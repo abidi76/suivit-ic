@@ -1,0 +1,1035 @@
+// =============================================================================
+// SuiviTic — Schéma de base de données
+// Aligné sur "Règles de gestion SuiviTic (version finale)" — 15 sections
+// Base : PostgreSQL 16
+// =============================================================================
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+enum Role {
+  ADMIN_CENTRAL
+  ADMIN_ADJOINT
+  SOUS_DIRECTEUR_TIC
+  SUPERVISEUR_LOCAL
+  DIRECTEUR_ETABLISSEMENT
+  PROF_RESPONSABLE
+  TECHNICIEN_INTERNE
+  TECHNICIEN_PRESTATAIRE
+  CHEF_PARC
+}
+
+enum EquipmentState {
+  EN_ATTENTE_CONFIRMATION
+  FONCTIONNEL
+  EN_PANNE
+  PERDU
+  TOTALEMENT_ENDOMMAGE
+  REFORME
+  PRETE
+  EMPRUNTE
+  NON_DECLARE
+}
+
+enum ArrivalStatut {
+  EN_ATTENTE
+  CONFIRME
+  EN_LITIGE
+  RECTIFIE
+}
+
+enum InventaireStatut {
+  OUVERTE
+  CLOTUREE
+}
+
+enum StatutDeclare {
+  FONCTIONNEL
+  EN_PANNE
+  PERDU
+  NON_DECLARE
+}
+
+enum PanneStatut {
+  DECLAREE
+  EN_COURS
+  RESOLUE
+  ANNULEE
+}
+
+enum PerteStatut {
+  DECLAREE
+  VALIDEE
+  REFUSEE
+}
+
+enum DommageStatut {
+  PROPOSE
+  VALIDE
+  REFUSE
+}
+
+enum InterventionStatut {
+  BROUILLON
+  EN_ATTENTE_VALIDATION
+  VALIDE
+  REFUSE
+}
+
+enum FormatageStatut {
+  DEMANDE
+  APPROUVE
+  REFUSE
+  EFFECTUE
+}
+
+enum BacPratiqueStatut {
+  BROUILLON
+  SOUMIS
+}
+
+enum PretStatut {
+  DEMANDE
+  ACCEPTE_SUPERVISEUR
+  ACCEPTE_ETABLISSEMENT
+  REFUSE
+  EN_COURS
+  RETOURNE
+  EN_RETARD
+}
+
+enum TicketStatut {
+  OUVERT
+  EN_COURS
+  EN_ATTENTE_VALIDATION
+  CLOTURE
+  ANNULE
+}
+
+enum Criticite {
+  BASSE
+  MOYENNE
+  HAUTE
+  CRITIQUE
+}
+
+enum MissionStatut {
+  DEMANDEE
+  VALIDEE
+  REFUSEE
+  EN_COURS
+  TERMINEE
+}
+
+enum CircuitType {
+  INTERNET
+  INTRANET
+  SECOURS
+}
+
+// =============================================================================
+// UTILISATEURS ET AUTHENTIFICATION
+// =============================================================================
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  emailVerifie   Boolean  @default(false)
+  matricule      String?  @unique
+  nom            String
+  prenom         String
+  motDePasseHash String
+  doitChangerMdp Boolean  @default(true)
+  role           Role
+  actif          Boolean  @default(true)
+  telephone      String?
+
+  creId           String?
+  etablissementId String?
+  laboId          String?
+  societeId       String?
+  marcheId        String?
+
+  emailVerifieAt    DateTime?
+  derniereConnexion DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  cre           Cre?           @relation(fields: [creId], references: [id])
+  etablissement Etablissement? @relation(fields: [etablissementId], references: [id])
+  labo          Labo?          @relation(fields: [laboId], references: [id])
+  societe       Societe?       @relation(fields: [societeId], references: [id])
+  marche        Marche?        @relation(fields: [marcheId], references: [id])
+
+  sessions           Session[]
+  passwordResets     PasswordResetToken[]
+  auditLogs          AuditLog[]
+  ticketsDeclares    Ticket[]              @relation("TicketDeclarant")
+  ticketsValides     Ticket[]              @relation("TicketValidateur")
+  interventions      Intervention[]
+  pannes             Panne[]
+  pertes             Perte[]
+  dommagesProposes   DommageTotal[]        @relation("DommageProposeur")
+  dommagesValides    DommageTotal[]        @relation("DommageValidateur")
+  arrivalsConfirmees ArrivalConfirmation[]
+  pretsSupervises    Pret[]                @relation("PretSuperviseur")
+
+  @@index([role, creId])
+  @@index([role, etablissementId])
+  @@index([actif])
+}
+
+model Session {
+  id               String    @id @default(cuid())
+  userId           String
+  refreshTokenHash String    @unique
+  userAgent        String?
+  ip               String?
+  expireAt         DateTime
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expireAt  DateTime
+  usedAt    DateTime?
+  ip        String?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model LoginAttempt {
+  id          String   @id @default(cuid())
+  identifiant String
+  ip          String
+  succes      Boolean
+  createdAt   DateTime @default(now())
+
+  @@index([identifiant, createdAt])
+  @@index([ip, createdAt])
+}
+
+model SmsVerification {
+  id         String    @id @default(cuid())
+  userId     String
+  telephone  String
+  codeHash   String
+  expireAt   DateTime
+  tentatives Int       @default(0)
+  createdAt  DateTime  @default(now())
+  usedAt     DateTime?
+
+  @@index([userId, createdAt])
+}
+
+// =============================================================================
+// GÉOGRAPHIE (CRE → GOUVERNORAT → DÉLÉGATION → ÉTABLISSEMENT → LABO)
+// =============================================================================
+
+model Cre {
+  id            String  @id @default(cuid())
+  code          String  @unique
+  designationFr String
+  designationAr String
+  actif         Boolean @default(true)
+
+  gouvernorats   Gouvernorat[]
+  etablissements Etablissement[]
+  users          User[]
+}
+
+model Gouvernorat {
+  id     String  @id @default(cuid())
+  code   String  @unique
+  nomFr  String
+  nomAr  String
+  creId  String
+  actif  Boolean @default(true)
+
+  cre         Cre          @relation(fields: [creId], references: [id])
+  delegations Delegation[]
+
+  @@index([creId])
+}
+
+model Delegation {
+  id            String  @id @default(cuid())
+  code          String  @unique
+  nomFr         String
+  nomAr         String
+  gouvernoratId String
+  actif         Boolean @default(true)
+
+  gouvernorat   Gouvernorat    @relation(fields: [gouvernoratId], references: [id])
+  etablissements Etablissement[]
+
+  @@index([gouvernoratId])
+}
+
+model Etablissement {
+  id           String  @id @default(cuid())
+  code         String  @unique
+  nomFr        String
+  nomAr        String
+  delegationId String
+  creId        String
+  actif        Boolean @default(true)
+
+  delegation      Delegation    @relation(fields: [delegationId], references: [id])
+  cre             Cre           @relation(fields: [creId], references: [id])
+  labos           Labo[]
+  equipements     Equipment[]
+  users           User[]
+  arrivals        Arrival[]
+  tickets         Ticket[]
+  bacPratiques    BacPratique[]
+  pretsPreteur    Pret[]        @relation("PretEtabPreteur")
+  pretsEmprunteur Pret[]        @relation("PretEtabEmprunteur")
+
+  @@index([creId])
+  @@index([delegationId])
+}
+
+model Labo {
+  id              String  @id @default(cuid())
+  nom             String
+  etablissementId String
+  actif           Boolean @default(true)
+
+  etablissement Etablissement @relation(fields: [etablissementId], references: [id])
+  equipements   Equipment[]
+  users         User[]
+
+  @@unique([etablissementId, nom])
+}
+
+model Direction {
+  id     String  @id @default(cuid())
+  nom    String
+  actif  Boolean @default(true)
+
+  services Service[]
+}
+
+model Service {
+  id          String  @id @default(cuid())
+  nom         String
+  directionId String
+  actif       Boolean @default(true)
+
+  direction Direction @relation(fields: [directionId], references: [id])
+}
+
+// =============================================================================
+// RÉFÉRENTIELS
+// =============================================================================
+
+model TypeEquipement {
+  id    String  @id @default(cuid())
+  nom   String  @unique
+  actif Boolean @default(true)
+
+  modeles            Modele[]
+  equipements        Equipment[]
+  bacPratiqueManques BacPratiqueManque[]
+}
+
+model Marque {
+  id    String  @id @default(cuid())
+  nom   String  @unique
+  actif Boolean @default(true)
+
+  modeles     Modele[]
+  equipements Equipment[]
+}
+
+model Modele {
+  id       String  @id @default(cuid())
+  nom      String
+  marqueId String
+  typeId   String
+  actif    Boolean @default(true)
+
+  marque      Marque         @relation(fields: [marqueId], references: [id])
+  type        TypeEquipement @relation(fields: [typeId], references: [id])
+  equipements Equipment[]
+
+  @@unique([nom, marqueId, typeId])
+}
+
+model AppelOffres {
+  id        String    @id @default(cuid())
+  numero    String    @unique
+  objet     String?
+  dateDebut DateTime?
+  dateFin   DateTime?
+  actif     Boolean   @default(true)
+
+  lots        Lot[]
+  equipements Equipment[]
+}
+
+model Lot {
+  id            String  @id @default(cuid())
+  appelOffresId String
+  numero        String
+  description   String?
+  quantiteMax   Int?
+  actif         Boolean @default(true)
+
+  appelOffres AppelOffres @relation(fields: [appelOffresId], references: [id])
+  equipements Equipment[]
+
+  @@unique([appelOffresId, numero])
+}
+
+model ActionMaintenance {
+  id      String  @id @default(cuid())
+  code    String  @unique
+  libelle String
+  actif   Boolean @default(true)
+
+  interventions Intervention[]
+}
+
+model TypePanne {
+  id      String  @id @default(cuid())
+  code    String  @unique
+  libelle String
+  actif   Boolean @default(true)
+
+  pannes  Panne[]
+  tickets Ticket[]
+}
+
+model TypeJustificatifPerte {
+  id      String  @id @default(cuid())
+  code    String  @unique
+  libelle String
+  actif   Boolean @default(true)
+
+  pertes Perte[]
+}
+
+model Fournisseur {
+  id    String  @id @default(cuid())
+  nom   String  @unique
+  actif Boolean @default(true)
+}
+
+model Societe {
+  id        String  @id @default(cuid())
+  nom       String  @unique
+  matricule String? @unique
+  actif     Boolean @default(true)
+
+  users   User[]
+  marches Marche[]
+}
+
+model Marche {
+  id        String    @id @default(cuid())
+  numero    String    @unique
+  societeId String
+  dateDebut DateTime?
+  dateFin   DateTime?
+  actif     Boolean   @default(true)
+
+  societe Societe @relation(fields: [societeId], references: [id])
+  users   User[]
+}
+
+// =============================================================================
+// ÉQUIPEMENTS
+// =============================================================================
+
+model Equipment {
+  id              String         @id @default(cuid())
+  numeroSerie     String         @unique
+  marqueId        String
+  modeleId        String
+  typeId          String
+  appelOffresId   String
+  lotId           String?
+  etablissementId String
+  laboId          String
+  etat            EquipmentState @default(EN_ATTENTE_CONFIRMATION)
+  proprietaireId  String?
+  dateReception   DateTime?
+  dateReforme     DateTime?
+  motifReforme    String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  etablissement Etablissement  @relation(fields: [etablissementId], references: [id])
+  labo          Labo           @relation(fields: [laboId], references: [id])
+  marque        Marque         @relation(fields: [marqueId], references: [id])
+  modele        Modele         @relation(fields: [modeleId], references: [id])
+  type          TypeEquipement @relation(fields: [typeId], references: [id])
+  appelOffres   AppelOffres    @relation(fields: [appelOffresId], references: [id])
+  lot           Lot?           @relation(fields: [lotId], references: [id])
+
+  arriveeItem        ArrivalItem?
+  pannes             Panne[]
+  pertes             Perte[]
+  dommagesTotaux     DommageTotal[]
+  interventions      Intervention[]
+  pretItem           PretItem?
+  inventaireLignes   InventaireLigne[]
+  bacPratiqueDetails BacPratiqueDetail[]
+
+  @@index([etablissementId, etat])
+  @@index([typeId])
+  @@index([appelOffresId])
+  @@index([proprietaireId])
+}
+
+// =============================================================================
+// ARRIVAGES
+// =============================================================================
+
+model Arrival {
+  id               String        @id @default(cuid())
+  numero           String        @unique
+  designation      String
+  bonLivraison     String?
+  etablissementId  String
+  adminId          String
+  statut           ArrivalStatut @default(EN_ATTENTE)
+  dateArrivee      DateTime      @default(now())
+  dateConfirmation DateTime?
+  dateEcheance     DateTime?
+  rectificatifDe   String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  etablissement Etablissement         @relation(fields: [etablissementId], references: [id])
+  items         ArrivalItem[]
+  confirmations ArrivalConfirmation[]
+  litiges       ArrivalLitige[]
+
+  @@index([etablissementId, statut])
+  @@index([dateEcheance])
+}
+
+model ArrivalItem {
+  id          String @id @default(cuid())
+  arrivalId   String
+  equipmentId String @unique
+  quantite    Int    @default(1)
+
+  arrival   Arrival   @relation(fields: [arrivalId], references: [id], onDelete: Cascade)
+  equipment Equipment @relation(fields: [equipmentId], references: [id])
+}
+
+model ArrivalConfirmation {
+  id          String   @id @default(cuid())
+  arrivalId   String
+  userId      String
+  role        Role
+  avecReserve Boolean  @default(false)
+  motif       String?
+  date        DateTime @default(now())
+
+  arrival Arrival @relation(fields: [arrivalId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@unique([arrivalId, userId])
+  @@index([arrivalId, role])
+}
+
+model ArrivalLitige {
+  id          String    @id @default(cuid())
+  arrivalId   String
+  motif       String
+  traite      Boolean   @default(false)
+  traiteParId String?
+  traiteAt    DateTime?
+  resolution  String?
+  createdAt   DateTime  @default(now())
+
+  arrival Arrival @relation(fields: [arrivalId], references: [id], onDelete: Cascade)
+
+  @@index([arrivalId, traite])
+}
+
+// =============================================================================
+// INVENTAIRE
+// =============================================================================
+
+model CampagneInventaire {
+  id         String           @id @default(cuid())
+  libelle    String
+  dateDebut  DateTime
+  dateLimite DateTime
+  statut     InventaireStatut @default(OUVERTE)
+  lanceParId String
+  createdAt  DateTime         @default(now())
+
+  lignes InventaireLigne[]
+
+  @@index([statut, dateLimite])
+}
+
+model InventaireLigne {
+  id              String        @id @default(cuid())
+  campagneId      String
+  equipmentId     String
+  etablissementId String
+  laboId          String
+  declarantId     String
+  statut          StatutDeclare
+  commentaire     String?
+  dateDeclaration DateTime      @default(now())
+
+  campagne  CampagneInventaire @relation(fields: [campagneId], references: [id], onDelete: Cascade)
+  equipment Equipment          @relation(fields: [equipmentId], references: [id])
+
+  @@unique([campagneId, equipmentId])
+  @@index([campagneId, statut])
+  @@index([etablissementId])
+}
+
+// =============================================================================
+// PANNES, PERTES, DOMMAGES
+// =============================================================================
+
+model Panne {
+  id             String      @id @default(cuid())
+  equipmentId    String
+  typePanneId    String
+  description    String
+  declarantId    String
+  statut         PanneStatut @default(DECLAREE)
+  ticketId       String?
+  date           DateTime    @default(now())
+  dateResolution DateTime?
+
+  equipment Equipment @relation(fields: [equipmentId], references: [id])
+  typePanne TypePanne @relation(fields: [typePanneId], references: [id])
+  declarant User      @relation(fields: [declarantId], references: [id])
+  ticket    Ticket?   @relation(fields: [ticketId], references: [id])
+
+  @@index([equipmentId, statut])
+}
+
+model Perte {
+  id           String      @id @default(cuid())
+  equipmentId  String
+  typeJustifId String
+  pdfUrl       String
+  pdfSha256    String
+  motif        String?
+  declarantId  String
+  statut       PerteStatut @default(DECLAREE)
+  valideParId  String?
+  valideAt     DateTime?
+  motifRefus   String?
+  date         DateTime    @default(now())
+
+  equipment  Equipment             @relation(fields: [equipmentId], references: [id])
+  typeJustif TypeJustificatifPerte @relation(fields: [typeJustifId], references: [id])
+  declarant  User                  @relation(fields: [declarantId], references: [id])
+
+  @@index([equipmentId, statut])
+}
+
+model DommageTotal {
+  id                String        @id @default(cuid())
+  equipmentId       String
+  motif             String
+  proposeParId      String
+  date              DateTime      @default(now())
+  statut            DommageStatut @default(PROPOSE)
+
+  valideProfId      String?
+  valideProfAt      DateTime?
+  valideDirId       String?
+  valideDirAt       DateTime?
+  valideTechId      String?
+  valideTechAt      DateTime?
+
+  avisPrestataireId String?
+  avisPrestataire   String?
+  avisPrestataireAt DateTime?
+
+  refusParId        String?
+  refusAt           DateTime?
+  motifRefus        String?
+
+  proposePar User?     @relation("DommageProposeur", fields: [proposeParId], references: [id])
+  valideProf User?     @relation("DommageValidateur", fields: [valideProfId], references: [id])
+  equipment  Equipment @relation(fields: [equipmentId], references: [id])
+
+  @@index([equipmentId, statut])
+}
+
+// =============================================================================
+// INTERVENTIONS
+// =============================================================================
+
+model Intervention {
+  id             String             @id @default(cuid())
+  equipmentId    String
+  technicienId   String
+  actionId       String
+  ticketId       String?
+  date           DateTime           @default(now())
+  bonPdfUrl      String?
+  bonPdfSha256   String?
+  statut         InterventionStatut @default(BROUILLON)
+  valideParDirId String?
+  valideAt       DateTime?
+  motifRefus     String?
+
+  equipment  Equipment           @relation(fields: [equipmentId], references: [id])
+  action     ActionMaintenance   @relation(fields: [actionId], references: [id])
+  ticket     Ticket?             @relation(fields: [ticketId], references: [id])
+  technicien User                @relation(fields: [technicienId], references: [id])
+  pieces     InterventionPiece[]
+
+  @@index([equipmentId, statut])
+  @@index([technicienId, statut])
+}
+
+model Piece {
+  id          String  @id @default(cuid())
+  numeroSerie String  @unique
+  designation String
+  marqueId    String?
+  typePiece   String?
+  actif       Boolean @default(true)
+
+  interventions InterventionPiece[]
+}
+
+model InterventionPiece {
+  id             String   @id @default(cuid())
+  interventionId String
+  pieceId        String?
+  numeroSerie    String
+  designation    String
+  ajoutee        Boolean
+  createdAt      DateTime @default(now())
+
+  intervention Intervention @relation(fields: [interventionId], references: [id], onDelete: Cascade)
+  piece        Piece?       @relation(fields: [pieceId], references: [id])
+
+  @@index([interventionId])
+}
+
+// =============================================================================
+// FORMATAGE ET CHARTE NUMÉRIQUE
+// =============================================================================
+
+model CharteNumerique {
+  id        String   @id @default(cuid())
+  version   String   @unique
+  contenuMd String
+  actif     Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  acceptations AcceptationCharte[]
+}
+
+model AcceptationCharte {
+  id             String   @id @default(cuid())
+  charteId       String
+  userId         String
+  ticketId       String?
+  interventionId String?
+  date           DateTime @default(now())
+
+  charte CharteNumerique @relation(fields: [charteId], references: [id])
+
+  @@index([userId, date])
+  @@index([ticketId])
+}
+
+model Formatage {
+  id            String          @id @default(cuid())
+  ticketId      String
+  equipementId  String
+  demandeParId  String
+  statut        FormatageStatut @default(DEMANDE)
+  approuveParId String?
+  approuveAt    DateTime?
+  motifRefus    String?
+  charteId      String?
+  effectueAt    DateTime?
+  createdAt     DateTime        @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id])
+
+  @@index([ticketId, statut])
+}
+
+// =============================================================================
+// BAC PRATIQUE
+// =============================================================================
+
+model BacPratique {
+  id              String            @id @default(cuid())
+  etablissementId String
+  directeurId     String
+  anneeScolaire   String
+  statut          BacPratiqueStatut @default(BROUILLON)
+  dateSoumission  DateTime?
+  etatConnexion   String?
+  besoinFlybox    Boolean           @default(false)
+  besoinSecours   Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  etablissement Etablissement       @relation(fields: [etablissementId], references: [id])
+  manques       BacPratiqueManque[]
+  details       BacPratiqueDetail[]
+
+  @@unique([etablissementId, anneeScolaire])
+}
+
+model BacPratiqueManque {
+  id            String @id @default(cuid())
+  bacPratiqueId String
+  typeId        String
+  quantite      Int
+
+  bacPratique BacPratique    @relation(fields: [bacPratiqueId], references: [id], onDelete: Cascade)
+  type        TypeEquipement @relation(fields: [typeId], references: [id])
+
+  @@unique([bacPratiqueId, typeId])
+}
+
+model BacPratiqueDetail {
+  id            String @id @default(cuid())
+  bacPratiqueId String
+  equipmentId   String
+
+  bacPratique BacPratique @relation(fields: [bacPratiqueId], references: [id], onDelete: Cascade)
+  equipment   Equipment   @relation(fields: [equipmentId], references: [id])
+
+  @@unique([bacPratiqueId, equipmentId])
+}
+
+// =============================================================================
+// PRÊTS ENTRE ÉTABLISSEMENTS
+// =============================================================================
+
+model Pret {
+  id                        String     @id @default(cuid())
+  etablissementPreteurId    String
+  etablissementEmprunteurId String
+  superviseurId             String
+  type                      String
+  statut                    PretStatut @default(DEMANDE)
+  dateDebut                 DateTime?
+  dateFin                   DateTime?
+  dateRetourEffective       DateTime?
+  motifRefus                String?
+  accepteParPreteurId       String?
+  accepteParPreteurAt       DateTime?
+  createdAt                 DateTime   @default(now())
+  updatedAt                 DateTime   @updatedAt
+
+  etablissementPreteur    Etablissement @relation("PretEtabPreteur", fields: [etablissementPreteurId], references: [id])
+  etablissementEmprunteur Etablissement @relation("PretEtabEmprunteur", fields: [etablissementEmprunteurId], references: [id])
+  superviseur             User          @relation("PretSuperviseur", fields: [superviseurId], references: [id])
+  items                   PretItem[]
+
+  @@index([etablissementPreteurId, statut])
+  @@index([etablissementEmprunteurId, statut])
+  @@index([dateFin])
+}
+
+model PretItem {
+  id                   String    @id @default(cuid())
+  pretId               String
+  equipmentId          String    @unique
+  retourne             Boolean   @default(false)
+  retourneAt           DateTime?
+  confirmePreteurAt    DateTime?
+  confirmeEmprunteurAt DateTime?
+
+  pret      Pret      @relation(fields: [pretId], references: [id], onDelete: Cascade)
+  equipment Equipment @relation(fields: [equipmentId], references: [id])
+}
+
+// =============================================================================
+// TICKETS
+// =============================================================================
+
+model Ticket {
+  id                 String       @id @default(cuid())
+  numero             String       @unique
+  etablissementId    String
+  laboId             String?
+  equipmentId        String?
+  declarantId        String
+  typePanneId        String
+  criticite          Criticite    @default(MOYENNE)
+  bacPratique        Boolean      @default(false)
+  description        String
+  statut             TicketStatut @default(OUVERT)
+  valideParId        String?
+  valideAt           DateTime?
+  noteSatisfaction   Int?
+  commentaireCloture String?
+  dateCloture        DateTime?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  etablissement Etablissement  @relation(fields: [etablissementId], references: [id])
+  declarant     User           @relation("TicketDeclarant", fields: [declarantId], references: [id])
+  validePar     User?          @relation("TicketValidateur", fields: [valideParId], references: [id])
+  typePanne     TypePanne      @relation(fields: [typePanneId], references: [id])
+  pannes        Panne[]
+  interventions Intervention[]
+  missions      Mission[]
+  formatages    Formatage[]
+
+  @@index([etablissementId, statut])
+  @@index([bacPratique])
+}
+
+// =============================================================================
+// COMPTES NUMÉRIQUES, MISSIONS, RÉSEAUX
+// =============================================================================
+
+model CompteNumerique {
+  id                     String   @id @default(cuid())
+  etablissementId        String
+  plateforme             String
+  anciennesTaches        String?
+  anciensLieux           String?
+  remarqueConfidentielle String?
+  transmisCnte           Boolean  @default(false)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@index([etablissementId])
+}
+
+model Vehicule {
+  id          String  @id @default(cuid())
+  immatricule String  @unique
+  marque      String?
+  modele      String?
+  actif       Boolean @default(true)
+
+  missions Mission[]
+}
+
+model Chauffeur {
+  id        String  @id @default(cuid())
+  nom       String
+  prenom    String
+  telephone String?
+  actif     Boolean @default(true)
+
+  missions Mission[]
+}
+
+model Mission {
+  id          String        @id @default(cuid())
+  numero      String        @unique
+  ticketId    String?
+  vehiculeId  String?
+  chauffeurId String?
+  dateDepart  DateTime
+  dateRetour  DateTime?
+  statut      MissionStatut @default(DEMANDEE)
+  valideParId String?
+  valideAt    DateTime?
+  pdfUrl      String?
+  pdfSha256   String?
+  createdAt   DateTime      @default(now())
+
+  ticket       Ticket?               @relation(fields: [ticketId], references: [id])
+  vehicule     Vehicule?             @relation(fields: [vehiculeId], references: [id])
+  chauffeur    Chauffeur?            @relation(fields: [chauffeurId], references: [id])
+  accompagnants MissionAccompagnant[]
+
+  @@index([dateDepart, statut])
+}
+
+model MissionAccompagnant {
+  id        String @id @default(cuid())
+  missionId String
+  userId    String
+
+  mission Mission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+}
+
+model CircuitReseau {
+  id              String      @id @default(cuid())
+  etablissementId String
+  type            CircuitType
+  fournisseur     String?
+  debit           String?
+  dateActivation  DateTime?
+  dateFin         DateTime?
+  actif           Boolean     @default(true)
+
+  @@index([etablissementId, type])
+  @@index([dateFin])
+}
+
+// =============================================================================
+// TRAÇABILITÉ
+// =============================================================================
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entite    String
+  entiteId  String
+  avant     Json?
+  apres     Json?
+  ip        String?
+  userAgent String?
+  date      DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([entite, entiteId])
+  @@index([userId, date])
+  @@index([action, date])
+}
+
+model DocumentArchive {
+  id          String   @id @default(cuid())
+  type        String
+  url         String
+  sha256      String
+  taille      Int?
+  mimeType    String?
+  entite      String
+  entiteId    String
+  deposeParId String?
+  date        DateTime @default(now())
+
+  @@index([entite, entiteId])
+  @@index([sha256])
+}
