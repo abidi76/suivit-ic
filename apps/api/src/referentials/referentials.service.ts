@@ -9,6 +9,11 @@ import { CreateGouvernoratDto } from './dto/create-gouvernorat.dto';
 import { CreateDelegationDto } from './dto/create-delegation.dto';
 import { CreateEtablissementDto } from './dto/create-etablissement.dto';
 import { CreateLaboDto } from './dto/create-labo.dto';
+import { CreateDirectionDto } from './dto/create-direction.dto';
+import { CreateServiceDto } from './dto/create-service.dto';
+import { CreateTypeEquipementDto } from './dto/create-type-equipement.dto';
+import { CreateMarqueDto } from './dto/create-marque.dto';
+import { CreateModeleDto } from './dto/create-modele.dto';
 
 @Injectable()
 export class ReferentialsService {
@@ -386,6 +391,276 @@ export class ReferentialsService {
   async desactiverLabo(id: string) {
     await this.findOneLabo(id);
     return this.prisma.labo.update({
+      where: { id },
+      data: { actif: false },
+    });
+  }
+    // ==========================================
+  // DIRECTION
+  // ==========================================
+
+  async findAllDirection() {
+    return this.prisma.direction.findMany({
+      where: { actif: true },
+      include: { services: { where: { actif: true } } },
+      orderBy: { nom: 'asc' },
+    });
+  }
+
+  async findOneDirection(id: string) {
+    const d = await this.prisma.direction.findUnique({
+      where: { id },
+      include: { services: true },
+    });
+    if (!d) throw new NotFoundException('Direction introuvable.');
+    return d;
+  }
+
+  async createDirection(dto: CreateDirectionDto) {
+    return this.prisma.direction.create({
+      data: {
+        nom: dto.nom.trim(),
+        actif: dto.actif ?? true,
+      },
+    });
+  }
+
+  async updateDirection(id: string, dto: Partial<CreateDirectionDto>) {
+    await this.findOneDirection(id);
+    return this.prisma.direction.update({
+      where: { id },
+      data: dto,
+    });
+  }
+
+  async desactiverDirection(id: string) {
+    await this.findOneDirection(id);
+    return this.prisma.direction.update({
+      where: { id },
+      data: { actif: false },
+    });
+  }
+
+  // ==========================================
+  // SERVICE
+  // ==========================================
+
+  async findAllService() {
+    return this.prisma.service.findMany({
+      where: { actif: true },
+      include: { direction: true },
+      orderBy: { nom: 'asc' },
+    });
+  }
+
+  async findOneService(id: string) {
+    const s = await this.prisma.service.findUnique({
+      where: { id },
+      include: { direction: true },
+    });
+    if (!s) throw new NotFoundException('Service introuvable.');
+    return s;
+  }
+
+  async createService(dto: CreateServiceDto) {
+    const direction = await this.prisma.direction.findUnique({
+      where: { id: dto.directionId },
+    });
+    if (!direction) throw new BadRequestException('Direction introuvable.');
+
+    return this.prisma.service.create({
+      data: {
+        nom: dto.nom.trim(),
+        directionId: dto.directionId,
+        actif: dto.actif ?? true,
+      },
+      include: { direction: true },
+    });
+  }
+
+  async updateService(id: string, dto: Partial<CreateServiceDto>) {
+    await this.findOneService(id);
+
+    if (dto.directionId) {
+      const d = await this.prisma.direction.findUnique({ where: { id: dto.directionId } });
+      if (!d) throw new BadRequestException('Direction introuvable.');
+    }
+
+    return this.prisma.service.update({
+      where: { id },
+      data: dto,
+      include: { direction: true },
+    });
+  }
+
+  async desactiverService(id: string) {
+    await this.findOneService(id);
+    return this.prisma.service.update({
+      where: { id },
+      data: { actif: false },
+    });
+  }
+
+  // ==========================================
+  // TYPE EQUIPEMENT
+  // ==========================================
+
+  async findAllTypeEquipement() {
+    return this.prisma.typeEquipement.findMany({
+      where: { actif: true },
+      orderBy: { nom: 'asc' },
+    });
+  }
+
+  async findOneTypeEquipement(id: string) {
+    const t = await this.prisma.typeEquipement.findUnique({
+      where: { id },
+      include: { modeles: true },
+    });
+    if (!t) throw new NotFoundException('Type équipement introuvable.');
+    return t;
+  }
+
+  async createTypeEquipement(dto: CreateTypeEquipementDto) {
+    const existing = await this.prisma.typeEquipement.findUnique({
+      where: { nom: dto.nom.trim() },
+    });
+    if (existing) throw new BadRequestException('Ce type existe déjà.');
+
+    return this.prisma.typeEquipement.create({
+      data: {
+        nom: dto.nom.trim(),
+        actif: dto.actif ?? true,
+      },
+    });
+  }
+
+  async updateTypeEquipement(id: string, dto: Partial<CreateTypeEquipementDto>) {
+    await this.findOneTypeEquipement(id);
+    return this.prisma.typeEquipement.update({
+      where: { id },
+      data: dto,
+    });
+  }
+
+  async desactiverTypeEquipement(id: string) {
+    await this.findOneTypeEquipement(id);
+    return this.prisma.typeEquipement.update({
+      where: { id },
+      data: { actif: false },
+    });
+  }
+
+  // ==========================================
+  // MARQUE
+  // ==========================================
+
+  async findAllMarque() {
+    return this.prisma.marque.findMany({
+      where: { actif: true },
+      orderBy: { nom: 'asc' },
+    });
+  }
+
+  async findOneMarque(id: string) {
+    const m = await this.prisma.marque.findUnique({
+      where: { id },
+      include: { modeles: true },
+    });
+    if (!m) throw new NotFoundException('Marque introuvable.');
+    return m;
+  }
+
+  async createMarque(dto: CreateMarqueDto) {
+    const existing = await this.prisma.marque.findUnique({
+      where: { nom: dto.nom.trim() },
+    });
+    if (existing) throw new BadRequestException('Cette marque existe déjà.');
+
+    return this.prisma.marque.create({
+      data: {
+        nom: dto.nom.trim(),
+        actif: dto.actif ?? true,
+      },
+    });
+  }
+
+  async updateMarque(id: string, dto: Partial<CreateMarqueDto>) {
+    await this.findOneMarque(id);
+    return this.prisma.marque.update({
+      where: { id },
+      data: dto,
+    });
+  }
+
+  async desactiverMarque(id: string) {
+    await this.findOneMarque(id);
+    return this.prisma.marque.update({
+      where: { id },
+      data: { actif: false },
+    });
+  }
+
+  // ==========================================
+  // MODELE
+  // ==========================================
+
+  async findAllModele() {
+    return this.prisma.modele.findMany({
+      where: { actif: true },
+      include: { marque: true, type: true },
+      orderBy: { nom: 'asc' },
+    });
+  }
+
+  async findOneModele(id: string) {
+    const m = await this.prisma.modele.findUnique({
+      where: { id },
+      include: { marque: true, type: true },
+    });
+    if (!m) throw new NotFoundException('Modèle introuvable.');
+    return m;
+  }
+
+  async createModele(dto: CreateModeleDto) {
+    const marque = await this.prisma.marque.findUnique({ where: { id: dto.marqueId } });
+    if (!marque) throw new BadRequestException('Marque introuvable.');
+
+    const type = await this.prisma.typeEquipement.findUnique({ where: { id: dto.typeId } });
+    if (!type) throw new BadRequestException('Type équipement introuvable.');
+
+    const existing = await this.prisma.modele.findFirst({
+      where: {
+        nom: dto.nom.trim(),
+        marqueId: dto.marqueId,
+        typeId: dto.typeId,
+      },
+    });
+    if (existing) throw new BadRequestException('Ce modèle existe déjà pour cette marque et ce type.');
+
+    return this.prisma.modele.create({
+      data: {
+        nom: dto.nom.trim(),
+        marqueId: dto.marqueId,
+        typeId: dto.typeId,
+        actif: dto.actif ?? true,
+      },
+      include: { marque: true, type: true },
+    });
+  }
+
+  async updateModele(id: string, dto: Partial<CreateModeleDto>) {
+    await this.findOneModele(id);
+    return this.prisma.modele.update({
+      where: { id },
+      data: dto,
+      include: { marque: true, type: true },
+    });
+  }
+
+  async desactiverModele(id: string) {
+    await this.findOneModele(id);
+    return this.prisma.modele.update({
       where: { id },
       data: { actif: false },
     });
