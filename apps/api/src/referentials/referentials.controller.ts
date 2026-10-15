@@ -20,7 +20,14 @@ import { CreateServiceDto } from './dto/create-service.dto';
 import { CreateTypeEquipementDto } from './dto/create-type-equipement.dto';
 import { CreateMarqueDto } from './dto/create-marque.dto';
 import { CreateModeleDto } from './dto/create-modele.dto';
-
+import { CreateAppelOffresDto } from './dto/create-appel-offres.dto';
+import { CreateLotDto } from './dto/create-lot.dto';
+import { CreateActionMaintenanceDto } from './dto/create-action-maintenance.dto';
+import { CreateTypePanneDto } from './dto/create-type-panne.dto';
+import { CreateTypeJustificatifPerteDto } from './dto/create-type-justificatif-perte.dto';
+import { CreateFournisseurDto } from './dto/create-fournisseur.dto';
+import { CreateSocieteDto } from './dto/create-societe.dto';
+import { CreateMarcheDto } from './dto/create-marche.dto';
 @Controller('referentials')
 export class ReferentialsController {
   constructor(private service: ReferentialsService) {}
@@ -341,5 +348,260 @@ export class ReferentialsController {
   @Delete('modele/:id')
   desactiverModele(@Param('id') id: string) {
     return this.service.desactiverModele(id);
+  }
+    // ==========================================
+  // APPEL D'OFFRES
+  // ==========================================
+
+  @Get('appel-offres')
+  findAllAppelOffres() {
+    return this.service.findAllAppelOffres();
+  }
+
+  @Get('appel-offres/:id')
+  findOneAppelOffres(@Param('id') id: string) {
+    return this.service.findOneAppelOffres(id);
+  }
+
+  @Roles(Role.ADMIN_CENTRAL)
+  @Post('appel-offres')
+  createAppelOffres(@Body() dto: CreateAppelOffresDto) {
+    return this.service.createAppelOffres(dto);
+  }
+
+  @Roles(Role.ADMIN_CENTRAL)
+  @Patch('appel-offres/:id')
+  updateAppelOffres(@Param('id') id: string, @Body() dto: Partial<CreateAppelOffresDto>) {
+    return this.service.updateAppelOffres(id, dto);
+  }
+
+  @Roles(Role.ADMIN_CENTRAL)
+  @Delete('appel-offres/:id')
+  desactiverAppelOffres(@Param('id') id: string) {
+    return this.service.desactiverAppelOffres(id);
+  }
+
+  // ==========================================
+  // LOT
+  // ==========================================
+
+  @Get('lot')
+  findAllLot() {
+    return this.service.findAllLot();
+  }
+
+  @Get('lot/:id')
+  findOneLot(@Param('id') id: string) {
+    return this.service.findOneLot(id);
+  }
+
+  @Roles(Role.ADMIN_CENTRAL)
+  @Post('lot')
+  createLot(@Body() dto: CreateLotDto) {
+    return this.service.createLot(dto);
+  }
+
+  @Roles(Role.ADMIN_CENTRAL)
+  @Patch('lot/:id')
+  updateLot(@Param('id') id: string, @Body() dto: Partial<CreateLotDto>) {
+    return this.service.updateLot(id, dto);
+  }
+
+  @Roles(Role.ADMIN_CENTRAL)
+  @Delete('lot/:id')
+  desactiverLot(@Param('id') id: string) {
+    return this.service.desactiverLot(id);
+  }
+
+  // ==========================================
+  // ACTION MAINTENANCE
+  // ==========================================
+
+  @Get('action-maintenance')
+  findAllActionMaintenance() {
+    return this.service.findAllActionMaintenance();
+  }
+
+  @Get('action-maintenance/:id')
+  findOneActionMaintenance(@Param('id') id: string) {
+    return this.service.findOneActionMaintenance(id);
+  }
+
+  @Roles(Role.ADMIN_CENTRAL)
+  @Post('action-maintenance')
+  createActionMaintenance(@Body() dto: CreateActionMaintenanceDto) {
+    return this.service.createActionMaintenance(dto);
+  }
+
+  @Roles(Role.ADMIN_CENTRAL)
+  @Patch('action-maintenance/:id')
+  updateActionMaintenance(@Param('id') id: string, @Body() dto: Partial<CreateActionMaintenanceDto>) {
+    return this.service.updateActionMaintenance(id, dto);
+  }
+
+  @Roles(Role.ADMIN_CENTRAL)
+  @Delete('action-maintenance/:id')
+  desactiverActionMaintenance(@Param('id') id: string) {
+    return this.service.desactiverActionMaintenance(id);
+  }
+
+  // ==========================================
+  // TYPE PANNE
+  // ==========================================
+
+  @Get('type-panne')
+  findAllTypePanne() {
+    return this.service.findAllTypePanne();
+  }
+
+  @Get('type-panne/:id')
+  findOneTypePanne(@Param('id') id: string) {
+    return this.service.findOneTypePanne(id);
+  }
+
+  @Roles(Role.ADMIN_CENTRAL)
+  @Post('type-panne')
+  createTypePanne(@Body() dto: CreateTypePanneDto) {
+    return this.service.createTypePanne(dto);
+  }
+
+  @Roles(Role.ADMIN_CENTRAL)
+  @Patch('type-panne/:id')
+  updateTypePanne(@Param('id') id: string, @Body() dto: Partial<CreateTypePanneDto>) {
+    return this.service.updateTypePanne(id, dto);
+  }
+
+  @Roles(Role.ADMIN_CENTRAL)
+  @Delete('type-panne/:id')
+  desactiverTypePanne(@Param('id') id: string) {
+    return this.service.desactiverTypePanne(id);
+  }
+
+  // ==========================================
+  // TYPE JUSTIFICATIF PERTE
+  // ==========================================
+
+  @Get('type-justificatif-perte')
+  findAllTypeJustificatifPerte() {
+    return this.service.findAllTypeJustificatifPerte();
+  }
+
+  @Get('type-justificatif-perte/:id')
+  findOneTypeJustificatifPerte(@Param('id') id: string) {
+    return this.service.findOneTypeJustificatifPerte(id);
+  }
+
+  @Roles(Role.ADMIN_CENTRAL)
+  @Post('type-justificatif-perte')
+  createTypeJustificatifPerte(@Body() dto: CreateTypeJustificatifPerteDto) {
+    return this.service.createTypeJustificatifPerte(dto);
+  }
+
+  @Roles(Role.ADMIN_CENTRAL)
+  @Patch('type-justificatif-perte/:id')
+  updateTypeJustificatifPerte(@Param('id') id: string, @Body() dto: Partial<CreateTypeJustificatifPerteDto>) {
+    return this.service.updateTypeJustificatifPerte(id, dto);
+  }
+
+  @Roles(Role.ADMIN_CENTRAL)
+  @Delete('type-justificatif-perte/:id')
+  desactiverTypeJustificatifPerte(@Param('id') id: string) {
+    return this.service.desactiverTypeJustificatifPerte(id);
+  }
+
+  // ==========================================
+  // FOURNISSEUR
+  // ==========================================
+
+  @Get('fournisseur')
+  findAllFournisseur() {
+    return this.service.findAllFournisseur();
+  }
+
+  @Get('fournisseur/:id')
+  findOneFournisseur(@Param('id') id: string) {
+    return this.service.findOneFournisseur(id);
+  }
+
+  @Roles(Role.ADMIN_CENTRAL)
+  @Post('fournisseur')
+  createFournisseur(@Body() dto: CreateFournisseurDto) {
+    return this.service.createFournisseur(dto);
+  }
+
+  @Roles(Role.ADMIN_CENTRAL)
+  @Patch('fournisseur/:id')
+  updateFournisseur(@Param('id') id: string, @Body() dto: Partial<CreateFournisseurDto>) {
+    return this.service.updateFournisseur(id, dto);
+  }
+
+  @Roles(Role.ADMIN_CENTRAL)
+  @Delete('fournisseur/:id')
+  desactiverFournisseur(@Param('id') id: string) {
+    return this.service.desactiverFournisseur(id);
+  }
+
+  // ==========================================
+  // SOCIETE
+  // ==========================================
+
+  @Get('societe')
+  findAllSociete() {
+    return this.service.findAllSociete();
+  }
+
+  @Get('societe/:id')
+  findOneSociete(@Param('id') id: string) {
+    return this.service.findOneSociete(id);
+  }
+
+  @Roles(Role.ADMIN_CENTRAL)
+  @Post('societe')
+  createSociete(@Body() dto: CreateSocieteDto) {
+    return this.service.createSociete(dto);
+  }
+
+  @Roles(Role.ADMIN_CENTRAL)
+  @Patch('societe/:id')
+  updateSociete(@Param('id') id: string, @Body() dto: Partial<CreateSocieteDto>) {
+    return this.service.updateSociete(id, dto);
+  }
+
+  @Roles(Role.ADMIN_CENTRAL)
+  @Delete('societe/:id')
+  desactiverSociete(@Param('id') id: string) {
+    return this.service.desactiverSociete(id);
+  }
+
+  // ==========================================
+  // MARCHE
+  // ==========================================
+
+  @Get('marche')
+  findAllMarche() {
+    return this.service.findAllMarche();
+  }
+
+  @Get('marche/:id')
+  findOneMarche(@Param('id') id: string) {
+    return this.service.findOneMarche(id);
+  }
+
+  @Roles(Role.ADMIN_CENTRAL)
+  @Post('marche')
+  createMarche(@Body() dto: CreateMarcheDto) {
+    return this.service.createMarche(dto);
+  }
+
+  @Roles(Role.ADMIN_CENTRAL)
+  @Patch('marche/:id')
+  updateMarche(@Param('id') id: string, @Body() dto: Partial<CreateMarcheDto>) {
+    return this.service.updateMarche(id, dto);
+  }
+
+  @Roles(Role.ADMIN_CENTRAL)
+  @Delete('marche/:id')
+  desactiverMarche(@Param('id') id: string) {
+    return this.service.desactiverMarche(id);
   }
 }

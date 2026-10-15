@@ -14,7 +14,14 @@ import { CreateServiceDto } from './dto/create-service.dto';
 import { CreateTypeEquipementDto } from './dto/create-type-equipement.dto';
 import { CreateMarqueDto } from './dto/create-marque.dto';
 import { CreateModeleDto } from './dto/create-modele.dto';
-
+import { CreateAppelOffresDto } from './dto/create-appel-offres.dto';
+import { CreateLotDto } from './dto/create-lot.dto';
+import { CreateActionMaintenanceDto } from './dto/create-action-maintenance.dto';
+import { CreateTypePanneDto } from './dto/create-type-panne.dto';
+import { CreateTypeJustificatifPerteDto } from './dto/create-type-justificatif-perte.dto';
+import { CreateFournisseurDto } from './dto/create-fournisseur.dto';
+import { CreateSocieteDto } from './dto/create-societe.dto';
+import { CreateMarcheDto } from './dto/create-marche.dto';
 @Injectable()
 export class ReferentialsService {
   constructor(private prisma: PrismaService) {}
@@ -661,6 +668,421 @@ export class ReferentialsService {
   async desactiverModele(id: string) {
     await this.findOneModele(id);
     return this.prisma.modele.update({
+      where: { id },
+      data: { actif: false },
+    });
+  }
+    // ==========================================
+  // APPEL D'OFFRES
+  // ==========================================
+
+  async findAllAppelOffres() {
+    return this.prisma.appelOffres.findMany({
+      where: { actif: true },
+      include: { lots: { where: { actif: true } } },
+      orderBy: { numero: 'asc' },
+    });
+  }
+
+  async findOneAppelOffres(id: string) {
+    const ao = await this.prisma.appelOffres.findUnique({
+      where: { id },
+      include: { lots: true },
+    });
+    if (!ao) throw new NotFoundException("Appel d'offres introuvable.");
+    return ao;
+  }
+
+  async createAppelOffres(dto: CreateAppelOffresDto) {
+    const existing = await this.prisma.appelOffres.findUnique({
+      where: { numero: dto.numero.trim() },
+    });
+    if (existing) throw new BadRequestException('Ce numéro existe déjà.');
+
+    return this.prisma.appelOffres.create({
+      data: {
+        numero: dto.numero.trim(),
+        objet: dto.objet,
+        dateDebut: dto.dateDebut ? new Date(dto.dateDebut) : null,
+        dateFin: dto.dateFin ? new Date(dto.dateFin) : null,
+        actif: dto.actif ?? true,
+      },
+    });
+  }
+
+  async updateAppelOffres(id: string, dto: Partial<CreateAppelOffresDto>) {
+    await this.findOneAppelOffres(id);
+    const data: any = { ...dto };
+    if (dto.dateDebut) data.dateDebut = new Date(dto.dateDebut);
+    if (dto.dateFin) data.dateFin = new Date(dto.dateFin);
+
+    return this.prisma.appelOffres.update({ where: { id }, data });
+  }
+
+  async desactiverAppelOffres(id: string) {
+    await this.findOneAppelOffres(id);
+    return this.prisma.appelOffres.update({
+      where: { id },
+      data: { actif: false },
+    });
+  }
+
+  // ==========================================
+  // LOT
+  // ==========================================
+
+  async findAllLot() {
+    return this.prisma.lot.findMany({
+      where: { actif: true },
+      include: { appelOffres: true },
+      orderBy: { numero: 'asc' },
+    });
+  }
+
+  async findOneLot(id: string) {
+    const l = await this.prisma.lot.findUnique({
+      where: { id },
+      include: { appelOffres: true },
+    });
+    if (!l) throw new NotFoundException('Lot introuvable.');
+    return l;
+  }
+
+  async createLot(dto: CreateLotDto) {
+    const ao = await this.prisma.appelOffres.findUnique({
+      where: { id: dto.appelOffresId },
+    });
+    if (!ao) throw new BadRequestException("Appel d'offres introuvable.");
+
+    const existing = await this.prisma.lot.findFirst({
+      where: {
+        appelOffresId: dto.appelOffresId,
+        numero: dto.numero.trim(),
+      },
+    });
+    if (existing) throw new BadRequestException('Ce lot existe déjà pour cet appel d\'offres.');
+
+    return this.prisma.lot.create({
+      data: {
+        appelOffresId: dto.appelOffresId,
+        numero: dto.numero.trim(),
+        description: dto.description,
+        quantiteMax: dto.quantiteMax,
+        actif: dto.actif ?? true,
+      },
+      include: { appelOffres: true },
+    });
+  }
+
+  async updateLot(id: string, dto: Partial<CreateLotDto>) {
+    await this.findOneLot(id);
+    return this.prisma.lot.update({
+      where: { id },
+      data: dto,
+      include: { appelOffres: true },
+    });
+  }
+
+  async desactiverLot(id: string) {
+    await this.findOneLot(id);
+    return this.prisma.lot.update({
+      where: { id },
+      data: { actif: false },
+    });
+  }
+
+  // ==========================================
+  // ACTION MAINTENANCE
+  // ==========================================
+
+  async findAllActionMaintenance() {
+    return this.prisma.actionMaintenance.findMany({
+      where: { actif: true },
+      orderBy: { code: 'asc' },
+    });
+  }
+
+  async findOneActionMaintenance(id: string) {
+    const a = await this.prisma.actionMaintenance.findUnique({ where: { id } });
+    if (!a) throw new NotFoundException('Action introuvable.');
+    return a;
+  }
+
+  async createActionMaintenance(dto: CreateActionMaintenanceDto) {
+    const existing = await this.prisma.actionMaintenance.findUnique({
+      where: { code: dto.code.trim() },
+    });
+    if (existing) throw new BadRequestException('Ce code existe déjà.');
+
+    return this.prisma.actionMaintenance.create({
+      data: {
+        code: dto.code.trim(),
+        libelle: dto.libelle,
+        actif: dto.actif ?? true,
+      },
+    });
+  }
+
+  async updateActionMaintenance(id: string, dto: Partial<CreateActionMaintenanceDto>) {
+    await this.findOneActionMaintenance(id);
+    return this.prisma.actionMaintenance.update({ where: { id }, data: dto });
+  }
+
+  async desactiverActionMaintenance(id: string) {
+    await this.findOneActionMaintenance(id);
+    return this.prisma.actionMaintenance.update({
+      where: { id },
+      data: { actif: false },
+    });
+  }
+
+  // ==========================================
+  // TYPE PANNE
+  // ==========================================
+
+  async findAllTypePanne() {
+    return this.prisma.typePanne.findMany({
+      where: { actif: true },
+      orderBy: { code: 'asc' },
+    });
+  }
+
+  async findOneTypePanne(id: string) {
+    const t = await this.prisma.typePanne.findUnique({ where: { id } });
+    if (!t) throw new NotFoundException('Type de panne introuvable.');
+    return t;
+  }
+
+  async createTypePanne(dto: CreateTypePanneDto) {
+    const existing = await this.prisma.typePanne.findUnique({
+      where: { code: dto.code.trim() },
+    });
+    if (existing) throw new BadRequestException('Ce code existe déjà.');
+
+    return this.prisma.typePanne.create({
+      data: {
+        code: dto.code.trim(),
+        libelle: dto.libelle,
+        actif: dto.actif ?? true,
+      },
+    });
+  }
+
+  async updateTypePanne(id: string, dto: Partial<CreateTypePanneDto>) {
+    await this.findOneTypePanne(id);
+    return this.prisma.typePanne.update({ where: { id }, data: dto });
+  }
+
+  async desactiverTypePanne(id: string) {
+    await this.findOneTypePanne(id);
+    return this.prisma.typePanne.update({
+      where: { id },
+      data: { actif: false },
+    });
+  }
+
+  // ==========================================
+  // TYPE JUSTIFICATIF PERTE
+  // ==========================================
+
+  async findAllTypeJustificatifPerte() {
+    return this.prisma.typeJustificatifPerte.findMany({
+      where: { actif: true },
+      orderBy: { code: 'asc' },
+    });
+  }
+
+  async findOneTypeJustificatifPerte(id: string) {
+    const t = await this.prisma.typeJustificatifPerte.findUnique({ where: { id } });
+    if (!t) throw new NotFoundException('Type de justificatif introuvable.');
+    return t;
+  }
+
+  async createTypeJustificatifPerte(dto: CreateTypeJustificatifPerteDto) {
+    const existing = await this.prisma.typeJustificatifPerte.findUnique({
+      where: { code: dto.code.trim() },
+    });
+    if (existing) throw new BadRequestException('Ce code existe déjà.');
+
+    return this.prisma.typeJustificatifPerte.create({
+      data: {
+        code: dto.code.trim(),
+        libelle: dto.libelle,
+        actif: dto.actif ?? true,
+      },
+    });
+  }
+
+  async updateTypeJustificatifPerte(id: string, dto: Partial<CreateTypeJustificatifPerteDto>) {
+    await this.findOneTypeJustificatifPerte(id);
+    return this.prisma.typeJustificatifPerte.update({ where: { id }, data: dto });
+  }
+
+  async desactiverTypeJustificatifPerte(id: string) {
+    await this.findOneTypeJustificatifPerte(id);
+    return this.prisma.typeJustificatifPerte.update({
+      where: { id },
+      data: { actif: false },
+    });
+  }
+
+  // ==========================================
+  // FOURNISSEUR
+  // ==========================================
+
+  async findAllFournisseur() {
+    return this.prisma.fournisseur.findMany({
+      where: { actif: true },
+      orderBy: { nom: 'asc' },
+    });
+  }
+
+  async findOneFournisseur(id: string) {
+    const f = await this.prisma.fournisseur.findUnique({ where: { id } });
+    if (!f) throw new NotFoundException('Fournisseur introuvable.');
+    return f;
+  }
+
+  async createFournisseur(dto: CreateFournisseurDto) {
+    const existing = await this.prisma.fournisseur.findUnique({
+      where: { nom: dto.nom.trim() },
+    });
+    if (existing) throw new BadRequestException('Ce fournisseur existe déjà.');
+
+    return this.prisma.fournisseur.create({
+      data: {
+        nom: dto.nom.trim(),
+        actif: dto.actif ?? true,
+      },
+    });
+  }
+
+  async updateFournisseur(id: string, dto: Partial<CreateFournisseurDto>) {
+    await this.findOneFournisseur(id);
+    return this.prisma.fournisseur.update({ where: { id }, data: dto });
+  }
+
+  async desactiverFournisseur(id: string) {
+    await this.findOneFournisseur(id);
+    return this.prisma.fournisseur.update({
+      where: { id },
+      data: { actif: false },
+    });
+  }
+
+  // ==========================================
+  // SOCIETE (prestataires)
+  // ==========================================
+
+  async findAllSociete() {
+    return this.prisma.societe.findMany({
+      where: { actif: true },
+      include: { marches: { where: { actif: true } } },
+      orderBy: { nom: 'asc' },
+    });
+  }
+
+  async findOneSociete(id: string) {
+    const s = await this.prisma.societe.findUnique({
+      where: { id },
+      include: { marches: true },
+    });
+    if (!s) throw new NotFoundException('Société introuvable.');
+    return s;
+  }
+
+  async createSociete(dto: CreateSocieteDto) {
+    const existing = await this.prisma.societe.findUnique({
+      where: { nom: dto.nom.trim() },
+    });
+    if (existing) throw new BadRequestException('Cette société existe déjà.');
+
+    return this.prisma.societe.create({
+      data: {
+        nom: dto.nom.trim(),
+        matricule: dto.matricule || null,
+        actif: dto.actif ?? true,
+      },
+    });
+  }
+
+  async updateSociete(id: string, dto: Partial<CreateSocieteDto>) {
+    await this.findOneSociete(id);
+    return this.prisma.societe.update({
+      where: { id },
+      data: dto,
+      include: { marches: true },
+    });
+  }
+
+  async desactiverSociete(id: string) {
+    await this.findOneSociete(id);
+    return this.prisma.societe.update({
+      where: { id },
+      data: { actif: false },
+    });
+  }
+
+  // ==========================================
+  // MARCHE
+  // ==========================================
+
+  async findAllMarche() {
+    return this.prisma.marche.findMany({
+      where: { actif: true },
+      include: { societe: true },
+      orderBy: { numero: 'asc' },
+    });
+  }
+
+  async findOneMarche(id: string) {
+    const m = await this.prisma.marche.findUnique({
+      where: { id },
+      include: { societe: true },
+    });
+    if (!m) throw new NotFoundException('Marché introuvable.');
+    return m;
+  }
+
+  async createMarche(dto: CreateMarcheDto) {
+    const societe = await this.prisma.societe.findUnique({
+      where: { id: dto.societeId },
+    });
+    if (!societe) throw new BadRequestException('Société introuvable.');
+
+    const existing = await this.prisma.marche.findUnique({
+      where: { numero: dto.numero.trim() },
+    });
+    if (existing) throw new BadRequestException('Ce numéro de marché existe déjà.');
+
+    return this.prisma.marche.create({
+      data: {
+        numero: dto.numero.trim(),
+        societeId: dto.societeId,
+        dateDebut: dto.dateDebut ? new Date(dto.dateDebut) : null,
+        dateFin: dto.dateFin ? new Date(dto.dateFin) : null,
+        actif: dto.actif ?? true,
+      },
+      include: { societe: true },
+    });
+  }
+
+  async updateMarche(id: string, dto: Partial<CreateMarcheDto>) {
+    await this.findOneMarche(id);
+    const data: any = { ...dto };
+    if (dto.dateDebut) data.dateDebut = new Date(dto.dateDebut);
+    if (dto.dateFin) data.dateFin = new Date(dto.dateFin);
+
+    return this.prisma.marche.update({
+      where: { id },
+      data,
+      include: { societe: true },
+    });
+  }
+
+  async desactiverMarche(id: string) {
+    await this.findOneMarche(id);
+    return this.prisma.marche.update({
       where: { id },
       data: { actif: false },
     });
