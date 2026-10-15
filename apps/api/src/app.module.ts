@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ReferentialsModule } from './referentials/referentials.module';
 import { ArrivalsModule } from './arrivals/arrivals.module';
+import { EquipmentModule } from './equipment/equipment.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 
@@ -20,6 +21,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
     UsersModule,
     ReferentialsModule,
     ArrivalsModule,
+    EquipmentModule,
   ],
   controllers: [AppController],
   providers: [
