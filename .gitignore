@@ -16,3 +16,12 @@ prisma/*.corrupted
 test-bcrypt.js
 gen-hash.js
 fix-password.js
+# Scripts de test locaux (contiennent des mots de passe)
+fix-password.ts
+fix-password.js
+gen-hash.ts
+gen-hash.js
+test-*.ts
+test-*.js
+test-api.ps1
+.token
