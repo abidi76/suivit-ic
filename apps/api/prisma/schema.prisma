@@ -498,6 +498,7 @@ model Equipment {
   pretItem           PretItem?
   inventaireLignes   InventaireLigne[]
   bacPratiqueDetails BacPratiqueDetail[]
+  tickets     Ticket[]       
 
   @@index([etablissementId, etat])
   @@index([typeId])
@@ -903,6 +904,7 @@ model Ticket {
   declarant     User           @relation("TicketDeclarant", fields: [declarantId], references: [id])
   validePar     User?          @relation("TicketValidateur", fields: [valideParId], references: [id])
   typePanne     TypePanne      @relation(fields: [typePanneId], references: [id])
+  equipment     Equipment?    @relation(fields: [equipmentId], references: [id])
   pannes        Panne[]
   interventions Intervention[]
   missions      Mission[]

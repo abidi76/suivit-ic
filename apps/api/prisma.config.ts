@@ -13,4 +13,6 @@ export default defineConfig({
   datasource: {
     url: env("DATABASE_URL"),
   },
+  // Options pour masquer les notifications
+  // (variable selon la version de Prisma)
 });
