@@ -11,6 +11,7 @@ import { ReferentialsModule } from './referentials/referentials.module';
 import { ArrivalsModule } from './arrivals/arrivals.module';
 import { EquipmentModule } from './equipment/equipment.module';
 import { TicketsModule } from './tickets/tickets.module';
+import { InterventionsModule } from './interventions/interventions.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 
@@ -24,6 +25,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
     ArrivalsModule,
     EquipmentModule,
     TicketsModule,
+    InterventionsModule,
   ],
   controllers: [AppController],
   providers: [

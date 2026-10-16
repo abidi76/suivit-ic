@@ -53,10 +53,12 @@ export class EquipmentService {
     }
 
     // Regle 1.12 : cloisonnement par role
-    if (userRole === Role.SOUS_DIRECTEUR_TIC ||
-        userRole === Role.SUPERVISEUR_LOCAL ||
-        userRole === Role.CHEF_PARC ||
-        userRole === Role.TECHNICIEN_INTERNE) {
+    if (
+      userRole === Role.SOUS_DIRECTEUR_TIC ||
+      userRole === Role.SUPERVISEUR_LOCAL ||
+      userRole === Role.CHEF_PARC ||
+      userRole === Role.TECHNICIEN_INTERNE
+    ) {
       if (userCreId) {
         where.etablissement = { creId: userCreId };
       }
@@ -117,7 +119,31 @@ export class EquipmentService {
         pannes: { orderBy: { date: 'desc' } },
         pertes: { orderBy: { date: 'desc' } },
         dommagesTotaux: { orderBy: { date: 'desc' } },
-        interventions: { orderBy: { date: 'desc' } },
+        interventionLignes: {
+          include: {
+            intervention: {
+              include: {
+                technicien: {
+                  select: {
+                    id: true,
+                    nom: true,
+                    prenom: true,
+                    email: true,
+                    role: true,
+                  },
+                },
+                ticket: true,
+              },
+            },
+            action: true,
+            pieces: {
+              include: { piece: true },
+            },
+          },
+          orderBy: {
+            intervention: { date: 'desc' },
+          },
+        },
         pretItem: { include: { pret: true } },
         inventaireLignes: { orderBy: { dateDeclaration: 'desc' }, take: 5 },
       },
@@ -137,10 +163,12 @@ export class EquipmentService {
   ) {
     const where: any = {};
 
-    if (userRole === Role.SOUS_DIRECTEUR_TIC ||
-        userRole === Role.SUPERVISEUR_LOCAL ||
-        userRole === Role.CHEF_PARC ||
-        userRole === Role.TECHNICIEN_INTERNE) {
+    if (
+      userRole === Role.SOUS_DIRECTEUR_TIC ||
+      userRole === Role.SUPERVISEUR_LOCAL ||
+      userRole === Role.CHEF_PARC ||
+      userRole === Role.TECHNICIEN_INTERNE
+    ) {
       if (userCreId) where.etablissement = { creId: userCreId };
     }
 
@@ -148,35 +176,30 @@ export class EquipmentService {
       where.etablissementId = userEtablissementId;
     }
 
-    const [
-      total,
-      parEtat,
-      parType,
-      parMarque,
-      parEtablissement,
-    ] = await Promise.all([
-      this.prisma.equipment.count({ where }),
-      this.prisma.equipment.groupBy({
-        by: ['etat'],
-        where,
-        _count: { _all: true },
-      }),
-      this.prisma.equipment.groupBy({
-        by: ['typeId'],
-        where,
-        _count: { _all: true },
-      }),
-      this.prisma.equipment.groupBy({
-        by: ['marqueId'],
-        where,
-        _count: { _all: true },
-      }),
-      this.prisma.equipment.groupBy({
-        by: ['etablissementId'],
-        where,
-        _count: { _all: true },
-      }),
-    ]);
+    const [total, parEtat, parType, parMarque, parEtablissement] =
+      await Promise.all([
+        this.prisma.equipment.count({ where }),
+        this.prisma.equipment.groupBy({
+          by: ['etat'],
+          where,
+          _count: { _all: true },
+        }),
+        this.prisma.equipment.groupBy({
+          by: ['typeId'],
+          where,
+          _count: { _all: true },
+        }),
+        this.prisma.equipment.groupBy({
+          by: ['marqueId'],
+          where,
+          _count: { _all: true },
+        }),
+        this.prisma.equipment.groupBy({
+          by: ['etablissementId'],
+          where,
+          _count: { _all: true },
+        }),
+      ]);
 
     // Enrichir les IDs avec les noms
     const typeIds = parType.map((t) => t.typeId);
@@ -200,13 +223,21 @@ export class EquipmentService {
 
     const typeMap = Object.fromEntries(types.map((t) => [t.id, t.nom]));
     const marqueMap = Object.fromEntries(marques.map((m) => [m.id, m.nom]));
-    const etabMap = Object.fromEntries(etablissements.map((e) => [e.id, `${e.code} - ${e.nomFr}`]));
+    const etabMap = Object.fromEntries(
+      etablissements.map((e) => [e.id, `${e.code} - ${e.nomFr}`]),
+    );
 
     return {
       total,
       parEtat: parEtat.map((e) => ({ etat: e.etat, count: e._count._all })),
-      parType: parType.map((t) => ({ type: typeMap[t.typeId] || t.typeId, count: t._count._all })),
-      parMarque: parMarque.map((m) => ({ marque: marqueMap[m.marqueId] || m.marqueId, count: m._count._all })),
+      parType: parType.map((t) => ({
+        type: typeMap[t.typeId] || t.typeId,
+        count: t._count._all,
+      })),
+      parMarque: parMarque.map((m) => ({
+        marque: marqueMap[m.marqueId] || m.marqueId,
+        count: m._count._all,
+      })),
       parEtablissement: parEtablissement.map((e) => ({
         etablissement: etabMap[e.etablissementId] || e.etablissementId,
         count: e._count._all,
@@ -225,7 +256,9 @@ export class EquipmentService {
     // Regle 3.5 : on ne supprime jamais, on reforme
     if (dto.etat === EquipmentState.REFORME) {
       if (userRole !== Role.ADMIN_CENTRAL) {
-        throw new ForbiddenException('Seul l\'admin central peut reformer un equipement.');
+        throw new ForbiddenException(
+          "Seul l'admin central peut reformer un equipement.",
+        );
       }
       if (!dto.motifReforme) {
         throw new BadRequestException('Le motif de reforme est obligatoire.');
@@ -258,7 +291,9 @@ export class EquipmentService {
    */
   async reformer(id: string, dto: ReformerEquipmentDto, userRole: Role) {
     if (userRole !== Role.ADMIN_CENTRAL) {
-      throw new ForbiddenException('Seul l\'admin central peut reformer un equipement.');
+      throw new ForbiddenException(
+        "Seul l'admin central peut reformer un equipement.",
+      );
     }
 
     const equipment = await this.prisma.equipment.findUnique({ where: { id } });

@@ -132,13 +132,17 @@ export class TicketsService {
     if (filters.declarantId) where.declarantId = filters.declarantId;
 
     // Cloisonnement par role (regle 1.12)
-    if (userRole === Role.SOUS_DIRECTEUR_TIC ||
-        userRole === Role.SUPERVISEUR_LOCAL ||
-        userRole === Role.CHEF_PARC ||
-        userRole === Role.TECHNICIEN_INTERNE) {
+    if (
+      userRole === Role.SOUS_DIRECTEUR_TIC ||
+      userRole === Role.SUPERVISEUR_LOCAL ||
+      userRole === Role.CHEF_PARC ||
+      userRole === Role.TECHNICIEN_INTERNE
+    ) {
       if (userCreId) where.etablissement = { creId: userCreId };
-    } else if (userRole === Role.DIRECTEUR_ETABLISSEMENT ||
-               userRole === Role.PROF_RESPONSABLE) {
+    } else if (
+      userRole === Role.DIRECTEUR_ETABLISSEMENT ||
+      userRole === Role.PROF_RESPONSABLE
+    ) {
       if (userEtablissementId) where.etablissementId = userEtablissementId;
     }
 
@@ -155,7 +159,22 @@ export class TicketsService {
         validePar: { select: { id: true, nom: true, prenom: true } },
         typePanne: true,
         equipment: { include: { marque: true, modele: true, type: true } },
-        interventions: true,
+        interventions: {
+          include: {
+            technicien: {
+              select: { id: true, nom: true, prenom: true, email: true, role: true },
+            },
+            lignes: {
+              include: {
+                action: true,
+                equipment: {
+                  include: { marque: true, modele: true, type: true },
+                },
+                pieces: { include: { piece: true } },
+              },
+            },
+          },
+        },
         pannes: true,
       },
       orderBy: [
@@ -174,7 +193,9 @@ export class TicketsService {
       where: { id },
       include: {
         etablissement: { include: { delegation: true, cre: true } },
-        declarant: { select: { id: true, nom: true, prenom: true, email: true, role: true } },
+        declarant: {
+          select: { id: true, nom: true, prenom: true, email: true, role: true },
+        },
         validePar: { select: { id: true, nom: true, prenom: true } },
         typePanne: true,
         equipment: {
@@ -183,10 +204,19 @@ export class TicketsService {
         pannes: { orderBy: { date: 'desc' } },
         interventions: {
           include: {
-            action: true,
-            pieces: true,
+            technicien: {
+              select: { id: true, nom: true, prenom: true, email: true, role: true },
+            },
+            lignes: {
+              include: {
+                action: true,
+                equipment: {
+                  include: { marque: true, modele: true, type: true },
+                },
+                pieces: { include: { piece: true } },
+              },
+            },
           },
-          orderBy: { date: 'desc' },
         },
         missions: true,
         formatages: true,
@@ -221,7 +251,12 @@ export class TicketsService {
    * Regle 14.2 : cloturer un ticket avec note de satisfaction.
    * Valide par le directeur.
    */
-  async cloturer(id: string, dto: CloturerTicketDto, directeurId: string, userRole: Role) {
+  async cloturer(
+    id: string,
+    dto: CloturerTicketDto,
+    directeurId: string,
+    userRole: Role,
+  ) {
     const ticket = await this.prisma.ticket.findUnique({
       where: { id },
       include: { equipment: true },
@@ -239,7 +274,10 @@ export class TicketsService {
     }
 
     // Verifier que le directeur est bien dans le perimetre
-    if (userRole !== Role.ADMIN_CENTRAL && userRole !== Role.DIRECTEUR_ETABLISSEMENT) {
+    if (
+      userRole !== Role.ADMIN_CENTRAL &&
+      userRole !== Role.DIRECTEUR_ETABLISSEMENT
+    ) {
       throw new ForbiddenException('Seul le directeur peut cloturer un ticket.');
     }
 
@@ -265,7 +303,12 @@ export class TicketsService {
    * Assigner un ticket a un technicien (via une intervention brouillon).
    * Regle 7.1 : le technicien choisit l'equipement.
    */
-  async assigner(id: string, dto: AssignerTicketDto, assigneParId: string, userRole: Role) {
+  async assigner(
+    id: string,
+    dto: AssignerTicketDto,
+    assigneParId: string,
+    userRole: Role,
+  ) {
     const ticket = await this.prisma.ticket.findUnique({ where: { id } });
     if (!ticket) throw new NotFoundException('Ticket introuvable.');
 
@@ -279,9 +322,7 @@ export class TicketsService {
       Role.TECHNICIEN_PRESTATAIRE,
     ];
     if (!rolesAutorises.includes(technicien.role)) {
-      throw new BadRequestException(
-        'Ce compte n\'est pas un technicien.',
-      );
+      throw new BadRequestException("Ce compte n'est pas un technicien.");
     }
 
     // Passer le ticket en EN_COURS
@@ -298,13 +339,13 @@ export class TicketsService {
    */
   async annuler(id: string, userRole: Role) {
     if (userRole !== Role.ADMIN_CENTRAL) {
-      throw new ForbiddenException('Seul l\'admin central peut annuler un ticket.');
+      throw new ForbiddenException("Seul l'admin central peut annuler un ticket.");
     }
 
     const ticket = await this.prisma.ticket.findUnique({ where: { id } });
     if (!ticket) throw new NotFoundException('Ticket introuvable.');
     if (ticket.statut === TicketStatut.CLOTURE) {
-      throw new BadRequestException('Impossible d\'annuler un ticket cloture.');
+      throw new BadRequestException("Impossible d'annuler un ticket cloture.");
     }
 
     return this.prisma.ticket.update({
@@ -323,10 +364,12 @@ export class TicketsService {
   ) {
     const where: any = {};
 
-    if (userRole === Role.SOUS_DIRECTEUR_TIC ||
-        userRole === Role.SUPERVISEUR_LOCAL ||
-        userRole === Role.CHEF_PARC ||
-        userRole === Role.TECHNICIEN_INTERNE) {
+    if (
+      userRole === Role.SOUS_DIRECTEUR_TIC ||
+      userRole === Role.SUPERVISEUR_LOCAL ||
+      userRole === Role.CHEF_PARC ||
+      userRole === Role.TECHNICIEN_INTERNE
+    ) {
       if (userCreId) where.etablissement = { creId: userCreId };
     }
 
@@ -352,8 +395,14 @@ export class TicketsService {
     return {
       total,
       bacPratique,
-      parStatut: parStatut.map((s) => ({ statut: s.statut, count: s._count._all })),
-      parCriticite: parCriticite.map((c) => ({ criticite: c.criticite, count: c._count._all })),
+      parStatut: parStatut.map((s) => ({
+        statut: s.statut,
+        count: s._count._all,
+      })),
+      parCriticite: parCriticite.map((c) => ({
+        criticite: c.criticite,
+        count: c._count._all,
+      })),
     };
   }
 }

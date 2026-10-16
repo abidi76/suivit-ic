@@ -306,6 +306,7 @@ model Etablissement {
   bacPratiques    BacPratique[]
   pretsPreteur    Pret[]        @relation("PretEtabPreteur")
   pretsEmprunteur Pret[]        @relation("PretEtabEmprunteur")
+  interventions   Intervention[]   // ← AJOUT
 
   @@index([creId])
   @@index([delegationId])
@@ -410,7 +411,7 @@ model ActionMaintenance {
   libelle String
   actif   Boolean @default(true)
 
-  interventions Intervention[]
+  interventionLignes InterventionLigne[]   // ← MODIFIÉ (était interventions Intervention[])
 }
 
 model TypePanne {
@@ -494,11 +495,11 @@ model Equipment {
   pannes             Panne[]
   pertes             Perte[]
   dommagesTotaux     DommageTotal[]
-  interventions      Intervention[]
+  interventionLignes InterventionLigne[]   // ← MODIFIÉ (était interventions Intervention[])
   pretItem           PretItem?
   inventaireLignes   InventaireLigne[]
   bacPratiqueDetails BacPratiqueDetail[]
-  tickets     Ticket[]       
+  tickets            Ticket[]
 
   @@index([etablissementId, etat])
   @@index([typeId])
@@ -691,27 +692,43 @@ model DommageTotal {
 // =============================================================================
 
 model Intervention {
-  id             String             @id @default(cuid())
-  equipmentId    String
-  technicienId   String
-  actionId       String
-  ticketId       String?
-  date           DateTime           @default(now())
-  bonPdfUrl      String?
-  bonPdfSha256   String?
-  statut         InterventionStatut @default(BROUILLON)
-  valideParDirId String?
-  valideAt       DateTime?
-  motifRefus     String?
+  id              String             @id @default(cuid())
+  reference       String             @unique                                    // ← AJOUT
+  etablissementId String                                                        // ← AJOUT
+  technicienId    String
+  ticketId        String?
+  description     String?                                                       // ← AJOUT
+  date            DateTime           @default(now())
+  bonPdfUrl       String?
+  bonPdfSha256    String?
+  statut          InterventionStatut @default(BROUILLON)
+  valideParDirId  String?
+  valideAt        DateTime?
+  motifRefus      String?
 
-  equipment  Equipment           @relation(fields: [equipmentId], references: [id])
-  action     ActionMaintenance   @relation(fields: [actionId], references: [id])
-  ticket     Ticket?             @relation(fields: [ticketId], references: [id])
-  technicien User                @relation(fields: [technicienId], references: [id])
-  pieces     InterventionPiece[]
+  etablissement Etablissement      @relation(fields: [etablissementId], references: [id])   // ← AJOUT
+  technicien    User               @relation(fields: [technicienId], references: [id])
+  ticket        Ticket?            @relation(fields: [ticketId], references: [id])
+  lignes        InterventionLigne[]                                                          // ← AJOUT
 
-  @@index([equipmentId, statut])
+  @@index([etablissementId, statut])
   @@index([technicienId, statut])
+}
+
+model InterventionLigne {
+  id             String   @id @default(cuid())
+  interventionId String
+  equipmentId    String
+  actionId       String
+  commentaire    String?
+
+  intervention Intervention           @relation(fields: [interventionId], references: [id], onDelete: Cascade)
+  equipment    Equipment              @relation(fields: [equipmentId], references: [id])
+  action       ActionMaintenance      @relation(fields: [actionId], references: [id])
+  pieces       InterventionPiece[]
+
+  @@index([interventionId])
+  @@index([equipmentId])
 }
 
 model Piece {
@@ -726,18 +743,18 @@ model Piece {
 }
 
 model InterventionPiece {
-  id             String   @id @default(cuid())
-  interventionId String
-  pieceId        String?
-  numeroSerie    String
-  designation    String
-  ajoutee        Boolean
-  createdAt      DateTime @default(now())
+  id                   String   @id @default(cuid())
+  interventionLigneId  String                                                          // ← MODIFIÉ
+  pieceId              String?
+  numeroSerie          String
+  designation          String
+  ajoutee              Boolean
+  createdAt            DateTime @default(now())
 
-  intervention Intervention @relation(fields: [interventionId], references: [id], onDelete: Cascade)
-  piece        Piece?       @relation(fields: [pieceId], references: [id])
+  interventionLigne InterventionLigne @relation(fields: [interventionLigneId], references: [id], onDelete: Cascade)   // ← MODIFIÉ
+  piece             Piece?            @relation(fields: [pieceId], references: [id])
 
-  @@index([interventionId])
+  @@index([interventionLigneId])
 }
 
 // =============================================================================
