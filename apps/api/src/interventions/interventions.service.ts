@@ -13,7 +13,10 @@ import { AddPieceDto } from './dto/add-piece.dto';
 import { ValiderInterventionDto } from './dto/valider-intervention.dto';
 import { RefuserInterventionDto } from './dto/refuser-intervention.dto';
 import { InterventionStatut, Role } from '../generated/prisma/client';
-
+import * as crypto from 'crypto';
+import PDFDocument from 'pdfkit';
+import * as fs from 'fs';
+import * as path from 'path';
 @Injectable()
 export class InterventionsService {
   constructor(private prisma: PrismaService) {}
@@ -128,6 +131,7 @@ export class InterventionsService {
     });
 
     return intervention;
+    
   }
 
   // ===========================================================================
@@ -579,5 +583,99 @@ export class InterventionsService {
         },
       },
     };
+  }
+    async generatePdf(id: string, res: any) {
+    // On récupère l'intervention avec toutes ses relations (technicien, lignes, équipements, etc.)
+    const intervention = await this.prisma.intervention.findUnique({
+      where: { id },
+      include: {
+        etablissement: true,
+        technicien: true,
+        lignes: {
+          include: {
+            equipment: true,
+            action: true,
+            pieces: true,
+          },
+        },
+      },
+    });
+
+    if (!intervention) throw new NotFoundException('Intervention introuvable.');
+    if (intervention.statut !== 'VALIDE') {
+      throw new BadRequestException('L\'intervention doit être validée par le directeur pour générer le bon.');
+    }
+
+    // 1. Création du PDF
+    const doc = new PDFDocument({ margin: 50 });
+    const fileName = `Bon_Intervention_${intervention.reference}.pdf`;
+    const uploadDir = path.join(process.cwd(), 'uploads');
+    
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    
+    const filePath = path.join(uploadDir, fileName);
+    const stream = fs.createWriteStream(filePath);
+    doc.pipe(stream);
+
+    // 2. Contenu du PDF
+    doc.fontSize(20).text('RÉPUBLIQUE TUNISIENNE', { align: 'center' });
+    doc.fontSize(14).text('Ministère de l\'Éducation', { align: 'center' });
+    doc.moveDown();
+    doc.fontSize(18).text(`BON D'INTERVENTION N° ${intervention.reference}`, { align: 'center', underline: true });
+    doc.moveDown();
+
+    doc.fontSize(12).text(`Date : ${new Date(intervention.date).toLocaleDateString('fr-FR')}`);
+    doc.text(`Établissement : ${intervention.etablissement.nomFr} (${intervention.etablissement.code})`);
+    doc.text(`Technicien : ${intervention.technicien.prenom} ${intervention.technicien.nom}`);
+    doc.moveDown();
+
+    doc.fontSize(14).text('Détail des équipements traités :', { underline: true });
+    doc.moveDown();
+
+    intervention.lignes.forEach((ligne: any, index: number) => {
+      doc.fontSize(12).text(`${index + 1}. Équipement N° Série : ${ligne.equipment.numeroSerie}`);
+      doc.text(`   - Action : ${ligne.action.libelle}`);
+      if (ligne.commentaire) {
+        doc.text(`   - Commentaire : ${ligne.commentaire}`);
+      }
+      if (ligne.pieces && ligne.pieces.length > 0) {
+        doc.text(`   - Pièces changées :`);
+        ligne.pieces.forEach((p: any) => {
+          doc.text(`     * ${p.designation} (S/N: ${p.numeroSerie})`);
+        });
+      }
+      doc.moveDown();
+    });
+
+    doc.moveDown(2);
+    doc.text('Signature du Directeur', { align: 'right' });
+    doc.moveDown(2);
+    doc.text('_______________________', { align: 'right' });
+
+    doc.end();
+
+    // 3. Attente de la fin, hachage et sauvegarde en BDD
+    return new Promise((resolve, reject) => {
+      stream.on('finish', async () => {
+        const fileBuffer = fs.readFileSync(filePath);
+        const hashSum = crypto.createHash('sha256');
+        hashSum.update(fileBuffer);
+        const hexHash = hashSum.digest('hex');
+
+        await this.prisma.intervention.update({
+          where: { id: intervention.id },
+          data: {
+            bonPdfUrl: `/uploads/${fileName}`,
+            bonPdfSha256: hexHash,
+          },
+        });
+
+        res.download(filePath, fileName);
+        resolve({ success: true, message: 'PDF généré', sha256: hexHash });
+      });
+      stream.on('error', reject);
+    });
   }
 }

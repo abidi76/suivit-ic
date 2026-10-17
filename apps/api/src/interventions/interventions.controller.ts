@@ -19,7 +19,8 @@ import { RefuserInterventionDto } from './dto/refuser-intervention.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator';
 import { InterventionStatut, Role } from '../generated/prisma/client';
-
+import { Res } from '@nestjs/common';
+import { Response } from 'express';
 @Controller('interventions')
 export class InterventionsController {
   constructor(private service: InterventionsService) {}
@@ -167,5 +168,10 @@ export class InterventionsController {
     @CurrentUser() user: JwtUser,
   ) {
     return this.service.refuser(id, dto, user);
+  }
+    @Get(':id/pdf')
+  @Roles(Role.ADMIN_CENTRAL, Role.DIRECTEUR_ETABLISSEMENT, Role.TECHNICIEN_INTERNE, Role.TECHNICIEN_PRESTATAIRE)
+  generatePdf(@Param('id') id: string, @Res() res: Response) {
+    return this.service.generatePdf(id, res);
   }
 }
