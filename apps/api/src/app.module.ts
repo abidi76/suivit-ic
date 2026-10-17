@@ -17,6 +17,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
 import { ConnectivityModule } from './connectivity/connectivity.module';
 import { ReclamationsModule } from './reclamations-connectivite/reclamations.module';
 import { TrajetsModule } from './trajets/trajets.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 
 @Module({
@@ -33,6 +34,7 @@ import { TrajetsModule } from './trajets/trajets.module';
     ConnectivityModule,
     ReclamationsModule,
     TrajetsModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [
