@@ -1,12 +1,10 @@
 // =============================================================================
 // SuiviTic — Schéma de base de données
-// Aligné sur "Règles de gestion SuiviTic (version finale)" — 15 sections
-// Base : PostgreSQL 16
 // =============================================================================
 
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma"
+   output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -132,10 +130,38 @@ enum MissionStatut {
   TERMINEE
 }
 
-enum CircuitType {
-  INTERNET
-  INTRANET
-  SECOURS
+enum TrajetStatut {
+  DEMANDE
+  ACCEPTE
+  REFUSE
+  EN_COURS
+  TERMINE
+  ANNULE
+}
+
+enum TrajetMotif {
+  RECLAMATIONS
+  BAC_PRATIQUE
+  VISITE_PROGRAMMEE
+  AUTRE
+}
+
+enum ReclamationStatut {
+  DECLAREE
+  RATTACHEE_TRAJET
+  EN_COURS
+  REPONDUE
+  AJOURNEE
+  ANNULEE
+  CLOTUREE
+}
+
+enum CircuitStatut {
+  ACTIF
+  EN_PANNE
+  RESERVE
+  EMPRUNTE
+  RESILIE
 }
 
 // =============================================================================
@@ -185,6 +211,14 @@ model User {
   arrivalsConfirmees ArrivalConfirmation[]
   pretsSupervises    Pret[]                @relation("PretSuperviseur")
 
+  reclamationsDeclarees  ReclamationConnexion[] @relation("ReclamationDeclarant")
+  reclamationsTraitees   ReclamationConnexion[] @relation("ReclamationTechnicien")
+  reclamationsDecidees   ReclamationConnexion[] @relation("ReclamationDecisionnaire")
+  trajetsDemandes        Trajet[]                @relation("TrajetDemandeur")
+  trajetsValidesBat      Trajet[]                @relation("TrajetValideurBat")
+  trajetsAccordesTic     Trajet[]                @relation("TrajetAccordTic")
+  trajetsCommeTechnicien TrajetTechnicien[]
+
   @@index([role, creId])
   @@index([role, etablissementId])
   @@index([actif])
@@ -199,9 +233,7 @@ model Session {
   expireAt         DateTime
   revokedAt        DateTime?
   createdAt        DateTime  @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@index([userId, revokedAt])
 }
 
@@ -213,9 +245,7 @@ model PasswordResetToken {
   usedAt    DateTime?
   ip        String?
   createdAt DateTime  @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@index([userId, createdAt])
 }
 
@@ -225,7 +255,6 @@ model LoginAttempt {
   ip          String
   succes      Boolean
   createdAt   DateTime @default(now())
-
   @@index([identifiant, createdAt])
   @@index([ip, createdAt])
 }
@@ -239,12 +268,11 @@ model SmsVerification {
   tentatives Int       @default(0)
   createdAt  DateTime  @default(now())
   usedAt     DateTime?
-
   @@index([userId, createdAt])
 }
 
 // =============================================================================
-// GÉOGRAPHIE (CRE → GOUVERNORAT → DÉLÉGATION → ÉTABLISSEMENT → LABO)
+// GÉOGRAPHIE
 // =============================================================================
 
 model Cre {
@@ -253,7 +281,6 @@ model Cre {
   designationFr String
   designationAr String
   actif         Boolean @default(true)
-
   gouvernorats   Gouvernorat[]
   etablissements Etablissement[]
   users          User[]
@@ -266,10 +293,8 @@ model Gouvernorat {
   nomAr  String
   creId  String
   actif  Boolean @default(true)
-
   cre         Cre          @relation(fields: [creId], references: [id])
   delegations Delegation[]
-
   @@index([creId])
 }
 
@@ -280,10 +305,8 @@ model Delegation {
   nomAr         String
   gouvernoratId String
   actif         Boolean @default(true)
-
   gouvernorat   Gouvernorat    @relation(fields: [gouvernoratId], references: [id])
   etablissements Etablissement[]
-
   @@index([gouvernoratId])
 }
 
@@ -306,7 +329,11 @@ model Etablissement {
   bacPratiques    BacPratique[]
   pretsPreteur    Pret[]        @relation("PretEtabPreteur")
   pretsEmprunteur Pret[]        @relation("PretEtabEmprunteur")
-  interventions   Intervention[]   // ← AJOUT
+  interventions   Intervention[]
+  circuitsEtablissement CircuitReseau[]        @relation("CircuitEtab")
+  circuitsPossedes      CircuitReseau[]        @relation("CircuitProprietaire")
+  reclamationsConnexion ReclamationConnexion[]
+  destinationsTrajet    TrajetDestination[]
 
   @@index([creId])
   @@index([delegationId])
@@ -317,11 +344,9 @@ model Labo {
   nom             String
   etablissementId String
   actif           Boolean @default(true)
-
-  etablissement Etablissement @relation(fields: [etablissementId], references: [id])
-  equipements   Equipment[]
-  users         User[]
-
+  etablissement   Etablissement @relation(fields: [etablissementId], references: [id])
+  equipements     Equipment[]
+  users           User[]
   @@unique([etablissementId, nom])
 }
 
@@ -329,7 +354,6 @@ model Direction {
   id     String  @id @default(cuid())
   nom    String
   actif  Boolean @default(true)
-
   services Service[]
 }
 
@@ -338,8 +362,7 @@ model Service {
   nom         String
   directionId String
   actif       Boolean @default(true)
-
-  direction Direction @relation(fields: [directionId], references: [id])
+  direction   Direction @relation(fields: [directionId], references: [id])
 }
 
 // =============================================================================
@@ -350,7 +373,6 @@ model TypeEquipement {
   id    String  @id @default(cuid())
   nom   String  @unique
   actif Boolean @default(true)
-
   modeles            Modele[]
   equipements        Equipment[]
   bacPratiqueManques BacPratiqueManque[]
@@ -360,7 +382,6 @@ model Marque {
   id    String  @id @default(cuid())
   nom   String  @unique
   actif Boolean @default(true)
-
   modeles     Modele[]
   equipements Equipment[]
 }
@@ -371,11 +392,9 @@ model Modele {
   marqueId String
   typeId   String
   actif    Boolean @default(true)
-
   marque      Marque         @relation(fields: [marqueId], references: [id])
   type        TypeEquipement @relation(fields: [typeId], references: [id])
   equipements Equipment[]
-
   @@unique([nom, marqueId, typeId])
 }
 
@@ -386,7 +405,6 @@ model AppelOffres {
   dateDebut DateTime?
   dateFin   DateTime?
   actif     Boolean   @default(true)
-
   lots        Lot[]
   equipements Equipment[]
 }
@@ -398,10 +416,8 @@ model Lot {
   description   String?
   quantiteMax   Int?
   actif         Boolean @default(true)
-
   appelOffres AppelOffres @relation(fields: [appelOffresId], references: [id])
   equipements Equipment[]
-
   @@unique([appelOffresId, numero])
 }
 
@@ -410,8 +426,8 @@ model ActionMaintenance {
   code    String  @unique
   libelle String
   actif   Boolean @default(true)
-
-  interventionLignes InterventionLigne[]   // ← MODIFIÉ (était interventions Intervention[])
+  interventionLignes InterventionLigne[]
+  reclamationActions ReclamationAction[]
 }
 
 model TypePanne {
@@ -419,7 +435,6 @@ model TypePanne {
   code    String  @unique
   libelle String
   actif   Boolean @default(true)
-
   pannes  Panne[]
   tickets Ticket[]
 }
@@ -429,8 +444,7 @@ model TypeJustificatifPerte {
   code    String  @unique
   libelle String
   actif   Boolean @default(true)
-
-  pertes Perte[]
+  pertes  Perte[]
 }
 
 model Fournisseur {
@@ -444,7 +458,6 @@ model Societe {
   nom       String  @unique
   matricule String? @unique
   actif     Boolean @default(true)
-
   users   User[]
   marches Marche[]
 }
@@ -456,7 +469,6 @@ model Marche {
   dateDebut DateTime?
   dateFin   DateTime?
   actif     Boolean   @default(true)
-
   societe Societe @relation(fields: [societeId], references: [id])
   users   User[]
 }
@@ -495,7 +507,7 @@ model Equipment {
   pannes             Panne[]
   pertes             Perte[]
   dommagesTotaux     DommageTotal[]
-  interventionLignes InterventionLigne[]   // ← MODIFIÉ (était interventions Intervention[])
+  interventionLignes InterventionLigne[]
   pretItem           PretItem?
   inventaireLignes   InventaireLigne[]
   bacPratiqueDetails BacPratiqueDetail[]
@@ -508,7 +520,7 @@ model Equipment {
 }
 
 // =============================================================================
-// ARRIVAGES
+// ARRIVAGES, INVENTAIRE, PANNES, PERTES, DOMMAGES
 // =============================================================================
 
 model Arrival {
@@ -525,12 +537,10 @@ model Arrival {
   rectificatifDe   String?
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
-
   etablissement Etablissement         @relation(fields: [etablissementId], references: [id])
   items         ArrivalItem[]
   confirmations ArrivalConfirmation[]
   litiges       ArrivalLitige[]
-
   @@index([etablissementId, statut])
   @@index([dateEcheance])
 }
@@ -540,7 +550,6 @@ model ArrivalItem {
   arrivalId   String
   equipmentId String @unique
   quantite    Int    @default(1)
-
   arrival   Arrival   @relation(fields: [arrivalId], references: [id], onDelete: Cascade)
   equipment Equipment @relation(fields: [equipmentId], references: [id])
 }
@@ -553,10 +562,8 @@ model ArrivalConfirmation {
   avecReserve Boolean  @default(false)
   motif       String?
   date        DateTime @default(now())
-
   arrival Arrival @relation(fields: [arrivalId], references: [id], onDelete: Cascade)
   user    User    @relation(fields: [userId], references: [id])
-
   @@unique([arrivalId, userId])
   @@index([arrivalId, role])
 }
@@ -570,15 +577,9 @@ model ArrivalLitige {
   traiteAt    DateTime?
   resolution  String?
   createdAt   DateTime  @default(now())
-
   arrival Arrival @relation(fields: [arrivalId], references: [id], onDelete: Cascade)
-
   @@index([arrivalId, traite])
 }
-
-// =============================================================================
-// INVENTAIRE
-// =============================================================================
 
 model CampagneInventaire {
   id         String           @id @default(cuid())
@@ -588,9 +589,7 @@ model CampagneInventaire {
   statut     InventaireStatut @default(OUVERTE)
   lanceParId String
   createdAt  DateTime         @default(now())
-
   lignes InventaireLigne[]
-
   @@index([statut, dateLimite])
 }
 
@@ -604,18 +603,12 @@ model InventaireLigne {
   statut          StatutDeclare
   commentaire     String?
   dateDeclaration DateTime      @default(now())
-
   campagne  CampagneInventaire @relation(fields: [campagneId], references: [id], onDelete: Cascade)
   equipment Equipment          @relation(fields: [equipmentId], references: [id])
-
   @@unique([campagneId, equipmentId])
   @@index([campagneId, statut])
   @@index([etablissementId])
 }
-
-// =============================================================================
-// PANNES, PERTES, DOMMAGES
-// =============================================================================
 
 model Panne {
   id             String      @id @default(cuid())
@@ -627,12 +620,10 @@ model Panne {
   ticketId       String?
   date           DateTime    @default(now())
   dateResolution DateTime?
-
   equipment Equipment @relation(fields: [equipmentId], references: [id])
   typePanne TypePanne @relation(fields: [typePanneId], references: [id])
   declarant User      @relation(fields: [declarantId], references: [id])
   ticket    Ticket?   @relation(fields: [ticketId], references: [id])
-
   @@index([equipmentId, statut])
 }
 
@@ -649,11 +640,9 @@ model Perte {
   valideAt     DateTime?
   motifRefus   String?
   date         DateTime    @default(now())
-
   equipment  Equipment             @relation(fields: [equipmentId], references: [id])
   typeJustif TypeJustificatifPerte @relation(fields: [typeJustifId], references: [id])
   declarant  User                  @relation(fields: [declarantId], references: [id])
-
   @@index([equipmentId, statut])
 }
 
@@ -664,26 +653,21 @@ model DommageTotal {
   proposeParId      String
   date              DateTime      @default(now())
   statut            DommageStatut @default(PROPOSE)
-
   valideProfId      String?
   valideProfAt      DateTime?
   valideDirId       String?
   valideDirAt       DateTime?
   valideTechId      String?
   valideTechAt      DateTime?
-
   avisPrestataireId String?
   avisPrestataire   String?
   avisPrestataireAt DateTime?
-
   refusParId        String?
   refusAt           DateTime?
   motifRefus        String?
-
   proposePar User?     @relation("DommageProposeur", fields: [proposeParId], references: [id])
   valideProf User?     @relation("DommageValidateur", fields: [valideProfId], references: [id])
   equipment  Equipment @relation(fields: [equipmentId], references: [id])
-
   @@index([equipmentId, statut])
 }
 
@@ -693,11 +677,11 @@ model DommageTotal {
 
 model Intervention {
   id              String             @id @default(cuid())
-  reference       String             @unique                                    // ← AJOUT
-  etablissementId String                                                        // ← AJOUT
+  reference       String             @unique
+  etablissementId String
   technicienId    String
   ticketId        String?
-  description     String?                                                       // ← AJOUT
+  description     String?
   date            DateTime           @default(now())
   bonPdfUrl       String?
   bonPdfSha256    String?
@@ -705,12 +689,10 @@ model Intervention {
   valideParDirId  String?
   valideAt        DateTime?
   motifRefus      String?
-
-  etablissement Etablissement      @relation(fields: [etablissementId], references: [id])   // ← AJOUT
+  etablissement Etablissement      @relation(fields: [etablissementId], references: [id])
   technicien    User               @relation(fields: [technicienId], references: [id])
   ticket        Ticket?            @relation(fields: [ticketId], references: [id])
-  lignes        InterventionLigne[]                                                          // ← AJOUT
-
+  lignes        InterventionLigne[]
   @@index([etablissementId, statut])
   @@index([technicienId, statut])
 }
@@ -721,12 +703,10 @@ model InterventionLigne {
   equipmentId    String
   actionId       String
   commentaire    String?
-
   intervention Intervention           @relation(fields: [interventionId], references: [id], onDelete: Cascade)
   equipment    Equipment              @relation(fields: [equipmentId], references: [id])
   action       ActionMaintenance      @relation(fields: [actionId], references: [id])
   pieces       InterventionPiece[]
-
   @@index([interventionId])
   @@index([equipmentId])
 }
@@ -738,27 +718,24 @@ model Piece {
   marqueId    String?
   typePiece   String?
   actif       Boolean @default(true)
-
   interventions InterventionPiece[]
 }
 
 model InterventionPiece {
   id                   String   @id @default(cuid())
-  interventionLigneId  String                                                          // ← MODIFIÉ
+  interventionLigneId  String
   pieceId              String?
   numeroSerie          String
   designation          String
   ajoutee              Boolean
   createdAt            DateTime @default(now())
-
-  interventionLigne InterventionLigne @relation(fields: [interventionLigneId], references: [id], onDelete: Cascade)   // ← MODIFIÉ
+  interventionLigne InterventionLigne @relation(fields: [interventionLigneId], references: [id], onDelete: Cascade)
   piece             Piece?            @relation(fields: [pieceId], references: [id])
-
   @@index([interventionLigneId])
 }
 
 // =============================================================================
-// FORMATAGE ET CHARTE NUMÉRIQUE
+// FORMATAGE, BAC PRATIQUE, PRÊTS, TICKETS, MISSIONS
 // =============================================================================
 
 model CharteNumerique {
@@ -767,7 +744,6 @@ model CharteNumerique {
   contenuMd String
   actif     Boolean  @default(true)
   createdAt DateTime @default(now())
-
   acceptations AcceptationCharte[]
 }
 
@@ -778,9 +754,7 @@ model AcceptationCharte {
   ticketId       String?
   interventionId String?
   date           DateTime @default(now())
-
   charte CharteNumerique @relation(fields: [charteId], references: [id])
-
   @@index([userId, date])
   @@index([ticketId])
 }
@@ -797,15 +771,9 @@ model Formatage {
   charteId      String?
   effectueAt    DateTime?
   createdAt     DateTime        @default(now())
-
   ticket Ticket @relation(fields: [ticketId], references: [id])
-
   @@index([ticketId, statut])
 }
-
-// =============================================================================
-// BAC PRATIQUE
-// =============================================================================
 
 model BacPratique {
   id              String            @id @default(cuid())
@@ -819,11 +787,9 @@ model BacPratique {
   besoinSecours   Boolean           @default(false)
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
-
   etablissement Etablissement       @relation(fields: [etablissementId], references: [id])
   manques       BacPratiqueManque[]
   details       BacPratiqueDetail[]
-
   @@unique([etablissementId, anneeScolaire])
 }
 
@@ -832,10 +798,8 @@ model BacPratiqueManque {
   bacPratiqueId String
   typeId        String
   quantite      Int
-
   bacPratique BacPratique    @relation(fields: [bacPratiqueId], references: [id], onDelete: Cascade)
   type        TypeEquipement @relation(fields: [typeId], references: [id])
-
   @@unique([bacPratiqueId, typeId])
 }
 
@@ -843,16 +807,10 @@ model BacPratiqueDetail {
   id            String @id @default(cuid())
   bacPratiqueId String
   equipmentId   String
-
   bacPratique BacPratique @relation(fields: [bacPratiqueId], references: [id], onDelete: Cascade)
   equipment   Equipment   @relation(fields: [equipmentId], references: [id])
-
   @@unique([bacPratiqueId, equipmentId])
 }
-
-// =============================================================================
-// PRÊTS ENTRE ÉTABLISSEMENTS
-// =============================================================================
 
 model Pret {
   id                        String     @id @default(cuid())
@@ -869,12 +827,10 @@ model Pret {
   accepteParPreteurAt       DateTime?
   createdAt                 DateTime   @default(now())
   updatedAt                 DateTime   @updatedAt
-
   etablissementPreteur    Etablissement @relation("PretEtabPreteur", fields: [etablissementPreteurId], references: [id])
   etablissementEmprunteur Etablissement @relation("PretEtabEmprunteur", fields: [etablissementEmprunteurId], references: [id])
   superviseur             User          @relation("PretSuperviseur", fields: [superviseurId], references: [id])
   items                   PretItem[]
-
   @@index([etablissementPreteurId, statut])
   @@index([etablissementEmprunteurId, statut])
   @@index([dateFin])
@@ -888,14 +844,9 @@ model PretItem {
   retourneAt           DateTime?
   confirmePreteurAt    DateTime?
   confirmeEmprunteurAt DateTime?
-
   pret      Pret      @relation(fields: [pretId], references: [id], onDelete: Cascade)
   equipment Equipment @relation(fields: [equipmentId], references: [id])
 }
-
-// =============================================================================
-// TICKETS
-// =============================================================================
 
 model Ticket {
   id                 String       @id @default(cuid())
@@ -916,7 +867,6 @@ model Ticket {
   dateCloture        DateTime?
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
-
   etablissement Etablissement  @relation(fields: [etablissementId], references: [id])
   declarant     User           @relation("TicketDeclarant", fields: [declarantId], references: [id])
   validePar     User?          @relation("TicketValidateur", fields: [valideParId], references: [id])
@@ -926,14 +876,9 @@ model Ticket {
   interventions Intervention[]
   missions      Mission[]
   formatages    Formatage[]
-
   @@index([etablissementId, statut])
   @@index([bacPratique])
 }
-
-// =============================================================================
-// COMPTES NUMÉRIQUES, MISSIONS, RÉSEAUX
-// =============================================================================
 
 model CompteNumerique {
   id                     String   @id @default(cuid())
@@ -945,7 +890,6 @@ model CompteNumerique {
   transmisCnte           Boolean  @default(false)
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
-
   @@index([etablissementId])
 }
 
@@ -955,8 +899,8 @@ model Vehicule {
   marque      String?
   modele      String?
   actif       Boolean @default(true)
-
   missions Mission[]
+  trajets  Trajet[]
 }
 
 model Chauffeur {
@@ -965,8 +909,8 @@ model Chauffeur {
   prenom    String
   telephone String?
   actif     Boolean @default(true)
-
   missions Mission[]
+  trajets  Trajet[]
 }
 
 model Mission {
@@ -983,12 +927,10 @@ model Mission {
   pdfUrl      String?
   pdfSha256   String?
   createdAt   DateTime      @default(now())
-
   ticket       Ticket?               @relation(fields: [ticketId], references: [id])
   vehicule     Vehicule?             @relation(fields: [vehiculeId], references: [id])
   chauffeur    Chauffeur?            @relation(fields: [chauffeurId], references: [id])
   accompagnants MissionAccompagnant[]
-
   @@index([dateDepart, statut])
 }
 
@@ -996,22 +938,152 @@ model MissionAccompagnant {
   id        String @id @default(cuid())
   missionId String
   userId    String
-
   mission Mission @relation(fields: [missionId], references: [id], onDelete: Cascade)
 }
 
-model CircuitReseau {
-  id              String      @id @default(cuid())
-  etablissementId String
-  type            CircuitType
-  fournisseur     String?
-  debit           String?
-  dateActivation  DateTime?
-  dateFin         DateTime?
-  actif           Boolean     @default(true)
+// =============================================================================
+// NOUVEAUX MODÈLES (CONNECTIVITÉ & RÉCLAMATIONS & TRAJETS)
+// =============================================================================
 
-  @@index([etablissementId, type])
-  @@index([dateFin])
+model TypeConnexion {
+  id                 String  @id @default(cuid())
+  code               String  @unique
+  libelle            String
+  formatIdentifiant  String?
+  exempleIdentifiant String?
+  actif              Boolean @default(true)
+  circuits CircuitReseau[]
+}
+
+model CircuitReseau {
+  id                          String        @id @default(cuid())
+  etablissementId             String
+  typeConnexionId             String
+  identifiant                 String
+  statut                      CircuitStatut @default(ACTIF)
+  fournisseur                 String?
+  debit                       String?
+  dateActivation              DateTime?
+  dateFin                     DateTime?
+  proprietaireEtablissementId String?
+  actif                       Boolean       @default(true)
+  createdAt                   DateTime      @default(now())
+  updatedAt                   DateTime      @updatedAt
+  etablissement Etablissement  @relation("CircuitEtab", fields: [etablissementId], references: [id])
+  proprietaire  Etablissement? @relation("CircuitProprietaire", fields: [proprietaireEtablissementId], references: [id])
+  typeConnexion TypeConnexion  @relation(fields: [typeConnexionId], references: [id])
+  reclamations  ReclamationConnexion[]
+  @@unique([etablissementId, typeConnexionId, identifiant])
+  @@index([etablissementId, statut])
+}
+
+model ReclamationConnexion {
+  id                    String              @id @default(cuid())
+  reference             String              @unique
+  circuitId             String
+  etablissementId       String
+  declarantId           String
+  description           String
+  statut                ReclamationStatut   @default(DECLAREE)
+  date                  DateTime            @default(now())
+  trajetId              String?
+  destinationId         String?
+  technicienId          String?
+  dateIntervention      DateTime?
+  clotureParTechnicien  Boolean?
+  commentaireTechnicien String?
+  decisionParId         String?
+  decisionAt            DateTime?
+  motifDecision         String?
+  circuit       CircuitReseau      @relation(fields: [circuitId], references: [id])
+  etablissement Etablissement      @relation(fields: [etablissementId], references: [id])
+  declarant     User               @relation("ReclamationDeclarant", fields: [declarantId], references: [id])
+  trajet        Trajet?            @relation(fields: [trajetId], references: [id])
+  destination   TrajetDestination? @relation(fields: [destinationId], references: [id])
+  technicien    User?              @relation("ReclamationTechnicien", fields: [technicienId], references: [id])
+  decisionPar   User?              @relation("ReclamationDecisionnaire", fields: [decisionParId], references: [id])
+  actions ReclamationAction[]
+  pieces  ReclamationPiece[]
+  @@index([etablissementId, statut])
+  @@index([circuitId, statut])
+  @@index([trajetId])
+}
+
+model ReclamationAction {
+  id            String   @id @default(cuid())
+  reclamationId String
+  actionId      String?
+  description   String?
+  date          DateTime @default(now())
+  reclamation ReclamationConnexion @relation(fields: [reclamationId], references: [id], onDelete: Cascade)
+  action      ActionMaintenance?   @relation(fields: [actionId], references: [id])
+  @@index([reclamationId])
+}
+
+model ReclamationPiece {
+  id            String   @id @default(cuid())
+  reclamationId String
+  numeroSerie   String
+  designation   String
+  ajoutee       Boolean
+  date          DateTime @default(now())
+  reclamation ReclamationConnexion @relation(fields: [reclamationId], references: [id], onDelete: Cascade)
+  @@index([reclamationId])
+}
+
+model Trajet {
+  id            String       @id @default(cuid())
+  reference     String       @unique
+  motif         TrajetMotif
+  description   String?
+  dateDepart    DateTime
+  dateRetour    DateTime?
+  dureeEstimee  Int?
+  statut        TrajetStatut @default(DEMANDE)
+  demandeurId   String
+  demandeurAt   DateTime     @default(now())
+  valideurBatId String?
+  valideAt      DateTime?
+  motifRefus    String?
+  accordTicId   String?
+  accordTicAt   DateTime?
+  vehiculeId    String?
+  chauffeurId   String?
+  pdfUrl        String?
+  pdfSha256     String?
+  demandeur    User               @relation("TrajetDemandeur", fields: [demandeurId], references: [id])
+  valideurBat  User?              @relation("TrajetValideurBat", fields: [valideurBatId], references: [id])
+  accordTic    User?              @relation("TrajetAccordTic", fields: [accordTicId], references: [id])
+  vehicule     Vehicule?          @relation(fields: [vehiculeId], references: [id])
+  chauffeur    Chauffeur?         @relation(fields: [chauffeurId], references: [id])
+  techniciens  TrajetTechnicien[]
+  destinations TrajetDestination[]
+  reclamations ReclamationConnexion[]
+  @@index([statut, dateDepart])
+}
+
+model TrajetTechnicien {
+  id       String  @id @default(cuid())
+  trajetId String
+  userId   String
+  trajet Trajet @relation(fields: [trajetId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
+  @@unique([trajetId, userId])
+}
+
+model TrajetDestination {
+  id              String    @id @default(cuid())
+  trajetId        String
+  etablissementId String
+  ordre           Int
+  dateArrivee     DateTime?
+  dateDepart      DateTime?
+  commentaire     String?
+  trajet        Trajet                 @relation(fields: [trajetId], references: [id], onDelete: Cascade)
+  etablissement Etablissement          @relation(fields: [etablissementId], references: [id])
+  reclamations  ReclamationConnexion[]
+  @@unique([trajetId, ordre])
+  @@index([trajetId])
 }
 
 // =============================================================================
@@ -1029,9 +1101,7 @@ model AuditLog {
   ip        String?
   userAgent String?
   date      DateTime @default(now())
-
   user User? @relation(fields: [userId], references: [id])
-
   @@index([entite, entiteId])
   @@index([userId, date])
   @@index([action, date])
@@ -1048,7 +1118,6 @@ model DocumentArchive {
   entiteId    String
   deposeParId String?
   date        DateTime @default(now())
-
   @@index([entite, entiteId])
   @@index([sha256])
 }

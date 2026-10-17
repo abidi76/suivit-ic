@@ -5,7 +5,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { Criticite } from '../../../generated/prisma/client';
+import { Criticite } from '../../generated/prisma/client';
 
 export class CreateTicketDto {
   @IsString()

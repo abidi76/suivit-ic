@@ -11,7 +11,7 @@ import { ReferentialsService } from './referentials.service';
 import { CreateCreDto } from './dto/create-cre.dto';
 import { CreateGouvernoratDto } from './dto/create-gouvernorat.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { Role } from '../../generated/prisma/client';
+import { Role } from '../generated/prisma/client';
 import { CreateDelegationDto } from './dto/create-delegation.dto';
 import { CreateEtablissementDto } from './dto/create-etablissement.dto';
 import { CreateLaboDto } from './dto/create-labo.dto';

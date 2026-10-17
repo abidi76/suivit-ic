@@ -7,7 +7,7 @@ import {
   MinLength,
   Matches,
 } from 'class-validator';
-import { Role } from '../../../generated/prisma/client';
+import { Role } from '../../generated/prisma/client';
 
 export class CreateUserDto {
   @IsEmail({}, { message: 'Email invalide.' })

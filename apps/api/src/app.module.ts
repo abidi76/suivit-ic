@@ -14,6 +14,10 @@ import { TicketsModule } from './tickets/tickets.module';
 import { InterventionsModule } from './interventions/interventions.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
+import { ConnectivityModule } from './connectivity/connectivity.module';
+import { ReclamationsModule } from './reclamations-connectivite/reclamations.module';
+import { TrajetsModule } from './trajets/trajets.module';
+
 
 @Module({
   imports: [
@@ -26,6 +30,9 @@ import { RolesGuard } from './auth/guards/roles.guard';
     EquipmentModule,
     TicketsModule,
     InterventionsModule,
+    ConnectivityModule,
+    ReclamationsModule,
+    TrajetsModule,
   ],
   controllers: [AppController],
   providers: [

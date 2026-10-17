@@ -7,7 +7,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateEquipmentDto } from './dto/update-equipment.dto';
 import { ReformerEquipmentDto } from './dto/reformer-equipment.dto';
-import { EquipmentState, Role } from '../../generated/prisma/client';
+import { EquipmentState, Role } from '../generated/prisma/client';
 
 export interface EquipmentFilters {
   etablissementId?: string;

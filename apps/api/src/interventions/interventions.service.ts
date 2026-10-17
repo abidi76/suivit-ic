@@ -12,7 +12,7 @@ import { UpdateLigneDto } from './dto/update-ligne.dto';
 import { AddPieceDto } from './dto/add-piece.dto';
 import { ValiderInterventionDto } from './dto/valider-intervention.dto';
 import { RefuserInterventionDto } from './dto/refuser-intervention.dto';
-import { InterventionStatut, Role } from '../../generated/prisma/client';
+import { InterventionStatut, Role } from '../generated/prisma/client';
 
 @Injectable()
 export class InterventionsService {

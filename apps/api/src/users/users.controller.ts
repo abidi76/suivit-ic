@@ -11,7 +11,7 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { Role } from '../../generated/prisma/client';
+import { Role } from '../generated/prisma/client';
 
 @Controller('users')
 @Roles(Role.ADMIN_CENTRAL)

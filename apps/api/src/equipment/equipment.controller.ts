@@ -12,7 +12,7 @@ import { UpdateEquipmentDto } from './dto/update-equipment.dto';
 import { ReformerEquipmentDto } from './dto/reformer-equipment.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator';
-import { EquipmentState, Role } from '../../generated/prisma/client';
+import { EquipmentState, Role } from '../generated/prisma/client';
 
 @Controller('equipment')
 export class EquipmentController {

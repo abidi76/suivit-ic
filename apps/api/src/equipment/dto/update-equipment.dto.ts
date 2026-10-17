@@ -3,7 +3,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { EquipmentState } from '../../../generated/prisma/client';
+import { EquipmentState } from '../../generated/prisma/client';
 
 export class UpdateEquipmentDto {
   @IsEnum(EquipmentState, { message: 'Etat invalide.' })

@@ -14,7 +14,7 @@ import { CloturerTicketDto } from './dto/cloturer-ticket.dto';
 import { AssignerTicketDto } from './dto/assigner-ticket.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator';
-import { Criticite, Role, TicketStatut } from '../../generated/prisma/client';
+import { Criticite, Role, TicketStatut } from '../generated/prisma/client';
 
 @Controller('tickets')
 export class TicketsController {

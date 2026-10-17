@@ -18,7 +18,7 @@ import { ValiderInterventionDto } from './dto/valider-intervention.dto';
 import { RefuserInterventionDto } from './dto/refuser-intervention.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator';
-import { InterventionStatut, Role } from '../../generated/prisma/client';
+import { InterventionStatut, Role } from '../generated/prisma/client';
 
 @Controller('interventions')
 export class InterventionsController {

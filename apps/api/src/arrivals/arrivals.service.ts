@@ -7,7 +7,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateArrivalDto } from './dto/create-arrival.dto';
 import { ConfirmArrivalDto } from './dto/confirm-arrival.dto';
-import { Role } from '../../generated/prisma/client';
+import { Role } from '../generated/prisma/client';
 
 const ROLES_CONFIRMATION: Role[] = [
   Role.SOUS_DIRECTEUR_TIC,

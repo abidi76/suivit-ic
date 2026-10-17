@@ -4,7 +4,7 @@ import { CreateArrivalDto } from './dto/create-arrival.dto';
 import { ConfirmArrivalDto } from './dto/confirm-arrival.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser, JwtUser } from '../auth/decorators/current-user.decorator';
-import { Role } from '../../generated/prisma/client';
+import { Role } from '../generated/prisma/client';
 
 @Controller('arrivals')
 export class ArrivalsController {

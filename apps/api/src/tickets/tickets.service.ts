@@ -9,7 +9,7 @@ import { CreateTicketDto } from './dto/create-ticket.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
 import { CloturerTicketDto } from './dto/cloturer-ticket.dto';
 import { AssignerTicketDto } from './dto/assigner-ticket.dto';
-import { Criticite, Role, TicketStatut } from '../../generated/prisma/client';
+import { Criticite, Role, TicketStatut } from '../generated/prisma/client';
 
 @Injectable()
 export class TicketsService {

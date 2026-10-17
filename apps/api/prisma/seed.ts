@@ -1,4 +1,4 @@
-import { PrismaClient, Role, EquipmentState } from '../generated/prisma/client';
+import { PrismaClient, Role, EquipmentState } from '../src/generated/prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -83,15 +83,7 @@ async function main() {
   // ==========================================================================
 
   const typesData = [
-    'PC Fixe',
-    'Laptop',
-    'Imprimante',
-    'Ecran',
-    'Souris',
-    'Clavier',
-    'Switch',
-    'Materiel Reseau',
-    'Flybox',
+    'PC Fixe', 'Laptop', 'Imprimante', 'Ecran', 'Souris', 'Clavier', 'Switch', 'Materiel Reseau', 'Flybox',
   ];
 
   const types: Record<string, any> = {};
@@ -233,16 +225,35 @@ async function main() {
   // 6. UTILISATEURS DE TEST
   // ==========================================================================
 
+  const hashAdmin = await bcrypt.hash('SuiviTic@2026!', 10);
   const hashDirecteur = await bcrypt.hash('Directeur123!', 10);
   const hashTechnicien = await bcrypt.hash('Technicien123!', 10);
   const hashProf = await bcrypt.hash('Prof123!', 10);
 
+  // Admin Central
   await prisma.user.upsert({
-    where: { email: 'directeur@edunet.tn' },
-    update: {
-      etablissementId: etablissement.id,
+    where: { email: 'admin@edunet.tn' },
+    update: {},
+    create: {
+      email: 'admin@edunet.tn',
+      emailVerifie: true,
+      matricule: 'ADM-001',
+      nom: 'Système',
+      prenom: 'Admin',
+      motDePasseHash: hashAdmin,
+      doitChangerMdp: false,
+      role: Role.ADMIN_CENTRAL,
+      actif: true,
+      telephone: '20000000',
       creId: cre.id,
     },
+  });
+  console.log('✅ Admin Central: admin@edunet.tn / SuiviTic@2026!');
+
+  // Directeur
+  await prisma.user.upsert({
+    where: { email: 'directeur@edunet.tn' },
+    update: { etablissementId: etablissement.id, creId: cre.id },
     create: {
       email: 'directeur@edunet.tn',
       emailVerifie: true,
@@ -260,6 +271,7 @@ async function main() {
   });
   console.log('✅ Directeur: directeur@edunet.tn / Directeur123!');
 
+  // Technicien
   await prisma.user.upsert({
     where: { email: 'technicien@edunet.tn' },
     update: { creId: cre.id },
@@ -279,12 +291,10 @@ async function main() {
   });
   console.log('✅ Technicien: technicien@edunet.tn / Technicien123!');
 
+  // Prof Responsable
   await prisma.user.upsert({
     where: { email: 'prof@edunet.tn' },
-    update: {
-      etablissementId: etablissement.id,
-      laboId: labo.id,
-    },
+    update: { etablissementId: etablissement.id, laboId: labo.id },
     create: {
       email: 'prof@edunet.tn',
       emailVerifie: true,
@@ -303,28 +313,66 @@ async function main() {
   console.log('✅ Prof: prof@edunet.tn / Prof123!');
 
   // ==========================================================================
-  // 7. EQUIPEMENTS DE TEST
+  // 7. MODULE CONNECTIVITY (Types & Circuits)
+  // ==========================================================================
+
+  const typeFibre = await prisma.typeConnexion.upsert({
+    where: { code: 'FIBRE' },
+    update: {},
+    create: {
+      code: 'FIBRE',
+      libelle: 'Fibre Optique',
+      formatIdentifiant: '^FT-[0-9]{4}-[0-9]{3}$',
+      exempleIdentifiant: 'FT-2026-001',
+      actif: true,
+    },
+  });
+
+  const typeAdsl = await prisma.typeConnexion.upsert({
+    where: { code: 'ADSL' },
+    update: {},
+    create: {
+      code: 'ADSL',
+      libelle: 'Ligne ADSL',
+      formatIdentifiant: '^[0-9]{8}$',
+      exempleIdentifiant: '71234567',
+      actif: true,
+    },
+  });
+  console.log('✅ Types de connexion:', typeFibre.code, typeAdsl.code);
+
+  // Création d'un circuit de test pour l'établissement
+    // Création d'un circuit de test pour l'établissement
+  const existingCircuit = await prisma.circuitReseau.findFirst({
+    where: {
+      etablissementId: etablissement.id,
+      typeConnexionId: typeFibre.id,
+      identifiant: 'FT-2026-001',
+    },
+  });
+
+  if (!existingCircuit) {
+    await prisma.circuitReseau.create({
+      data: {
+        etablissementId: etablissement.id,
+        typeConnexionId: typeFibre.id,
+        identifiant: 'FT-2026-001',
+        statut: 'ACTIF',
+        fournisseur: 'Tunisie Telecom',
+        debit: '100 Mbps',
+        dateActivation: new Date(),
+      },
+    });
+  }
+  console.log('✅ Circuit Test: FT-2026-001');
+  // ==========================================================================
+  // 8. EQUIPEMENTS DE TEST
   // ==========================================================================
 
   const equipementsData = [
-    {
-      numeroSerie: 'PC-001',
-      marque: 'Dell',
-      modele: 'OptiPlex 7010',
-      type: 'PC Fixe',
-    },
-    {
-      numeroSerie: 'PC-002',
-      marque: 'HP',
-      modele: 'EliteDesk 800',
-      type: 'PC Fixe',
-    },
-    {
-      numeroSerie: 'SW-001',
-      marque: 'Cisco',
-      modele: 'Catalyst 2960',
-      type: 'Switch',
-    },
+    { numeroSerie: 'PC-001', marque: 'Dell', modele: 'OptiPlex 7010', type: 'PC Fixe' },
+    { numeroSerie: 'PC-002', marque: 'HP', modele: 'EliteDesk 800', type: 'PC Fixe' },
+    { numeroSerie: 'SW-001', marque: 'Cisco', modele: 'Catalyst 2960', type: 'Switch' },
   ];
 
   for (const e of equipementsData) {
