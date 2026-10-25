@@ -1,0 +1,15 @@
+<div *ngIf="!stats">Chargement...</div>
+
+<div *ngIf="stats" style="display: flex; gap: 20px;">
+  <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; flex: 1; border-top: 4px solid #0056b3;">
+    <h3>INTERVENTIONS</h3>
+    <p style="font-size: 32px; margin: 0;">{{ stats.interventions.total }}</p>
+    <p style="color: orange;">{{ stats.interventions.enAttente }} en attente</p>
+  </div>
+  
+  <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; flex: 1; border-top: 4px solid #0056b3;">
+    <h3>ÉQUIPEMENTS</h3>
+    <p style="font-size: 32px; margin: 0;">{{ stats.equipements.total }}</p>
+    <p style="color: red;">{{ stats.equipements.enPanne }} en panne</p>
+  </div>
+</div>
