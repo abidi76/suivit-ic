@@ -42,7 +42,7 @@ export class AdminCentralDashboardComponent implements OnInit {
   currentUser: UserAccount | null = null;
   activeTab: 'global' | 'cre-list' | 'adjoints' | 'arrivages' = 'global';
 
-  // Filtres multidimensionnels nationaux (Section 11 & spécification utilisateur)
+  // Filtres multidimensionnels nationaux
   selectedCre = 'TOUS';
   selectedEtabType = 'TOUS';
   selectedAppelOffre = 'TOUS';
@@ -137,7 +137,8 @@ export class AdminCentralDashboardComponent implements OnInit {
     }
   ];
 
-  // Gestion des 3 Admin Central-Adjoints (Affectation / Interdiction de tâches par l'Admin Central)
+  // Gestion des 3 Admin Central-Adjoints
+  // RÈGLE : Seul l'Admin Central titulaire affecte ou interdit des tâches aux adjoints
   adjointsList: AdjointManagement[] = [
     {
       id: 'ADJ-01',
@@ -177,7 +178,7 @@ export class AdminCentralDashboardComponent implements OnInit {
     }
   ];
 
-  // Gestion des Arrivages Nationaux (Section 4)
+  // Arrivages
   arrivagesList = [
     {
       numero: 'ARR-2026-0042',
@@ -219,6 +220,17 @@ export class AdminCentralDashboardComponent implements OnInit {
     this.currentUser = this.authService.currentUserValue;
   }
 
+  get isAdminCentralTitulaire(): boolean {
+    return this.currentUser?.role === 'ADMIN_CENTRAL';
+  }
+
+  get myAdjointPermissions(): AdjointManagement | undefined {
+    if (this.currentUser?.role === 'ADMIN_ADJOINT') {
+      return this.adjointsList.find(a => a.email.toLowerCase() === this.currentUser?.email.toLowerCase()) || this.adjointsList[0];
+    }
+    return undefined;
+  }
+
   // Chiffres consolidés nationaux
   get totalEquipementsNational(): number {
     return this.creList.reduce((acc, c) => acc + c.totalEquipements, 0);
@@ -247,17 +259,22 @@ export class AdminCentralDashboardComponent implements OnInit {
     });
   }
 
+  // Seul l'Admin Central titulaire peut modifier/autoriser/interdire les tâches des adjoints
   togglePermission(adj: AdjointManagement, task: keyof AdjointManagement['tachesAutorisees']): void {
-    if (this.currentUser?.role !== 'ADMIN_CENTRAL') {
-      alert('Seul un Admin Central titulaire peut modifier les habilitations des adjoints.');
+    if (!this.isAdminCentralTitulaire) {
+      alert('Action strictement interdite : Seul l\'Admin Central titulaire peut affecter ou interdire des tâches. Un adjoint ne peut en aucun cas modifier ses propres attributions.');
       return;
     }
     adj.tachesAutorisees[task] = !adj.tachesAutorisees[task];
     const etat = adj.tachesAutorisees[task] ? 'autorisée' : 'interdite';
-    this.afficherToast(`Habilitation ${task} ${etat} pour ${adj.nom}.`);
+    this.afficherToast(`Habilitation « ${task} » ${etat} pour l'adjoint ${adj.nom}.`);
   }
 
   toggleSdTicStatus(cre: CreSupervision): void {
+    if (!this.isAdminCentralTitulaire) {
+      alert('Action réservée à l\'Admin Central titulaire : Seul l\'Admin Central peut activer ou suspendre les responsables de CRE.');
+      return;
+    }
     cre.sdticActif = !cre.sdticActif;
     const etat = cre.sdticActif ? 'activé' : 'suspendu';
     this.afficherToast(`Compte de ${cre.sdticNom} ${etat}.`);

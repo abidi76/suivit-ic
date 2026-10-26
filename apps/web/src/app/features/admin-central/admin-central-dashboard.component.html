@@ -5,7 +5,7 @@
   </div>
 
   <!-- Header National Admin Central -->
-  <header class="central-header">
+  <header class="central-header" [class.adjoint-header]="!isAdminCentralTitulaire">
     <div class="central-header-left">
       <span class="emblem">🇹🇳</span>
       <div>
@@ -13,7 +13,9 @@
         <h1 class="main-title">Supervision Nationale du Parc Informatique & Connectivité</h1>
         <div class="user-role-line">
           Compte connecté : <strong>{{ currentUser?.prenom }} {{ currentUser?.nom }}</strong> 
-          ({{ currentUser?.roleLabel }}) · Accès National Exhaustif
+          — <span class="badge-role-header" [class.badge-titulaire]="isAdminCentralTitulaire" [class.badge-adj]="!isAdminCentralTitulaire">
+            {{ isAdminCentralTitulaire ? '👑 Admin Central Titulaire (Tous Pouvoirs)' : '🛡️ Admin Central Adjoint (Tâches Déléguées)' }}
+          </span>
         </div>
       </div>
     </div>
@@ -59,7 +61,7 @@
       🏢 Gestion des Comptes SD TIC & Directeurs TIC
     </button>
     <button class="admin-tab-btn" [class.active]="activeTab === 'adjoints'" (click)="activeTab = 'adjoints'">
-      🛡️ Gestion des 3 Admin Adjoints & Délégation de Tâches
+      🛡️ {{ isAdminCentralTitulaire ? 'Affectation des Tâches aux 3 Adjoints' : 'Mes Habilitations Déléguées' }}
     </button>
     <button class="admin-tab-btn" [class.active]="activeTab === 'arrivages'" (click)="activeTab = 'arrivages'">
       📦 Pilotage des Arrivages Nationaux & Marchés
@@ -124,6 +126,10 @@
       </div>
     </div>
 
+    <div *ngIf="!isAdminCentralTitulaire" class="restriction-alert">
+      ℹ️ <strong>Mode consultation Adjoint :</strong> Seul l'Admin Central titulaire dispose des prérogatives de suspension ou d'activation des responsables de CRE.
+    </div>
+
     <div class="cards-grid">
       <div *ngFor="let c of creList" class="cre-mgmt-card">
         <div class="card-head">
@@ -139,7 +145,7 @@
             Périmètre : Siège CRE + {{ c.totalEtablissements }} établissements scolaires (Écoles primaires, collèges, lycées).
           </div>
         </div>
-        <div class="card-footer">
+        <div class="card-footer" *ngIf="isAdminCentralTitulaire">
           <button class="btn btn-sm" [class.btn-danger]="c.sdticActif" [class.btn-success]="!c.sdticActif" (click)="toggleSdTicStatus(c)">
             {{ c.sdticActif ? 'Suspendre l\'accès' : 'Réactiver l\'accès' }}
           </button>
@@ -152,14 +158,32 @@
   <div *ngIf="activeTab === 'adjoints'" class="central-panel">
     <div class="panel-head-bar">
       <div>
-        <h3>Gestion des 3 Comptes Admin Central Adjoints</h3>
-        <p class="panel-sub">
-          Règle : <em>« L'Admin Central peut affecter à ses adjoints une ou plusieurs tâches spécifiques ou les interdire. »</em>
+        <h3 *ngIf="isAdminCentralTitulaire">Affectation & Contrôle des Tâches des 3 Adjoints (Exclusivité Admin Central)</h3>
+        <h3 *ngIf="!isAdminCentralTitulaire">Consultation de vos Tâches Déléguées (Compte Adjoint)</h3>
+        
+        <p class="panel-sub" *ngIf="isAdminCentralTitulaire">
+          Règle : <em>« L'Admin Central titulaire affecte à chacun de ses adjoints une ou plusieurs tâches spécifiques ou peut les interdire. »</em>
+        </p>
+        <p class="panel-sub" *ngIf="!isAdminCentralTitulaire">
+          Règle : <em>« C'est la tâche de l'Admin Central d'affecter les tâches aux adjoints. L'adjoint ne peut en aucun cas modifier ou interdire ses propres tâches. »</em>
         </p>
       </div>
     </div>
 
-    <div class="adjoints-table-wrap">
+    <!-- Bannière explicative pour l'Adjoint -->
+    <div *ngIf="!isAdminCentralTitulaire" class="lock-banner">
+      <div class="lock-icon">🔒</div>
+      <div class="lock-text">
+        <strong>Accès verrouillé en lecture seule :</strong> Vos autorisations d'action sont fixées et contrôlées souverainement par l'Admin Central titulaire. Vous ne pouvez ni modifier vos propres droits, ni modifier ceux des autres adjoints.
+      </div>
+    </div>
+
+    <!-- Si Admin Central Titulaire : Panneau complet avec boutons interactifs -->
+    <div *ngIf="isAdminCentralTitulaire" class="adjoints-table-wrap">
+      <div class="titulaire-badge-bar">
+        <span>👑 Vous êtes connecté en tant qu'<strong>Admin Central Titulaire</strong> : Cliquez sur les boutons pour autoriser ou interdire instantanément une tâche à un adjoint.</span>
+      </div>
+
       <table class="admin-table">
         <thead>
           <tr>
@@ -177,40 +201,88 @@
             <td class="font-bold">🛡️ {{ adj.nom }}</td>
             <td class="text-muted">{{ adj.email }}</td>
 
-            <!-- Permissions commutables par l'Admin Central -->
+            <!-- Permissions commutables UNIQUEMENT par l'Admin Central Titulaire -->
             <td class="text-center">
               <button class="perm-btn" [class.perm-yes]="adj.tachesAutorisees.arrivages" [class.perm-no]="!adj.tachesAutorisees.arrivages"
-                      (click)="togglePermission(adj, 'arrivages')">
+                      (click)="togglePermission(adj, 'arrivages')" title="Cliquez pour autoriser/interdire">
                 {{ adj.tachesAutorisees.arrivages ? '✓ Autorisée' : '✗ Interdite' }}
               </button>
             </td>
             <td class="text-center">
               <button class="perm-btn" [class.perm-yes]="adj.tachesAutorisees.inventaires" [class.perm-no]="!adj.tachesAutorisees.inventaires"
-                      (click)="togglePermission(adj, 'inventaires')">
+                      (click)="togglePermission(adj, 'inventaires')" title="Cliquez pour autoriser/interdire">
                 {{ adj.tachesAutorisees.inventaires ? '✓ Autorisée' : '✗ Interdite' }}
               </button>
             </td>
             <td class="text-center">
               <button class="perm-btn" [class.perm-yes]="adj.tachesAutorisees.pannesPertes" [class.perm-no]="!adj.tachesAutorisees.pannesPertes"
-                      (click)="togglePermission(adj, 'pannesPertes')">
+                      (click)="togglePermission(adj, 'pannesPertes')" title="Cliquez pour autoriser/interdire">
                 {{ adj.tachesAutorisees.pannesPertes ? '✓ Autorisée' : '✗ Interdite' }}
               </button>
             </td>
             <td class="text-center">
               <button class="perm-btn" [class.perm-yes]="adj.tachesAutorisees.comptesLocaux" [class.perm-no]="!adj.tachesAutorisees.comptesLocaux"
-                      (click)="togglePermission(adj, 'comptesLocaux')">
+                      (click)="togglePermission(adj, 'comptesLocaux')" title="Cliquez pour autoriser/interdire">
                 {{ adj.tachesAutorisees.comptesLocaux ? '✓ Autorisée' : '✗ Interdite' }}
               </button>
             </td>
             <td class="text-center">
               <button class="perm-btn" [class.perm-yes]="adj.tachesAutorisees.rapports" [class.perm-no]="!adj.tachesAutorisees.rapports"
-                      (click)="togglePermission(adj, 'rapports')">
+                      (click)="togglePermission(adj, 'rapports')" title="Cliquez pour autoriser/interdire">
                 {{ adj.tachesAutorisees.rapports ? '✓ Autorisée' : '✗ Interdite' }}
               </button>
             </td>
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- Si Adjoint : Affichage statique non-modifiable de ses propres tâches -->
+    <div *ngIf="!isAdminCentralTitulaire" class="adjoint-readonly-view">
+      <div class="adjoint-my-card" *ngIf="myAdjointPermissions">
+        <h4>Vos Tâches Actuelles (Affectées par l'Admin Central) :</h4>
+        <div class="tasks-status-grid">
+          <div class="task-badge-box" [class.box-allowed]="myAdjointPermissions.tachesAutorisees.arrivages" [class.box-forbidden]="!myAdjointPermissions.tachesAutorisees.arrivages">
+            <span class="box-icon">{{ myAdjointPermissions.tachesAutorisees.arrivages ? '✓' : '✗' }}</span>
+            <div class="box-text">
+              <span class="box-title">Gestion des Arrivages</span>
+              <span class="box-desc">{{ myAdjointPermissions.tachesAutorisees.arrivages ? 'Tâche autorisée par l\'Admin Central' : 'Tâche interdite par l\'Admin Central' }}</span>
+            </div>
+          </div>
+
+          <div class="task-badge-box" [class.box-allowed]="myAdjointPermissions.tachesAutorisees.inventaires" [class.box-forbidden]="!myAdjointPermissions.tachesAutorisees.inventaires">
+            <span class="box-icon">{{ myAdjointPermissions.tachesAutorisees.inventaires ? '✓' : '✗' }}</span>
+            <div class="box-text">
+              <span class="box-title">Campagnes d'Inventaire</span>
+              <span class="box-desc">{{ myAdjointPermissions.tachesAutorisees.inventaires ? 'Tâche autorisée par l\'Admin Central' : 'Tâche interdite par l\'Admin Central' }}</span>
+            </div>
+          </div>
+
+          <div class="task-badge-box" [class.box-allowed]="myAdjointPermissions.tachesAutorisees.pannesPertes" [class.box-forbidden]="!myAdjointPermissions.tachesAutorisees.pannesPertes">
+            <span class="box-icon">{{ myAdjointPermissions.tachesAutorisees.pannesPertes ? '✓' : '✗' }}</span>
+            <div class="box-text">
+              <span class="box-title">Suivi des Pannes & Pertes</span>
+              <span class="box-desc">{{ myAdjointPermissions.tachesAutorisees.pannesPertes ? 'Tâche autorisée par l\'Admin Central' : 'Tâche interdite par l\'Admin Central' }}</span>
+            </div>
+          </div>
+
+          <div class="task-badge-box" [class.box-allowed]="myAdjointPermissions.tachesAutorisees.comptesLocaux" [class.box-forbidden]="!myAdjointPermissions.tachesAutorisees.comptesLocaux">
+            <span class="box-icon">{{ myAdjointPermissions.tachesAutorisees.comptesLocaux ? '✓' : '✗' }}</span>
+            <div class="box-text">
+              <span class="box-title">Comptes Locaux CRE</span>
+              <span class="box-desc">{{ myAdjointPermissions.tachesAutorisees.comptesLocaux ? 'Tâche autorisée par l\'Admin Central' : 'Tâche interdite par l\'Admin Central' }}</span>
+            </div>
+          </div>
+
+          <div class="task-badge-box" [class.box-allowed]="myAdjointPermissions.tachesAutorisees.rapports" [class.box-forbidden]="!myAdjointPermissions.tachesAutorisees.rapports">
+            <span class="box-icon">{{ myAdjointPermissions.tachesAutorisees.rapports ? '✓' : '✗' }}</span>
+            <div class="box-text">
+              <span class="box-title">Rapports & Exports Officiels</span>
+              <span class="box-desc">{{ myAdjointPermissions.tachesAutorisees.rapports ? 'Tâche autorisée par l\'Admin Central' : 'Tâche interdite par l\'Admin Central' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -223,6 +295,11 @@
           L'Admin Central enregistre les livraisons globales issues des Appels d'Offres et suit le circuit des 3 confirmations.
         </p>
       </div>
+    </div>
+
+    <!-- Alerte si l'Adjoint connecté n'a pas la permission Arrivages -->
+    <div *ngIf="!isAdminCentralTitulaire && myAdjointPermissions && !myAdjointPermissions.tachesAutorisees.arrivages" class="restriction-alert">
+      ⚠️ <strong>Action restreinte :</strong> L'enregistrement des arrivages vous a été interdit par l'Admin Central titulaire. Vous pouvez uniquement consulter l'état des livraisons ci-dessous.
     </div>
 
     <div class="arrivages-cards-list">
