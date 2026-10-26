@@ -3,6 +3,14 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService, UserAccount } from '../../core/services/auth.service';
 
+export interface InterventionEquipement {
+  id?: string;
+  type: string;
+  marqueModele: string;
+  numeroSerie: string;
+  panneConstatee: string;
+}
+
 export interface InterventionTechnicien {
   id: string;
   etablissement: string;
@@ -18,6 +26,7 @@ export interface InterventionTechnicien {
   // Données de l'équipement
   equipementNom: string;
   numeroSerieEquipement: string;
+  equipements?: InterventionEquipement[];
   // Rapport d'intervention
   rapportDetaille?: string;
   pieceAjouteeDesignation?: string;
@@ -51,7 +60,10 @@ export class TechnicienDashboardComponent implements OnInit {
       datePrevue: 'Aujourd\'hui 09:00',
       statut: 'EN_COURS',
       equipementNom: 'PC Fixe Dell OptiPlex 3080',
-      numeroSerieEquipement: 'SN-DELL-883921'
+      numeroSerieEquipement: 'SN-DELL-883921',
+      equipements: [
+        { id: 'eq-1', type: 'PC Fixe', marqueModele: 'Dell OptiPlex 3080', numeroSerie: 'SN-DELL-883921', panneConstatee: 'Bloc d\'alimentation grillé, surtension orageuse' }
+      ]
     },
     {
       id: 'INT-2026-0045',
@@ -65,8 +77,15 @@ export class TechnicienDashboardComponent implements OnInit {
       chauffeur: 'Hédi Baccouche',
       datePrevue: 'Demain 08:30',
       statut: 'A_TRAITER',
-      equipementNom: 'Lot 5 Écrans Dell 24"',
-      numeroSerieEquipement: 'SN-SCR-4401-4405'
+      equipementNom: 'Lot de 5 Écrans Dell 24"',
+      numeroSerieEquipement: 'SN-SCR-4401, SN-SCR-4402, SN-SCR-4403, SN-SCR-4404, SN-SCR-4405',
+      equipements: [
+        { id: 'eq-1', type: 'Écran', marqueModele: 'Dell 24" P2419H', numeroSerie: 'SN-SCR-4401', panneConstatee: 'Affichage noir complet' },
+        { id: 'eq-2', type: 'Écran', marqueModele: 'Dell 24" P2419H', numeroSerie: 'SN-SCR-4402', panneConstatee: 'Voyant clignotant orange, alim HS' },
+        { id: 'eq-3', type: 'Écran', marqueModele: 'Dell 24" P2419H', numeroSerie: 'SN-SCR-4403', panneConstatee: 'Grésillement interne et extinction' },
+        { id: 'eq-4', type: 'Écran', marqueModele: 'Dell 24" P2419H', numeroSerie: 'SN-SCR-4404', panneConstatee: 'Ports HDMI et DP non reconnus' },
+        { id: 'eq-5', type: 'Écran', marqueModele: 'Dell 24" P2419H', numeroSerie: 'SN-SCR-4405', panneConstatee: 'Dalle endommagée / rétroéclairage' }
+      ]
     },
     {
       id: 'INT-2026-0036',
@@ -82,6 +101,9 @@ export class TechnicienDashboardComponent implements OnInit {
       statut: 'TERMINEE_ATTENTE_VALIDATION',
       equipementNom: 'Switch Cisco Catalyst 2960',
       numeroSerieEquipement: 'SN-CSCO-992144',
+      equipements: [
+        { id: 'eq-sw-1', type: 'Switch Réseau', marqueModele: 'Cisco Catalyst 2960', numeroSerie: 'SN-CSCO-992144', panneConstatee: 'Module SFP fibre défectueux' }
+      ],
       rapportDetaille: 'Remplacement module SFP fibre + reprogrammation VLAN. Test de débit conforme 1 Gbps.',
       pieceAjouteeDesignation: 'Module SFP Gigabit Cisco',
       pieceAjouteeNumeroSerie: 'SN-SFP-77441',

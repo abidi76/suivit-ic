@@ -162,7 +162,21 @@
 
         <h4 class="dec-title">{{ dec.equipementNom }}</h4>
         <div class="dec-sn">
-          Numéro de Série (Obligatoire) : <strong class="font-mono">{{ dec.numeroSerie }}</strong>
+          Numéro(s) de Série (Obligatoire) : <strong class="font-mono text-danger">{{ dec.numeroSerie }}</strong>
+        </div>
+
+        <!-- LISTE MULTI-ÉQUIPEMENTS PROF -->
+        <div *ngIf="dec.equipements && dec.equipements.length > 0" class="dec-equipements-box">
+          <div class="dec-equip-title">📦 Détail du ou des équipements concernés ({{ dec.equipements.length }}) :</div>
+          <div class="dec-equip-grid">
+            <div *ngFor="let eq of dec.equipements; let i = index" class="dec-equip-item">
+              <span class="eq-pill">#{{ i + 1 }}</span>
+              <span class="eq-type">{{ eq.type }}</span>
+              <span class="eq-model">{{ eq.marqueModele }}</span>
+              <span class="eq-sn">S/N: <code>{{ eq.numeroSerie }}</code></span>
+              <span *ngIf="eq.panneConstatee" class="eq-note">⚠️ {{ eq.panneConstatee }}</span>
+            </div>
+          </div>
         </div>
 
         <div class="dec-desc">
@@ -225,38 +239,71 @@
     </div>
   </div>
 
-  <!-- MODAL NOUVELLE DÉCLARATION -->
+  <!-- MODAL NOUVELLE DÉCLARATION (1 ou Liste d'Équipements avec N° de série) -->
   <div *ngIf="showDeclarationModal" class="modal-backdrop">
-    <div class="modal-card">
+    <div class="modal-card modal-card-large">
       <div class="modal-header">
         <h3>
-          {{ nouvelleDeclaration.type === 'CHOC_ELECTRIQUE' ? '⚡ Déclaration de Dégât Surtension / Choc Électrique' : 'Signaler Panne ou Perte' }}
+          {{ nouvelleDeclaration.type === 'CHOC_ELECTRIQUE' ? '⚡ Déclaration de Dégât Surtension / Choc Électrique' : (nouvelleDeclaration.type === 'PERTE' ? '📁 Déclaration de Perte' : '⚠️ Déclaration de Panne') }}
         </h3>
         <button class="modal-close" (click)="showDeclarationModal = false">✕</button>
       </div>
 
       <div class="modal-body">
-        <div class="form-group alert-box">
-          <label><span class="required-star">*</span> <strong>Numéro de Série de l'Équipement (Strictement Obligatoire) :</strong></label>
-          <input type="text" 
-                 [(ngModel)]="nouvelleDeclaration.numeroSerie" 
-                 placeholder="Ex: SN-DELL-3080-03" 
-                 class="form-control font-mono font-bold" />
+        <!-- Section Équipements dynamiques -->
+        <div class="equipements-multi-section">
+          <div class="section-top-row">
+            <div>
+              <span class="sec-title">📦 Matériel concerné ({{ nouvelleDeclaration.equipements.length }}) :</span>
+              <span class="sec-sub">Chaque matériel doit obligatoirement avoir son numéro de série unique.</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-primary" (click)="ajouterEquipementLigne()">
+              ➕ Ajouter un équipement
+            </button>
+          </div>
+
+          <div class="equip-rows-container">
+            <div *ngFor="let eq of nouvelleDeclaration.equipements; let i = index" class="equip-single-row">
+              <div class="row-top">
+                <span class="eq-number">Équipement #{{ i + 1 }}</span>
+                <button *ngIf="nouvelleDeclaration.equipements.length > 1" 
+                        type="button" 
+                        class="btn-del" 
+                        (click)="supprimerEquipementLigne(i)">
+                  ✕ Retirer
+                </button>
+              </div>
+
+              <div class="row-fields">
+                <div class="form-group flex-1">
+                  <label>Type :</label>
+                  <select [(ngModel)]="eq.type" class="form-control">
+                    <option *ngFor="let t of equipementTypes" [value]="t">{{ t }}</option>
+                  </select>
+                </div>
+                <div class="form-group flex-1">
+                  <label>Marque / Modèle :</label>
+                  <input type="text" [(ngModel)]="eq.marqueModele" placeholder="Ex: Dell OptiPlex 3080" class="form-control" />
+                </div>
+                <div class="form-group flex-1 alert-box-mini">
+                  <label><span class="required-star">*</span> <strong>N° de Série (Obligatoire) :</strong></label>
+                  <input type="text" [(ngModel)]="eq.numeroSerie" placeholder="Ex: SN-DELL-3080-03" class="form-control font-mono font-bold" required />
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-top: 0.35rem;">
+                <label>Dégât / Panne constatée :</label>
+                <input type="text" [(ngModel)]="eq.panneConstatee" placeholder="Ex: Carte mère brûlée, composant noirci, extinction nette..." class="form-control" />
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="form-group">
-          <label>Désignation / Emplacement du matériel :</label>
-          <input type="text" 
-                 [(ngModel)]="nouvelleDeclaration.equipementNom" 
-                 placeholder="Ex: PC Fixe Dell - Poste Élève 03" 
-                 class="form-control" />
-        </div>
-
-        <div class="form-group">
-          <label><span class="required-star">*</span> Constat détaillé (surtension, dommage irrécupérable, panne) :</label>
+        <div class="form-group" style="margin-top: 1rem;">
+          <label><span class="required-star">*</span> Circonstances & Constat global (surtension, orage, incident) :</label>
           <textarea [(ngModel)]="nouvelleDeclaration.description" 
                     rows="3" 
-                    placeholder="Précisez la date de survenue, les manifestations (odeur de brûlé, arrêt net suite orage, choc électrique...)" 
+                    placeholder="Précisez la date, l'heure et les circonstances de survenue..." 
                     class="form-control"></textarea>
         </div>
 
@@ -276,7 +323,7 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" (click)="showDeclarationModal = false">Annuler</button>
         <button class="btn btn-primary" (click)="soumettreDeclaration()">
-          📤 Transmettre la Déclaration Officielle
+          📤 Transmettre la Déclaration Officielle ({{ nouvelleDeclaration.equipements.length }} équipement{{ nouvelleDeclaration.equipements.length > 1 ? 's' : '' }})
         </button>
       </div>
     </div>

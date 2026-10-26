@@ -135,7 +135,15 @@ let DIRECTEUR_DATA: any = {
       type: 'PANNE_EQUIPEMENT',
       titre: '5 Écrans Dell sans affichage suite coupure électrique',
       labo: 'Labo Informatique 2',
-      equipement: 'Écrans Dell 24" P2419H (S/N: DL-8841-8845)',
+      equipement: 'Lot de 5 Écrans Dell 24" P2419H',
+      numeroSerie: 'SN-SCR-4401, SN-SCR-4402, SN-SCR-4403, SN-SCR-4404, SN-SCR-4405',
+      equipements: [
+        { id: 'eq-1', type: 'Écran', marqueModele: 'Dell 24" P2419H', numeroSerie: 'SN-SCR-4401', panneConstatee: 'Affichage noir complet suite choc électrique', etat: 'EN_PANNE' },
+        { id: 'eq-2', type: 'Écran', marqueModele: 'Dell 24" P2419H', numeroSerie: 'SN-SCR-4402', panneConstatee: 'Voyant clignotant orange, bloc alimentation interne HS', etat: 'EN_PANNE' },
+        { id: 'eq-3', type: 'Écran', marqueModele: 'Dell 24" P2419H', numeroSerie: 'SN-SCR-4403', panneConstatee: 'Grésillement interne et extinction', etat: 'EN_PANNE' },
+        { id: 'eq-4', type: 'Écran', marqueModele: 'Dell 24" P2419H', numeroSerie: 'SN-SCR-4404', panneConstatee: 'Port HDMI et DisplayPort hors service', etat: 'EN_PANNE' },
+        { id: 'eq-5', type: 'Écran', marqueModele: 'Dell 24" P2419H', numeroSerie: 'SN-SCR-4405', panneConstatee: 'Dalle endommagée et coupure rétroéclairage', etat: 'TOTALEMENT_ENDOMMAGE' }
+      ],
       criticite: 'CRITIQUE',
       bacPratique: true,
       dateDeclaration: '2026-10-26T09:15:00',
@@ -156,6 +164,10 @@ let DIRECTEUR_DATA: any = {
       titre: 'Coupure totale ligne Edunet principale Fibre',
       labo: 'Tous les laboratoires & Administration',
       equipement: 'Circuit Internet Edunet (Fibre TT - Réf: TT-MAN-8841)',
+      numeroSerie: 'CIRCUIT-TT-8841',
+      equipements: [
+        { id: 'eq-cnx-1', type: 'Matériel Réseau / Fibre', marqueModele: 'Jarretière Optique & Routeur Edunet Huawei', numeroSerie: 'CIRCUIT-TT-8841', panneConstatee: 'Perte de synchronisation optique et coupure lien Edunet', etat: 'EN_PANNE' }
+      ],
       criticite: 'CRITIQUE',
       bacPratique: true,
       dateDeclaration: '2026-10-24T14:30:00',
@@ -176,6 +188,10 @@ let DIRECTEUR_DATA: any = {
       titre: 'Panne Imprimante HP Bac Pratique',
       labo: 'Salle Tirage Épreuves',
       equipement: 'HP LaserJet Enterprise M506',
+      numeroSerie: 'SN-HP-M506-9921',
+      equipements: [
+        { id: 'eq-prn-1', type: 'Imprimante', marqueModele: 'HP LaserJet Enterprise M506', numeroSerie: 'SN-HP-M506-9921', panneConstatee: 'Four de fixation en surchauffe code erreur 50.2', etat: 'EN_PANNE' }
+      ],
       criticite: 'HAUTE',
       bacPratique: true,
       dateDeclaration: '2026-10-21T11:00:00',
@@ -206,15 +222,33 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
     return of(new HttpResponse({ status: 200, body: DIRECTEUR_DATA }));
   }
 
-  // Déclaration de réclamation par le Directeur (Panne équipement ou Connectivité)
+  // Déclaration de réclamation par le Directeur (Panne équipement ou Connectivité, 1 ou plusieurs équipements)
   if (url.includes('/reclamations/create')) {
     const body = (req.body as any) || {};
+    const equipementsList = (body.equipements && Array.isArray(body.equipements) && body.equipements.length > 0)
+      ? body.equipements
+      : [{
+          id: 'eq-1',
+          type: body.equipementType || 'PC Fixe',
+          marqueModele: body.equipement || 'Équipement informatique',
+          numeroSerie: body.numeroSerie || 'SN-NON-SPECIFIE',
+          panneConstatee: body.description || body.titre || 'Panne constatée',
+          etat: 'EN_PANNE'
+        }];
+
+    const snConcat = equipementsList.map((e: any) => e.numeroSerie).filter(Boolean).join(', ');
+    const equipementLabel = equipementsList.length === 1
+      ? `${equipementsList[0].marqueModele || equipementsList[0].type} (S/N: ${equipementsList[0].numeroSerie})`
+      : `${equipementsList.length} équipements déclarés (${equipementsList.map((e: any) => e.type || 'Matériel').join(', ')})`;
+
     const nouvelleReclamation = {
       id: `REC-2026-${String(DIRECTEUR_DATA.reclamations.length + 42).padStart(4, '0')}`,
       type: body.type || 'PANNE_EQUIPEMENT',
       titre: body.titre || 'Signalement incident',
-      labo: body.labo || 'Laboratoire Informatique',
-      equipement: body.equipement || 'Matériel non spécifié',
+      labo: body.labo || 'Laboratoire Informatique 1',
+      equipement: equipementLabel,
+      numeroSerie: snConcat,
+      equipements: equipementsList,
       criticite: body.criticite || 'HAUTE',
       bacPratique: !!body.bacPratique,
       dateDeclaration: new Date().toISOString(),

@@ -58,6 +58,7 @@ export interface OrdreMissionDemande {
   technicienNom: string;
   motifMission: string;
   dateDemandee: string;
+  equipementsConcernes?: string;
   // Circuit avec le SD-Bâtiments
   statutBatiments: 'EN_ATTENTE_SD_BATIMENTS' | 'VALIDE_AVEC_VEHICULE' | 'AJOURNE_REPORTE';
   vehiculeAffecte?: string;
@@ -73,6 +74,7 @@ export interface PlanningItem {
   date: string;
   etablissement: string;
   action: string;
+  equipementsConcernes?: string;
   priorite: 'URGENTE' | 'NORMALE';
   statut: 'PLANIFIE' | 'EN_COURS' | 'CLOTURE';
 }
@@ -264,6 +266,7 @@ export class DashboardComponent implements OnInit {
       etablissement: 'Lycée Asad Ibn Al Fourat (Oued Ellil)',
       technicienNom: 'Sami Khelifi',
       motifMission: 'Dépannage d\'urgence 5 postes informatiques Bac Pratique',
+      equipementsConcernes: 'Lot de 5 PC Dell OptiPlex 3080 (SN: SN-DELL-883921 à 883925)',
       dateDemandee: '2026-10-27 08:30',
       statutBatiments: 'VALIDE_AVEC_VEHICULE',
       vehiculeAffecte: 'Peugeot Partner (204 TU 1150)',
@@ -275,6 +278,7 @@ export class DashboardComponent implements OnInit {
       etablissement: 'Lycée Ibn Abi Dhiaf (Manouba)',
       technicienNom: 'Sami Khelifi',
       motifMission: 'Remplacement écrans labo 2 suite coupure électrique',
+      equipementsConcernes: 'Lot de 5 Écrans Dell 24" (SN: SN-SCR-4401 à 4405)',
       dateDemandee: '2026-10-28 09:00',
       statutBatiments: 'EN_ATTENTE_SD_BATIMENTS'
     },
@@ -284,6 +288,7 @@ export class DashboardComponent implements OnInit {
       etablissement: 'Collège Technique Oued Ellil',
       technicienNom: 'Équipe Réseau Externe',
       motifMission: 'Inspection ligne Fibre optique et jarretière',
+      equipementsConcernes: 'Routeur Fibre Edunet & Jarretière (CIRCUIT-TT-8841)',
       dateDemandee: '2026-10-26 14:00',
       statutBatiments: 'AJOURNE_REPORTE',
       dateAjournee: '2026-10-29 09:30',
@@ -300,6 +305,7 @@ export class DashboardComponent implements OnInit {
       date: 'Mardi 27 Oct 09:00',
       etablissement: 'Lycée Asad Ibn Al Fourat',
       action: 'Changement bloc alimentation ATX + test tension',
+      equipementsConcernes: 'PC Dell OptiPlex 3080 (SN-DELL-883921)',
       priorite: 'URGENTE',
       statut: 'PLANIFIE'
     },
@@ -310,6 +316,7 @@ export class DashboardComponent implements OnInit {
       date: 'Mercredi 28 Oct 08:30',
       etablissement: 'Lycée Ibn Abi Dhiaf',
       action: 'Déploiement image Windows 11 + Python 3.11 + MySQL',
+      equipementsConcernes: '24 Postes PC Dell (SN-DELL-3080-01 à 24)',
       priorite: 'URGENTE',
       statut: 'PLANIFIE'
     },
@@ -320,6 +327,7 @@ export class DashboardComponent implements OnInit {
       date: 'Jeudi 29 Oct 10:00',
       etablissement: 'Collège Pilote Manouba',
       action: 'Nettoyage têtes laser et galets d\'entraînement',
+      equipementsConcernes: '2 Imprimantes HP LaserJet M404n (SN-HP-M404-01, 02)',
       priorite: 'NORMALE',
       statut: 'PLANIFIE'
     },
@@ -330,6 +338,7 @@ export class DashboardComponent implements OnInit {
       date: 'Vendredi 30 Oct 14:00',
       etablissement: 'Lycée Mornaguia',
       action: 'Reconfiguration VLAN salle des professeurs',
+      equipementsConcernes: 'Switch Cisco Catalyst 2960 (SN-CSCO-992144)',
       priorite: 'NORMALE',
       statut: 'EN_COURS'
     }

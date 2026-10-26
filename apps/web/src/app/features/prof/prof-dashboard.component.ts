@@ -12,11 +12,20 @@ export interface EquipementLabo {
   posteNumero: string;
 }
 
+export interface DeclarationEquipementItem {
+  id?: string;
+  type: string;
+  marqueModele: string;
+  numeroSerie: string;
+  panneConstatee: string;
+}
+
 export interface DeclarationProf {
   id: string;
   type: 'PANNE' | 'CHOC_ELECTRIQUE' | 'PERTE';
   numeroSerie: string;
   equipementNom: string;
+  equipements?: DeclarationEquipementItem[];
   description: string;
   date: string;
   destinataires: string;
@@ -34,6 +43,9 @@ export interface DeclarationProf {
 export class ProfDashboardComponent implements OnInit {
   currentUser: UserAccount | null = null;
   activeTab: 'inventaire' | 'bac-pratique' | 'declarations' | 'arrivage' = 'inventaire';
+
+  // Types d'équipements disponibles
+  equipementTypes = ['PC Fixe', 'Écran', 'Laptop', 'Imprimante', 'Switch Réseau', 'Flybox', 'Onduleur / Alimentation'];
 
   // Labo rattaché au prof
   laboNom = 'Laboratoire Informatique 1';
@@ -85,6 +97,9 @@ export class ProfDashboardComponent implements OnInit {
       type: 'CHOC_ELECTRIQUE',
       numeroSerie: 'SN-DELL-3080-03',
       equipementNom: 'PC Fixe Dell OptiPlex 3080 (Poste Élève 03)',
+      equipements: [
+        { type: 'PC Fixe', marqueModele: 'Dell OptiPlex 3080', numeroSerie: 'SN-DELL-3080-03', panneConstatee: 'Carte mère et alimentation brûlées suite à surtension électrique' }
+      ],
       description: 'Arrêt brutal avec fumée suite à surtension électrique orageuse sur le réseau du bâtiment. Carte mère et alimentation brûlées.',
       date: '2026-10-25',
       destinataires: 'Directeur d\'Établissement & Inspecteur Pédagogique TIC',
@@ -92,14 +107,21 @@ export class ProfDashboardComponent implements OnInit {
     }
   ];
 
-  // Modal Nouvelle Déclaration
+  // Modal Nouvelle Déclaration (1 ou liste d'équipements)
   showDeclarationModal = false;
   nouvelleDeclaration = {
     type: 'CHOC_ELECTRIQUE' as DeclarationProf['type'],
-    numeroSerie: '',
-    equipementNom: '',
     description: '',
-    justificatifPvNom: ''
+    justificatifPvNom: '',
+    equipements: [
+      {
+        id: 'eq-1',
+        type: 'PC Fixe',
+        marqueModele: 'Dell OptiPlex 3080',
+        numeroSerie: 'SN-DELL-3080-03',
+        panneConstatee: 'Arrêt complet suite coupure électrique'
+      }
+    ] as DeclarationEquipementItem[]
   };
 
   toastMessage = '';
@@ -123,27 +145,65 @@ export class ProfDashboardComponent implements OnInit {
 
   ouvrirModalDeclaration(type: DeclarationProf['type']): void {
     this.nouvelleDeclaration.type = type;
-    this.nouvelleDeclaration.numeroSerie = '';
-    this.nouvelleDeclaration.equipementNom = '';
     this.nouvelleDeclaration.description = '';
+    this.nouvelleDeclaration.justificatifPvNom = '';
+    this.nouvelleDeclaration.equipements = [
+      {
+        id: `eq-${Date.now()}`,
+        type: 'PC Fixe',
+        marqueModele: 'Dell OptiPlex 3080',
+        numeroSerie: '',
+        panneConstatee: ''
+      }
+    ];
     this.showDeclarationModal = true;
   }
 
+  ajouterEquipementLigne(): void {
+    this.nouvelleDeclaration.equipements.push({
+      id: `eq-${Date.now()}`,
+      type: 'Écran',
+      marqueModele: 'Dell 24" P2419H',
+      numeroSerie: '',
+      panneConstatee: ''
+    });
+  }
+
+  supprimerEquipementLigne(idx: number): void {
+    if (this.nouvelleDeclaration.equipements.length > 1) {
+      this.nouvelleDeclaration.equipements.splice(idx, 1);
+    }
+  }
+
   soumettreDeclaration(): void {
-    if (!this.nouvelleDeclaration.numeroSerie.trim()) {
-      alert('Le Numéro de Série est obligatoire pour toute déclaration de panne, choc électrique ou perte.');
+    if (!this.nouvelleDeclaration.equipements || this.nouvelleDeclaration.equipements.length === 0) {
+      alert('Veuillez ajouter au moins un équipement.');
       return;
     }
+
+    const sansSn = this.nouvelleDeclaration.equipements.find(e => !e.numeroSerie || !e.numeroSerie.trim());
+    if (sansSn) {
+      alert('Règle SuiviTic : Le Numéro de Série est strictement obligatoire pour chaque équipement déclaré.');
+      return;
+    }
+
     if (!this.nouvelleDeclaration.description.trim()) {
-      alert('Veuillez renseigner le motif de la déclaration.');
+      alert('Veuillez renseigner le motif et les détails de la déclaration.');
       return;
     }
+
+    const snList = this.nouvelleDeclaration.equipements.map(e => e.numeroSerie).join(', ');
+    const count = this.nouvelleDeclaration.equipements.length;
+    const equipNom = count === 1
+      ? `${this.nouvelleDeclaration.equipements[0].marqueModele || this.nouvelleDeclaration.equipements[0].type} (${this.nouvelleDeclaration.equipements[0].numeroSerie})`
+      : `${count} équipements (${this.nouvelleDeclaration.equipements.map(e => e.type).join(', ')})`;
 
     const dec: DeclarationProf = {
       id: `DEC-2026-${String(this.declarationsList.length + 13).padStart(4, '0')}`,
       type: this.nouvelleDeclaration.type,
-      numeroSerie: this.nouvelleDeclaration.numeroSerie,
-      equipementNom: this.nouvelleDeclaration.equipementNom || 'Matériel Labo Info 1',
+      numeroSerie: snList,
+      equipementNom: equipNom,
+      equipements: [...this.nouvelleDeclaration.equipements],
       description: this.nouvelleDeclaration.description,
       date: new Date().toISOString().split('T')[0],
       destinataires: 'Directeur d\'Établissement & Inspecteur Pédagogique TIC',
@@ -153,7 +213,7 @@ export class ProfDashboardComponent implements OnInit {
 
     this.declarationsList = [dec, ...this.declarationsList];
     this.showDeclarationModal = false;
-    this.afficherToast('✅ Déclaration enregistrée et transmise simultanément au Directeur et à l\'Inspecteur.');
+    this.afficherToast(`✅ Déclaration (${count} équipement(s)) transmise simultanément au Directeur et à l'Inspecteur.`);
   }
 
   afficherToast(msg: string): void {

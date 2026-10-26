@@ -72,7 +72,21 @@
 
         <div class="equip-info-row">
           <span>Matériel : <strong>{{ m.equipementNom }}</strong></span>
-          <span>N° Série : <strong class="font-mono text-primary">{{ m.numeroSerieEquipement }}</strong></span>
+          <span>N° Série global : <strong class="font-mono text-primary">{{ m.numeroSerieEquipement }}</strong></span>
+        </div>
+
+        <!-- LISTE DES ÉQUIPEMENTS CONCERNÉS (avec leurs numéros de série) -->
+        <div *ngIf="m.equipements && m.equipements.length > 0" class="mission-equipements-list">
+          <div class="equip-list-title">📦 Liste des équipements assignés à cette intervention ({{ m.equipements.length }}) :</div>
+          <div class="equip-list-items">
+            <div *ngFor="let eq of m.equipements; let idx = index" class="equip-list-item">
+              <span class="eq-idx">#{{ idx + 1 }}</span>
+              <span class="eq-type-tag">{{ eq.type }}</span>
+              <span class="eq-name">{{ eq.marqueModele }}</span>
+              <span class="eq-sn-tag">S/N: <code>{{ eq.numeroSerie }}</code></span>
+              <span *ngIf="eq.panneConstatee" class="eq-fail-note">⚠️ {{ eq.panneConstatee }}</span>
+            </div>
+          </div>
         </div>
 
         <!-- Si rapport déjà soumis -->

@@ -152,7 +152,12 @@
           <td><span class="badge-tech">🔧 {{ p.technicien }}</span></td>
           <td class="font-bold text-primary">{{ p.date }}</td>
           <td>🏫 {{ p.etablissement }}</td>
-          <td class="action-desc">« {{ p.action }} »</td>
+          <td class="action-desc">
+            « {{ p.action }} »
+            <div *ngIf="p.equipementsConcernes" class="planning-equip-sub text-muted font-mono" style="font-size: 0.75rem; margin-top: 0.25rem;">
+              📦 {{ p.equipementsConcernes }}
+            </div>
+          </td>
           <td class="text-center">
             <span class="prio-tag" [class.prio-urgente]="p.priorite === 'URGENTE'">{{ p.priorite }}</span>
           </td>
@@ -193,6 +198,9 @@
 
         <div class="om-body">
           <div class="om-motif"><strong>Motif de la mission :</strong> {{ om.motifMission }}</div>
+          <div *ngIf="om.equipementsConcernes" class="om-equip-line" style="font-size: 0.85rem; margin: 0.25rem 0; color: #0369a1;">
+            📦 <strong>Équipements concernés :</strong> <span class="font-mono">{{ om.equipementsConcernes }}</span>
+          </div>
           <div class="om-date">Date et heure demandées par le SD TIC : <strong>{{ om.dateDemandee }}</strong></div>
 
           <!-- Section Réponse SD-Bâtiments -->

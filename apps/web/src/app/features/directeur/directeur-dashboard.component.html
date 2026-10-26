@@ -153,7 +153,7 @@
 
           <div class="rec-details-grid">
             <div class="detail-block">
-              <span class="detail-label">Emplacement & Matériel :</span>
+              <span class="detail-label">Emplacement & Synthèse :</span>
               <span class="detail-val">{{ rec.labo }} — <strong>{{ rec.equipement }}</strong></span>
             </div>
             <div class="detail-block">
@@ -161,6 +161,30 @@
               <span class="priority-pill" [class.prio-critique]="rec.criticite === 'CRITIQUE'">
                 {{ rec.criticite }}
               </span>
+            </div>
+          </div>
+
+          <!-- LISTE DÉTAILLÉE DU OU DES ÉQUIPEMENTS (Numéro de série obligatoire) -->
+          <div *ngIf="rec.equipements && rec.equipements.length > 0" class="equipements-included-box">
+            <div class="equipements-box-header">
+              <span class="box-tag">📦 Équipement(s) déclaré(s) ({{ rec.equipements.length }}) :</span>
+              <span class="box-hint">Traçabilité par numéro de série individuel</span>
+            </div>
+
+            <div class="equipements-cards-grid">
+              <div *ngFor="let eq of rec.equipements; let i = index" class="eq-subcard">
+                <div class="eq-subcard-head">
+                  <span class="eq-num">#{{ i + 1 }}</span>
+                  <span class="eq-type-badge">{{ eq.type }}</span>
+                  <span class="eq-sn-pill">S/N: <code>{{ eq.numeroSerie }}</code></span>
+                </div>
+                <div class="eq-subcard-body">
+                  <div class="eq-model">{{ eq.marqueModele || 'Matériel référencé' }}</div>
+                  <div class="eq-failure" *ngIf="eq.panneConstatee">
+                    <span class="failure-icon">⚠️</span> {{ eq.panneConstatee }}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -383,9 +407,9 @@
     </section>
   </div>
 
-  <!-- MODAL 1 : Nouvelle Réclamation avec N° DE SÉRIE OBLIGATOIRE -->
+  <!-- MODAL 1 : Nouvelle Réclamation avec 1 ou Liste d'Équipements (N° DE SÉRIE OBLIGATOIRE) -->
   <div *ngIf="showReclamationModal" class="modal-backdrop">
-    <div class="modal-card">
+    <div class="modal-card modal-card-wide">
       <div class="modal-header">
         <h3>
           {{ nouvelleReclamation.type === 'CONNECTIVITE' ? '🌐 Signaler une Coupure Réseau / Connexion' : '🚨 Déclarer une Panne Équipement' }}
@@ -394,59 +418,102 @@
       </div>
 
       <div class="modal-body">
-        <div class="form-group">
-          <label>Type de réclamation :</label>
-          <select [(ngModel)]="nouvelleReclamation.type" class="form-input">
-            <option value="PANNE_EQUIPEMENT">Panne Équipement Matériel (PC, Écran, Imprimante, Switch)</option>
-            <option value="CONNECTIVITE">Coupure Connectivité (Fibre Edunet, Routeur, Flybox)</option>
-          </select>
-        </div>
-
-        <!-- N° DE SÉRIE OBLIGATOIRE -->
-        <div class="form-group alert-group">
-          <label><span class="required-star">*</span> <strong>Numéro de Série du ou des Équipements (Obligatoire) :</strong></label>
-          <input type="text" 
-                 [(ngModel)]="nouvelleReclamation.numeroSerie" 
-                 placeholder="Ex: SN-DELL-883921 ou SN-SCR-4401-4405" 
-                 class="form-input font-mono font-bold" 
-                 required />
-        </div>
-
-        <div class="form-group">
-          <label>Titre de l'incident :</label>
-          <input type="text" 
-                 [(ngModel)]="nouvelleReclamation.titre" 
-                 placeholder="Ex: Coupure complète de connexion dans le labo 1" 
-                 class="form-input" />
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Type de réclamation :</label>
+            <select [(ngModel)]="nouvelleReclamation.type" class="form-input">
+              <option value="PANNE_EQUIPEMENT">Panne Matériel (PC, Écran, Imprimante, Switch...)</option>
+              <option value="CONNECTIVITE">Coupure Connectivité (Fibre Edunet, Routeur, Flybox)</option>
+            </select>
+          </div>
+          <div class="form-group flex-1">
+            <label>Laboratoire / Local :</label>
+            <input type="text" [(ngModel)]="nouvelleReclamation.labo" placeholder="Ex: Labo Info 1" class="form-input" />
+          </div>
         </div>
 
         <div class="form-row">
-          <div class="form-group flex-1">
-            <label>Laboratoire / Local :</label>
-            <input type="text" [(ngModel)]="nouvelleReclamation.labo" class="form-input" />
+          <div class="form-group flex-2">
+            <label>Titre de l'incident / Réclamation :</label>
+            <input type="text" 
+                   [(ngModel)]="nouvelleReclamation.titre" 
+                   placeholder="Ex: Pannes multiples suite à surtension électrique orageuse" 
+                   class="form-input" />
           </div>
           <div class="form-group flex-1">
             <label>Niveau de Criticité :</label>
             <select [(ngModel)]="nouvelleReclamation.criticite" class="form-input">
-              <option value="CRITIQUE">CRITIQUE (Bloque les cours / Bac)</option>
+              <option value="CRITIQUE">CRITIQUE (Bloque cours / Bac)</option>
               <option value="HAUTE">HAUTE (Urgente)</option>
               <option value="MOYENNE">MOYENNE (Normale)</option>
             </select>
           </div>
         </div>
 
-        <div class="form-group">
-          <label>Désignation équipement / circuit concerné :</label>
-          <input type="text" 
-                 [(ngModel)]="nouvelleReclamation.equipement" 
-                 placeholder="Ex: Circuit Fibre Edunet ou Dell OptiPlex 3080" 
-                 class="form-input" />
+        <!-- Section 1 ou Liste d'Équipements avec Numéros de Série -->
+        <div class="equipements-form-section">
+          <div class="section-title-row">
+            <div>
+              <span class="section-title">📦 Équipement(s) de la réclamation ({{ nouvelleReclamation.equipements.length }})</span>
+              <span class="section-desc">Vous pouvez inclure un seul équipement ou une liste d'équipements avec leur numéro de série unique.</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-primary-add" (click)="ajouterLigneEquipement()">
+              ➕ Ajouter un équipement
+            </button>
+          </div>
+
+          <div class="equipements-form-list">
+            <div *ngFor="let eq of nouvelleReclamation.equipements; let idx = index" class="equipement-form-row">
+              <div class="row-header">
+                <span class="row-index">Équipement #{{ idx + 1 }}</span>
+                <span class="badge-row-type">{{ eq.type }}</span>
+                <button *ngIf="nouvelleReclamation.equipements.length > 1" 
+                        type="button" 
+                        class="btn-remove-row" 
+                        (click)="supprimerLigneEquipement(idx)"
+                        title="Retirer cet équipement">
+                  🗑️ Retirer
+                </button>
+              </div>
+
+              <div class="row-inputs-grid">
+                <div class="form-group">
+                  <label>Type :</label>
+                  <select [(ngModel)]="eq.type" class="form-input">
+                    <option *ngFor="let t of equipementTypes" [value]="t">{{ t }}</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label>Marque & Modèle :</label>
+                  <input type="text" [(ngModel)]="eq.marqueModele" placeholder="Ex: Dell OptiPlex 3080" class="form-input" />
+                </div>
+
+                <div class="form-group alert-group">
+                  <label><span class="required-star">*</span> <strong>Numéro de Série (Obligatoire) :</strong></label>
+                  <input type="text" 
+                         [(ngModel)]="eq.numeroSerie" 
+                         placeholder="Ex: SN-DELL-884192" 
+                         class="form-input font-mono font-bold" 
+                         required />
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-top: 0.5rem;">
+                <label>Panne constatée sur cet équipement :</label>
+                <input type="text" 
+                       [(ngModel)]="eq.panneConstatee" 
+                       placeholder="Ex: Arrêt immédiat suite surtension, alimentation HS, écran sans signal..." 
+                       class="form-input" />
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="form-group checkbox-group">
+        <div class="form-group checkbox-group" style="margin-top: 1rem;">
           <label>
             <input type="checkbox" [(ngModel)]="nouvelleReclamation.bacPratique" />
-            <strong>Impact sur la préparation du Bac Pratique</strong> (priorité d'affectation véhicule SD TIC)
+            <strong>Impact sur la préparation du Bac Pratique</strong> (priorité d'affectation véhicule SD TIC & ordre de mission)
           </label>
         </div>
       </div>
@@ -455,8 +522,8 @@
         <button class="btn btn-secondary" (click)="showReclamationModal = false">Annuler</button>
         <button class="btn btn-danger-action" 
                 (click)="soumettreReclamation()" 
-                [disabled]="!nouvelleReclamation.titre.trim() || !nouvelleReclamation.numeroSerie.trim()">
-          📤 Envoyer au SD TIC
+                [disabled]="!nouvelleReclamation.titre.trim()">
+          📤 Envoyer au SD TIC ({{ nouvelleReclamation.equipements.length }} équipement{{ nouvelleReclamation.equipements.length > 1 ? 's' : '' }})
         </button>
       </div>
     </div>

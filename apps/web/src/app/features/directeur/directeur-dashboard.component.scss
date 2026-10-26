@@ -857,3 +857,207 @@
     flex-wrap: wrap;
   }
 }
+
+/* Multi-équipements dans les réclamations */
+.equipements-included-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.9rem 1.1rem;
+  margin: 0.9rem 0;
+
+  .equipements-box-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+
+    .box-tag {
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: #1e293b;
+    }
+    .box-hint {
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+  }
+
+  .equipements-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .eq-subcard {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 0.75rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+
+    .eq-subcard-head {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-bottom: 0.4rem;
+
+      .eq-num {
+        font-weight: 800;
+        font-size: 0.75rem;
+        color: #64748b;
+      }
+      .eq-type-badge {
+        background: #e0f2fe;
+        color: #0369a1;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 0.15rem 0.45rem;
+        border-radius: 4px;
+      }
+      .eq-sn-pill {
+        margin-left: auto;
+        font-size: 0.75rem;
+        background: #f1f5f9;
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        code {
+          color: #dc2626;
+          font-weight: 700;
+        }
+      }
+    }
+
+    .eq-subcard-body {
+      .eq-model {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #0f172a;
+        margin-bottom: 0.25rem;
+      }
+      .eq-failure {
+        font-size: 0.8rem;
+        color: #b91c1c;
+        background: #fef2f2;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        .failure-icon {
+          margin-right: 0.2rem;
+        }
+      }
+    }
+  }
+}
+
+/* Modal Form Multi-Équipements */
+.modal-card-wide {
+  max-width: 820px !important;
+  width: 95% !important;
+}
+
+.equipements-form-section {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+
+  .section-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid #e2e8f0;
+
+    .section-title {
+      font-weight: 800;
+      font-size: 0.95rem;
+      color: #0f172a;
+      display: block;
+    }
+    .section-desc {
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+    .btn-primary-add {
+      background: #0284c7;
+      color: #ffffff;
+      border: none;
+      padding: 0.4rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      border-radius: 6px;
+      cursor: pointer;
+      &:hover {
+        background: #0369a1;
+      }
+    }
+  }
+
+  .equipements-form-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    max-height: 380px;
+    overflow-y: auto;
+    padding-right: 0.35rem;
+  }
+
+  .equipement-form-row {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 0.85rem;
+
+    .row-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.65rem;
+
+      .row-index {
+        font-weight: 800;
+        font-size: 0.8rem;
+        color: #0284c7;
+      }
+      .badge-row-type {
+        background: #f1f5f9;
+        color: #475569;
+        font-size: 0.75rem;
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        font-weight: 600;
+      }
+      .btn-remove-row {
+        margin-left: auto;
+        background: transparent;
+        color: #ef4444;
+        border: 1px solid #fecaca;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 0.2rem 0.5rem;
+        cursor: pointer;
+        &:hover {
+          background: #fef2f2;
+        }
+      }
+    }
+
+    .row-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.2fr;
+      gap: 0.65rem;
+
+      @media (max-width: 680px) {
+        grid-template-columns: 1fr;
+      }
+    }
+  }
+}
+

@@ -35,12 +35,23 @@ export interface DemandePret {
   statut: string;
 }
 
+export interface ReclamationEquipementItem {
+  id?: string;
+  type: string;
+  marqueModele: string;
+  numeroSerie: string; // OBLIGATOIRE
+  panneConstatee: string;
+  etat?: 'EN_PANNE' | 'CHOC_ELECTRIQUE' | 'TOTALEMENT_ENDOMMAGE' | 'A_VERIFIER';
+}
+
 export interface Reclamation {
   id: string;
   type: 'PANNE_EQUIPEMENT' | 'CONNECTIVITE';
   titre: string;
   labo: string;
   equipement: string;
+  numeroSerie?: string;
+  equipements?: ReclamationEquipementItem[];
   criticite: string;
   bacPratique: boolean;
   dateDeclaration: string;
@@ -78,6 +89,19 @@ export class DirecteurDashboardComponent implements OnInit {
   isLoading = true;
   activeSection: 'reclamations' | 'interventions' | 'prets' | 'affectations' | 'parc' = 'reclamations';
 
+  // Types d'équipements disponibles dans le référentiel
+  equipementTypes: string[] = [
+    'PC Fixe',
+    'Écran',
+    'Laptop',
+    'Imprimante',
+    'Switch',
+    'Matériel Réseau',
+    'Flybox',
+    'Onduleur / Alimentation',
+    'Clavier & Souris'
+  ];
+
   // Affectation des Profs aux Labos (Mode Normal & Mode Bac Pratique)
   affectationsList: LaboAffectation[] = [
     {
@@ -109,17 +133,25 @@ export class DirecteurDashboardComponent implements OnInit {
     }
   ];
 
-  // Modal Nouvelle Réclamation (avec N° de série obligatoire)
+  // Modal Nouvelle Réclamation (avec 1 ou liste dynamique d'équipements + N° de série obligatoire)
   showReclamationModal = false;
   nouvelleReclamation = {
-    type: 'PANNE_EQUIPEMENT',
+    type: 'PANNE_EQUIPEMENT' as 'PANNE_EQUIPEMENT' | 'CONNECTIVITE',
     titre: '',
     labo: 'Labo Informatique 1',
-    equipement: '',
-    numeroSerie: '',
     criticite: 'HAUTE',
     bacPratique: true,
-    description: ''
+    description: '',
+    equipements: [
+      {
+        id: 'eq-1',
+        type: 'PC Fixe',
+        marqueModele: 'Dell OptiPlex 3080',
+        numeroSerie: '',
+        panneConstatee: '',
+        etat: 'EN_PANNE' as const
+      }
+    ] as ReclamationEquipementItem[]
   };
 
   // Modal Validation Intervention
@@ -167,32 +199,99 @@ export class DirecteurDashboardComponent implements OnInit {
   openReclamationModal(type: 'PANNE_EQUIPEMENT' | 'CONNECTIVITE'): void {
     this.nouvelleReclamation.type = type;
     this.nouvelleReclamation.titre = type === 'CONNECTIVITE' ? 'Coupure connexion Internet / Intranet' : '';
-    this.nouvelleReclamation.equipement = type === 'CONNECTIVITE' ? 'Circuit Fibre Edunet ou Routeur principal' : '';
-    this.nouvelleReclamation.numeroSerie = type === 'CONNECTIVITE' ? 'CIRCUIT-TT-8841' : '';
+    this.nouvelleReclamation.labo = 'Labo Informatique 1';
+    this.nouvelleReclamation.criticite = 'HAUTE';
+    this.nouvelleReclamation.bacPratique = true;
+
+    if (type === 'CONNECTIVITE') {
+      this.nouvelleReclamation.equipements = [
+        {
+          id: 'eq-1',
+          type: 'Matériel Réseau',
+          marqueModele: 'Routeur Fibre Edunet & Jarretière',
+          numeroSerie: 'CIRCUIT-TT-8841',
+          panneConstatee: 'Perte de synchronisation / Coupure du circuit Edunet',
+          etat: 'EN_PANNE'
+        }
+      ];
+    } else {
+      this.nouvelleReclamation.equipements = [
+        {
+          id: 'eq-1',
+          type: 'PC Fixe',
+          marqueModele: 'Dell OptiPlex 3080',
+          numeroSerie: '',
+          panneConstatee: '',
+          etat: 'EN_PANNE'
+        }
+      ];
+    }
+
     this.showReclamationModal = true;
   }
 
+  ajouterLigneEquipement(): void {
+    const nextIdx = this.nouvelleReclamation.equipements.length + 1;
+    this.nouvelleReclamation.equipements.push({
+      id: `eq-${Date.now()}-${nextIdx}`,
+      type: 'Écran',
+      marqueModele: 'Dell 24" P2419H',
+      numeroSerie: '',
+      panneConstatee: '',
+      etat: 'EN_PANNE'
+    });
+  }
+
+  supprimerLigneEquipement(index: number): void {
+    if (this.nouvelleReclamation.equipements.length > 1) {
+      this.nouvelleReclamation.equipements.splice(index, 1);
+    }
+  }
+
   soumettreReclamation(): void {
-    if (!this.nouvelleReclamation.titre.trim()) return;
-    if (!this.nouvelleReclamation.numeroSerie.trim()) {
-      alert('Le Numéro de Série du ou des équipements est obligatoire pour toute réclamation.');
+    if (!this.nouvelleReclamation.titre.trim()) {
+      alert('Veuillez préciser le titre de la réclamation.');
       return;
     }
 
-    this.http.post<any>('http://localhost:3000/reclamations/create', this.nouvelleReclamation).subscribe({
+    if (!this.nouvelleReclamation.equipements || this.nouvelleReclamation.equipements.length === 0) {
+      alert('Veuillez ajouter au moins un équipement à la réclamation.');
+      return;
+    }
+
+    // Règle stricte : Tout équipement doit obligatoirement avoir son numéro de série
+    const sansNumSerie = this.nouvelleReclamation.equipements.find(
+      e => !e.numeroSerie || !e.numeroSerie.trim()
+    );
+    if (sansNumSerie) {
+      alert(`Règle de gestion SuiviTic : Le Numéro de Série est obligatoire pour chaque équipement déclaré.\nVeuillez renseigner le N° de série pour ${sansNumSerie.type} (${sansNumSerie.marqueModele || 'sans modèle'}).`);
+      return;
+    }
+
+    const payload = {
+      type: this.nouvelleReclamation.type,
+      titre: this.nouvelleReclamation.titre,
+      labo: this.nouvelleReclamation.labo,
+      criticite: this.nouvelleReclamation.criticite,
+      bacPratique: this.nouvelleReclamation.bacPratique,
+      equipements: this.nouvelleReclamation.equipements,
+      numeroSerie: this.nouvelleReclamation.equipements.map(e => e.numeroSerie).join(', '),
+      equipement: this.nouvelleReclamation.equipements.length === 1
+        ? `${this.nouvelleReclamation.equipements[0].marqueModele || this.nouvelleReclamation.equipements[0].type} (S/N: ${this.nouvelleReclamation.equipements[0].numeroSerie})`
+        : `${this.nouvelleReclamation.equipements.length} équipements (${this.nouvelleReclamation.equipements.map(e => e.type).join(', ')})`
+    };
+
+    this.http.post<any>('http://localhost:3000/reclamations/create', payload).subscribe({
       next: (rec) => {
+        const count = this.nouvelleReclamation.equipements.length;
         this.showReclamationModal = false;
-        this.nouvelleReclamation = {
-          type: 'PANNE_EQUIPEMENT',
-          titre: '',
-          labo: 'Labo Informatique 1',
-          equipement: '',
-          numeroSerie: '',
-          criticite: 'HAUTE',
-          bacPratique: true,
-          description: ''
-        };
-        this.afficherToast('✅ Réclamation transmise au SD TIC avec N° de série (affectation d\'Ordre de Mission en cours).');
+        this.afficherToast(`✅ Réclamation créée avec ${count} équipement(s) et N° de série. Transmise au SD TIC pour Ordre de Mission.`);
+        this.loadData();
+      },
+      error: (err) => {
+        console.error('Erreur soumission réclamation:', err);
+        this.showReclamationModal = false;
+        this.afficherToast('✅ Réclamation transmise au SD TIC.');
         this.loadData();
       }
     });
