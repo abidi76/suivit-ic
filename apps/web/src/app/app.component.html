@@ -1,37 +1,74 @@
 <div class="app-shell">
   <header class="app-topbar">
     <div class="topbar-left">
-      <div class="brand-block">
+      <div class="brand-block" routerLink="/login">
         <span class="flag-icon">🇹🇳</span>
         <div class="brand-text">
           <span class="brand-app">SuiviTic</span>
-          <span class="brand-desc">Ministère de l'Éducation · CRE Manouba</span>
+          <span class="brand-desc">Ministère de l'Éducation · République Tunisienne</span>
         </div>
       </div>
 
-      <nav class="main-nav">
-        <a routerLink="/dashboard" routerLinkActive="nav-active" class="nav-link">
-          📊 Supervision Régionale (SD TIC)
-        </a>
-        <a routerLink="/directeur" routerLinkActive="nav-active" class="nav-link nav-highlight">
-          🏫 Espace Directeur d'Établissement
-        </a>
-        <a routerLink="/interventions" routerLinkActive="nav-active" class="nav-link">
-          🔧 Interventions & Maintenance
-        </a>
+      <!-- Navigation spécifique et exclusive au rôle connecté (Règle d'isolation hiérarchique) -->
+      <nav *ngIf="currentUser$ | async as user" class="main-nav">
+        <!-- Rôle Admin Central & Adjoint -->
+        <ng-container *ngIf="user.role === 'ADMIN_CENTRAL' || user.role === 'ADMIN_ADJOINT'">
+          <a routerLink="/admin-central" routerLinkActive="nav-active" class="nav-link">
+            👑 Supervision Nationale (Tous CRE)
+          </a>
+        </ng-container>
+
+        <!-- Rôle SD TIC / Directeur TIC -->
+        <ng-container *ngIf="user.role === 'SD_TIC'">
+          <a routerLink="/sd-tic" routerLinkActive="nav-active" class="nav-link">
+            🏢 Supervision CRE Manouba (Tous Établissements)
+          </a>
+          <a routerLink="/interventions" routerLinkActive="nav-active" class="nav-link">
+            🔧 Interventions & Maintenance
+          </a>
+        </ng-container>
+
+        <!-- Rôle Directeur d'Établissement -->
+        <ng-container *ngIf="user.role === 'DIRECTEUR'">
+          <a routerLink="/directeur" routerLinkActive="nav-active" class="nav-link">
+            🏫 Mon Établissement (Lycée Ibn Abi Dhiaf)
+          </a>
+        </ng-container>
+
+        <!-- Rôle Prof Responsable de Labo -->
+        <ng-container *ngIf="user.role === 'PROF_LABO'">
+          <a routerLink="/prof" routerLinkActive="nav-active" class="nav-link">
+            👨‍🏫 Mon Laboratoire & Bac Pratique
+          </a>
+        </ng-container>
+
+        <!-- Rôle Technicien Mobile -->
+        <ng-container *ngIf="user.role === 'TECHNICIEN'">
+          <a routerLink="/technicien" routerLinkActive="nav-active" class="nav-link">
+            🔧 Mes Missions & Ordres de Mission
+          </a>
+        </ng-container>
       </nav>
     </div>
 
     <div class="topbar-right">
-      <div class="profile-switcher">
-        <span class="role-badge">Session active</span>
+      <div *ngIf="currentUser$ | async as user" class="user-session-block">
         <div class="user-profile-badge">
-          <div class="user-avatar">👤</div>
+          <div class="user-avatar">{{ user.avatar }}</div>
           <div class="user-details">
-            <span class="user-name">M. Moncef Ben Salem</span>
-            <span class="user-role">Directeur · Lycée Ibn Abi Dhiaf</span>
+            <span class="user-name">{{ user.prenom }} {{ user.nom }}</span>
+            <span class="user-role">{{ user.roleLabel }}</span>
+            <span class="user-scope">{{ user.perimetre }}</span>
           </div>
         </div>
+
+        <button class="btn-logout" (click)="logout()" title="Se déconnecter ou changer de rôle">
+          🔄 Changer de compte
+        </button>
+      </div>
+
+      <div *ngIf="!(currentUser$ | async)" class="guest-session-block">
+        <a routerLink="/login" class="btn-login-link">Connexion</a>
       </div>
     </div>
   </header>

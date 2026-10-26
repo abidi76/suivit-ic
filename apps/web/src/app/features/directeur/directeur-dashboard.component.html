@@ -44,8 +44,8 @@
     <!-- Barre d'actions prioritaires pour le Directeur (Seul émetteur des réclamations) -->
     <div class="director-action-bar">
       <div class="action-bar-label">
-        <span class="label-title">Gestionnaire de l'Établissement</span>
-        <span class="label-sub">Déclaration officielle des incidents auprès de la Sous-Direction TIC</span>
+        <span class="label-title">Espace Directeur d'Établissement</span>
+        <span class="label-sub">Gestion des profs, préparation Bac, prêts et transmission des réclamations au SD TIC</span>
       </div>
       <div class="action-buttons-group">
         <button class="btn btn-danger-action" (click)="openReclamationModal('PANNE_EQUIPEMENT')">
@@ -82,20 +82,20 @@
 
       <div class="kpi-mini-card">
         <div class="kpi-mini-top">
-          <span>RÉCLAMATIONS EN COURS</span>
+          <span>RÉCLAMATIONS AU SD TIC</span>
           <span class="icon">📋</span>
         </div>
         <div class="kpi-mini-val">{{ data.reclamations.length }}</div>
-        <div class="kpi-mini-sub">Suivi SD TIC & Ordres de mission</div>
+        <div class="kpi-mini-sub">Suivi Ordres de mission & Véhicules</div>
       </div>
 
       <div class="kpi-mini-card">
         <div class="kpi-mini-top">
-          <span>PRÊTS & EMPRUNTS</span>
-          <span class="icon">🔄</span>
+          <span>LABOS BAC PRATIQUE</span>
+          <span class="icon">🎯</span>
         </div>
-        <div class="kpi-mini-val">{{ data.demandesPrets.length }}</div>
-        <div class="kpi-mini-sub">Équipements & Flybox Bac Pratique</div>
+        <div class="kpi-mini-val text-success">{{ affectationsList.length }}</div>
+        <div class="kpi-mini-sub">Salles équipées & affectées</div>
       </div>
     </div>
 
@@ -104,6 +104,9 @@
       <button class="nav-tab" [class.active]="activeSection === 'reclamations'" (click)="activeSection = 'reclamations'">
         📋 Réclamations & Traitement SD TIC ({{ data.reclamations.length }})
       </button>
+      <button class="nav-tab" [class.active]="activeSection === 'affectations'" (click)="activeSection = 'affectations'">
+        👥 Affectation Profs & Validation Labos Bac ({{ affectationsList.length }})
+      </button>
       <button class="nav-tab" [class.active]="activeSection === 'interventions'" (click)="activeSection = 'interventions'">
         ✍️ Interventions Technicien à Valider
         <span *ngIf="data.interventionsAValider.length > 0" class="badge-count">
@@ -111,7 +114,7 @@
         </span>
       </button>
       <button class="nav-tab" [class.active]="activeSection === 'prets'" (click)="activeSection = 'prets'">
-        🤝 Demandes d'Emprunts & Flybox ({{ data.demandesPrets.length }})
+        🤝 Demandes d'Emprunts & Accords ({{ data.demandesPrets.length }})
       </button>
       <button class="nav-tab" [class.active]="activeSection === 'parc'" (click)="activeSection = 'parc'">
         🏢 Parc Informatique & Salles
@@ -203,13 +206,64 @@
       </div>
     </section>
 
-    <!-- SECTION 2 : Interventions Technicien à Valider -->
+    <!-- SECTION 2 : AFFECTATION DES PROFS & PRÉPARATION BAC PRATIQUE -->
+    <section *ngIf="activeSection === 'affectations'" class="content-panel">
+      <div class="panel-header">
+        <div>
+          <h3>Affectation des Professeurs aux Laboratoires & Validation Bac Pratique</h3>
+          <p class="panel-desc">
+            Règle : <em>« Le Directeur affecte les profs au labo en mode normal et en période de préparation Bac Pratique pour installation, formatage et préparation des labos. Après les travaux du prof, le Directeur valide officiellement. »</em>
+          </p>
+        </div>
+      </div>
+
+      <div class="affectations-list">
+        <div *ngFor="let aff of affectationsList" class="affectation-card">
+          <div class="aff-head">
+            <div class="aff-title-wrap">
+              <span class="aff-icon">🖥️</span>
+              <h4 class="aff-lab-name">{{ aff.labo }}</h4>
+            </div>
+            <div class="aff-status-badge" [class.badge-validated]="aff.bacValideParDirecteur">
+              {{ aff.bacValideParDirecteur ? '✅ Labo Validé Conforme par le Directeur' : '⏳ Travaux en cours / À valider' }}
+            </div>
+          </div>
+
+          <div class="aff-grid">
+            <div class="aff-col">
+              <span class="col-lbl">Professeur Responsable Titulaire (Mode Normal) :</span>
+              <span class="col-val font-bold">👨‍🏫 {{ aff.profTitulaire }}</span>
+            </div>
+            <div class="aff-col">
+              <span class="col-lbl">Professeur(s) Missionné(s) Bac Pratique :</span>
+              <span class="col-val font-bold text-primary">🎯 {{ aff.profBacPratique }}</span>
+            </div>
+          </div>
+
+          <div class="aff-tasks-box">
+            <strong>Missions de préparation Bac confiées :</strong>
+            <p>« {{ aff.tachesBac }} »</p>
+          </div>
+
+          <div class="aff-footer-actions">
+            <button class="btn btn-sm btn-secondary" (click)="ouvrirModificationAffectation(aff)">
+              ✏️ Modifier l'affectation
+            </button>
+            <button *ngIf="!aff.bacValideParDirecteur" class="btn btn-sm btn-success" (click)="validerConformiteLaboBac(aff)">
+              ✍️ Valider la Conformité du Labo pour le Bac Pratique
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3 : Interventions Technicien à Valider -->
     <section *ngIf="activeSection === 'interventions'" class="content-panel">
       <div class="panel-header">
         <div>
           <h3>Validation des Interventions Réalisées (Règle 7.7 & 14.2)</h3>
           <p class="panel-desc">
-            Le Directeur d'établissement examine le rapport de travail, valide la remise en service et attribue une note de satisfaction.
+            Le Directeur d'établissement examine le rapport de travail, valide la remise en service et attribue une note de satisfaction de 1 à 5.
           </p>
         </div>
       </div>
@@ -249,13 +303,13 @@
       </div>
     </section>
 
-    <!-- SECTION 3 : Demandes d'Emprunts & Prêts (Équipements & Flybox) -->
+    <!-- SECTION 4 : Demandes d'Emprunts & Prêts (Équipements & Flybox) -->
     <section *ngIf="activeSection === 'prets'" class="content-panel">
       <div class="panel-header">
         <div>
-          <h3>Prêts d'Équipements & Connexions Flybox (Sections 9 & 10)</h3>
+          <h3>Gestion des Emprunts pour Bac Pratique (Demande / Accord)</h3>
           <p class="panel-desc">
-            Gestion des transferts inter-établissements validés par le Superviseur SD TIC dans le cadre du Bac Pratique ou de renforts.
+            Prêts d'équipements et de Flybox sous forme de demande officielle et accord entre directeurs sous l'autorité du Superviseur SD TIC.
           </p>
         </div>
         <button class="btn btn-sm btn-primary" (click)="showPretModal = true">
@@ -287,7 +341,7 @@
             <!-- Actions pour le directeur si demande reçue -->
             <div *ngIf="p.direction === 'RECU' && p.statut === 'EN_ATTENTE_REPONSE_DIRECTEUR'" class="pret-actions">
               <button class="btn btn-sm btn-success" (click)="repondrePret(p.id, true)">
-                ✅ Accepter le prêt
+                ✅ Donner l'Accord de Prêt
               </button>
               <button class="btn btn-sm btn-danger" (click)="repondrePret(p.id, false)">
                 ❌ Refuser
@@ -298,7 +352,7 @@
       </div>
     </section>
 
-    <!-- SECTION 4 : Parc de l'établissement -->
+    <!-- SECTION 5 : Parc de l'établissement -->
     <section *ngIf="activeSection === 'parc'" class="content-panel">
       <div class="panel-header">
         <div>
@@ -329,7 +383,7 @@
     </section>
   </div>
 
-  <!-- MODAL 1 : Nouvelle Réclamation Panne ou Connectivité -->
+  <!-- MODAL 1 : Nouvelle Réclamation avec N° DE SÉRIE OBLIGATOIRE -->
   <div *ngIf="showReclamationModal" class="modal-backdrop">
     <div class="modal-card">
       <div class="modal-header">
@@ -346,6 +400,16 @@
             <option value="PANNE_EQUIPEMENT">Panne Équipement Matériel (PC, Écran, Imprimante, Switch)</option>
             <option value="CONNECTIVITE">Coupure Connectivité (Fibre Edunet, Routeur, Flybox)</option>
           </select>
+        </div>
+
+        <!-- N° DE SÉRIE OBLIGATOIRE -->
+        <div class="form-group alert-group">
+          <label><span class="required-star">*</span> <strong>Numéro de Série du ou des Équipements (Obligatoire) :</strong></label>
+          <input type="text" 
+                 [(ngModel)]="nouvelleReclamation.numeroSerie" 
+                 placeholder="Ex: SN-DELL-883921 ou SN-SCR-4401-4405" 
+                 class="form-input font-mono font-bold" 
+                 required />
         </div>
 
         <div class="form-group">
@@ -375,7 +439,7 @@
           <label>Désignation équipement / circuit concerné :</label>
           <input type="text" 
                  [(ngModel)]="nouvelleReclamation.equipement" 
-                 placeholder="Ex: Circuit Fibre Edunet ou N° Série Matériel" 
+                 placeholder="Ex: Circuit Fibre Edunet ou Dell OptiPlex 3080" 
                  class="form-input" />
         </div>
 
@@ -391,14 +455,46 @@
         <button class="btn btn-secondary" (click)="showReclamationModal = false">Annuler</button>
         <button class="btn btn-danger-action" 
                 (click)="soumettreReclamation()" 
-                [disabled]="!nouvelleReclamation.titre.trim()">
+                [disabled]="!nouvelleReclamation.titre.trim() || !nouvelleReclamation.numeroSerie.trim()">
           📤 Envoyer au SD TIC
         </button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL 2 : Validation d'Intervention avec Note 1-5 -->
+  <!-- MODAL 2 : Modification Affectation Prof -->
+  <div *ngIf="selectedAffectation" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Affectation Enseignants — {{ selectedAffectation.labo }}</h3>
+        <button class="modal-close" (click)="selectedAffectation = null">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Professeur Responsable Titulaire (Mode Normal) :</label>
+          <input type="text" [(ngModel)]="editProfTitulaire" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label>Professeur(s) Affecté(s) en Période Bac Pratique :</label>
+          <input type="text" [(ngModel)]="editProfBac" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label>Tâches confiées (installation, formatage, tests) :</label>
+          <textarea [(ngModel)]="editTachesBac" rows="3" class="form-input"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="selectedAffectation = null">Annuler</button>
+        <button class="btn btn-primary" (click)="enregistrerAffectation()">
+          💾 Enregistrer l'Affectation
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3 : Validation d'Intervention avec Note 1-5 -->
   <div *ngIf="selectedIntervention" class="modal-backdrop">
     <div class="modal-card">
       <div class="modal-header">
@@ -440,7 +536,7 @@
     </div>
   </div>
 
-  <!-- MODAL 3 : Demande de prêt / Flybox -->
+  <!-- MODAL 4 : Demande de prêt / Flybox -->
   <div *ngIf="showPretModal" class="modal-backdrop">
     <div class="modal-card">
       <div class="modal-header">

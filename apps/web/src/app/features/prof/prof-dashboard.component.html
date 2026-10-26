@@ -1,0 +1,284 @@
+<div class="prof-container">
+  <!-- Toast -->
+  <div *ngIf="toastMessage" class="toast-notification">
+    {{ toastMessage }}
+  </div>
+
+  <!-- Header Prof Labo -->
+  <header class="prof-header">
+    <div class="prof-header-left">
+      <span class="prof-icon">👨‍🏫</span>
+      <div>
+        <div class="sup-title">{{ etablissementNom }}</div>
+        <h1 class="main-title">{{ laboNom }}</h1>
+        <div class="user-info">
+          Prof Responsable : <strong>{{ currentUser?.prenom }} {{ currentUser?.nom }}</strong> · Périmètre restreint à ce laboratoire
+        </div>
+      </div>
+    </div>
+
+    <div class="prof-header-right">
+      <div class="lab-badge">
+        <span>Laboratoire Informatique Pédagogique & Bac Pratique</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Onglets -->
+  <div class="prof-tabs">
+    <button class="prof-tab-btn" [class.active]="activeTab === 'inventaire'" (click)="activeTab = 'inventaire'">
+      🖥️ Équipements du Labo ({{ equipementsList.length }})
+    </button>
+    <button class="prof-tab-btn" [class.active]="activeTab === 'bac-pratique'" (click)="activeTab = 'bac-pratique'">
+      🎯 Préparation Bac Pratique & Engagement
+    </button>
+    <button class="prof-tab-btn" [class.active]="activeTab === 'declarations'" (click)="activeTab = 'declarations'">
+      ⚡ Déclarations Pannes, Chocs Électriques & Pertes ({{ declarationsList.length }})
+    </button>
+    <button class="prof-tab-btn" [class.active]="activeTab === 'arrivage'" (click)="activeTab = 'arrivage'">
+      📦 Validation Réception Arrivage
+      <span *ngIf="!arrivageEnAttente.confirmeParProf" class="badge-dot">!</span>
+    </button>
+  </div>
+
+  <!-- ONGLET 1 : ÉQUIPEMENTS DU LABO -->
+  <div *ngIf="activeTab === 'inventaire'" class="prof-panel">
+    <div class="panel-header-row">
+      <h3>Matériels inventoriés dans le {{ laboNom }}</h3>
+      <div class="quick-actions">
+        <button class="btn btn-warning-action" (click)="ouvrirModalDeclaration('CHOC_ELECTRIQUE')">
+          ⚡ Déclarer Dégât Surtension / Choc Électrique
+        </button>
+        <button class="btn btn-danger-action" (click)="ouvrirModalDeclaration('PANNE')">
+          ⚠️ Signaler Panne Équipement
+        </button>
+      </div>
+    </div>
+
+    <table class="prof-table">
+      <thead>
+        <tr>
+          <th>Poste / Emplacement</th>
+          <th>Type de Matériel</th>
+          <th>Marque & Modèle</th>
+          <th>Numéro de Série (Unique)</th>
+          <th class="text-center">État Fonctionnel</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let eq of equipementsList">
+          <td class="font-bold">📍 {{ eq.posteNumero }}</td>
+          <td>{{ eq.type }}</td>
+          <td>{{ eq.marque }}</td>
+          <td class="font-mono text-primary font-bold">{{ eq.numeroSerie }}</td>
+          <td class="text-center">
+            <span class="status-pill" 
+                  [class.pill-ok]="eq.etat === 'FONCTIONNEL'"
+                  [class.pill-ko]="eq.etat === 'EN_PANNE' || eq.etat === 'ENDOMMAGE_CHOC'">
+              {{ eq.etat }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ONGLET 2 : PRÉPARATION DU BAC PRATIQUE -->
+  <div *ngIf="activeTab === 'bac-pratique'" class="prof-panel">
+    <div class="panel-header-row">
+      <div>
+        <h3>Engagement & Préparation du Laboratoire pour le Bac Pratique</h3>
+        <p class="panel-sub">
+          Règle : <em>« Le prof valide l'engagement de préparation du labo (installation logicielle, formatage) et après les travaux, le Directeur valide. »</em>
+        </p>
+      </div>
+    </div>
+
+    <div class="bac-prep-card">
+      <div class="prep-status-header">
+        <div class="prep-title">État d'avancement de la salle :</div>
+        <div class="prep-badge" [class.badge-pending]="!bacEngagement.valideDirecteur">
+          {{ bacEngagement.valideDirecteur ? '✅ Labo Validé Conforme par le Directeur' : '⏳ Engagement Soumis — En attente de validation par le Directeur' }}
+        </div>
+      </div>
+
+      <div class="prep-checklist">
+        <div class="check-item">
+          <span class="icon">✓</span>
+          <span>Postes requis : <strong>{{ bacEngagement.totalPostesRequis }}</strong> · Postes installés et testés : <strong>{{ bacEngagement.postesPrets }}</strong></span>
+        </div>
+        <div class="check-item">
+          <span class="icon">✓</span>
+          <span>Environnement logiciel officiel installé (Python 3, VS Code, SGBD MySQL, Thonny)</span>
+        </div>
+        <div class="check-item">
+          <span class="icon">✓</span>
+          <span>Réseau local configuré et isolé selon les directives d'examen</span>
+        </div>
+      </div>
+
+      <div class="prep-comment-box">
+        <strong>Observation du Professeur Responsable :</strong>
+        <p>« {{ bacEngagement.commentaire }} »</p>
+        <span class="text-muted">Transmis le : {{ bacEngagement.dateSoumission }}</span>
+      </div>
+
+      <div class="prep-actions">
+        <button class="btn btn-primary" (click)="soumettreEngagementBac()">
+          🔄 Réévaluer et Mettre à jour l'Engagement de Préparation
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ONGLET 3 : DÉCLARATIONS PANNES, CHOCS ÉLECTRIQUES & PERTES -->
+  <div *ngIf="activeTab === 'declarations'" class="prof-panel">
+    <div class="panel-header-row">
+      <div>
+        <h3>Déclarations Officielles (Directeur & Inspecteur Pédagogique)</h3>
+        <p class="panel-sub">
+          Règle : <em>« Le prof déclare les pannes, les pertes et équipements endommagés (notamment en cas de choc électrique ou surtension) au bénéfice du Directeur et de son Inspecteur. Tout document doit contenir le N° de série. »</em>
+        </p>
+      </div>
+      <div class="quick-actions">
+        <button class="btn btn-warning-action" (click)="ouvrirModalDeclaration('CHOC_ELECTRIQUE')">
+          ⚡ Déclarer Choc Électrique
+        </button>
+        <button class="btn btn-danger-action" (click)="ouvrirModalDeclaration('PERTE')">
+          📁 Déclarer Perte (avec PV)
+        </button>
+      </div>
+    </div>
+
+    <div class="declarations-list">
+      <div *ngFor="let dec of declarationsList" class="dec-card" [class.choc-alert]="dec.type === 'CHOC_ELECTRIQUE'">
+        <div class="dec-top">
+          <span class="dec-id">{{ dec.id }}</span>
+          <span class="dec-type" [class.type-choc]="dec.type === 'CHOC_ELECTRIQUE'" [class.type-perte]="dec.type === 'PERTE'">
+            {{ dec.type === 'CHOC_ELECTRIQUE' ? '⚡ CHOC ÉLECTRIQUE / SURTENSION' : (dec.type === 'PERTE' ? '📁 PERTE MATÉRIEL' : '⚠️ PANNE') }}
+          </span>
+          <span class="dec-date">Date : {{ dec.date | date:'dd/MM/yyyy' }}</span>
+        </div>
+
+        <h4 class="dec-title">{{ dec.equipementNom }}</h4>
+        <div class="dec-sn">
+          Numéro de Série (Obligatoire) : <strong class="font-mono">{{ dec.numeroSerie }}</strong>
+        </div>
+
+        <div class="dec-desc">
+          <strong>Constat & Circonstances :</strong>
+          <p>« {{ dec.description }} »</p>
+        </div>
+
+        <div class="dec-footer">
+          <span>Destinataires notifiés : <strong>{{ dec.destinataires }}</strong></span>
+          <span class="badge-status">Statut : {{ dec.statut }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ONGLET 4 : VALIDATION RÉCEPTION ARRIVAGE -->
+  <div *ngIf="activeTab === 'arrivage'" class="prof-panel">
+    <div class="panel-header-row">
+      <div>
+        <h3>Validation de la Réception Matérielle (3ème Confirmation)</h3>
+        <p class="panel-sub">
+          Règle : <em>« Trois confirmations requises : Sous-Directeur TIC, Directeur et Prof responsable. Le matériel ne passe à "fonctionnel" qu'après confirmation physique par le prof. »</em>
+        </p>
+      </div>
+    </div>
+
+    <div class="arrivage-box">
+      <div class="arr-header">
+        <span class="arr-code">{{ arrivageEnAttente.numero }}</span>
+        <span class="arr-bl">Bon de Livraison : {{ arrivageEnAttente.bonLivraison }}</span>
+      </div>
+
+      <h4>{{ arrivageEnAttente.designation }}</h4>
+
+      <div class="arr-items-list">
+        <h5>Matériels livrés dans votre salle :</h5>
+        <ul>
+          <li *ngFor="let eq of arrivageEnAttente.equipements">
+            {{ eq.type }} - {{ eq.modele }} · Numéro de série : <strong class="font-mono">{{ eq.sn }}</strong>
+          </li>
+        </ul>
+      </div>
+
+      <div class="confirmations-progress">
+        <div class="step step-ok">1. Sous-Directeur TIC : Confirmé ✓</div>
+        <div class="step step-ok">2. Directeur d'Établissement : Confirmé ✓</div>
+        <div class="step" [class.step-ok]="arrivageEnAttente.confirmeParProf" [class.step-waiting]="!arrivageEnAttente.confirmeParProf">
+          3. Prof Responsable de Labo : {{ arrivageEnAttente.confirmeParProf ? 'Confirmé ✓' : 'En attente de votre signature' }}
+        </div>
+      </div>
+
+      <div class="arr-actions">
+        <button *ngIf="!arrivageEnAttente.confirmeParProf" class="btn btn-success" (click)="validerReceptionArrivage()">
+          ✍️ Confirmer la Réception Conforme du Matériel dans le Labo
+        </button>
+        <div *ngIf="arrivageEnAttente.confirmeParProf" class="confirmed-msg">
+          ✅ Réception confirmée par le Professeur Responsable. Les équipements sont désormais opérationnels.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL NOUVELLE DÉCLARATION -->
+  <div *ngIf="showDeclarationModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>
+          {{ nouvelleDeclaration.type === 'CHOC_ELECTRIQUE' ? '⚡ Déclaration de Dégât Surtension / Choc Électrique' : 'Signaler Panne ou Perte' }}
+        </h3>
+        <button class="modal-close" (click)="showDeclarationModal = false">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group alert-box">
+          <label><span class="required-star">*</span> <strong>Numéro de Série de l'Équipement (Strictement Obligatoire) :</strong></label>
+          <input type="text" 
+                 [(ngModel)]="nouvelleDeclaration.numeroSerie" 
+                 placeholder="Ex: SN-DELL-3080-03" 
+                 class="form-control font-mono font-bold" />
+        </div>
+
+        <div class="form-group">
+          <label>Désignation / Emplacement du matériel :</label>
+          <input type="text" 
+                 [(ngModel)]="nouvelleDeclaration.equipementNom" 
+                 placeholder="Ex: PC Fixe Dell - Poste Élève 03" 
+                 class="form-control" />
+        </div>
+
+        <div class="form-group">
+          <label><span class="required-star">*</span> Constat détaillé (surtension, dommage irrécupérable, panne) :</label>
+          <textarea [(ngModel)]="nouvelleDeclaration.description" 
+                    rows="3" 
+                    placeholder="Précisez la date de survenue, les manifestations (odeur de brûlé, arrêt net suite orage, choc électrique...)" 
+                    class="form-control"></textarea>
+        </div>
+
+        <div *ngIf="nouvelleDeclaration.type === 'PERTE'" class="form-group">
+          <label>Référence Procès-Verbal de justification (PV obligatoire pour perte) :</label>
+          <input type="text" 
+                 [(ngModel)]="nouvelleDeclaration.justificatifPvNom" 
+                 placeholder="Ex: PV-POLICE-MANOUBA-8841.pdf" 
+                 class="form-control" />
+        </div>
+
+        <div class="destinataires-note">
+          📢 <em>Cette déclaration sera transmise simultanément au <strong>Directeur d'Établissement</strong> et à l'<strong>Inspecteur Pédagogique TIC</strong>.</em>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showDeclarationModal = false">Annuler</button>
+        <button class="btn btn-primary" (click)="soumettreDeclaration()">
+          📤 Transmettre la Déclaration Officielle
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

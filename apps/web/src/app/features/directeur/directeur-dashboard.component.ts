@@ -56,6 +56,16 @@ export interface Reclamation {
   rapportTechnicien?: string | null;
 }
 
+export interface LaboAffectation {
+  id: string;
+  labo: string;
+  profTitulaire: string;
+  profBacPratique: string;
+  tachesBac: string;
+  etatPreparationBac: 'NON_COMMENCE' | 'ENGAGEMENT_SOUMIS' | 'VALIDE_CONFORME';
+  bacValideParDirecteur: boolean;
+}
+
 @Component({
   selector: 'app-directeur-dashboard',
   standalone: true,
@@ -66,15 +76,47 @@ export interface Reclamation {
 export class DirecteurDashboardComponent implements OnInit {
   data: any = null;
   isLoading = true;
-  activeSection: 'reclamations' | 'interventions' | 'prets' | 'parc' = 'reclamations';
+  activeSection: 'reclamations' | 'interventions' | 'prets' | 'affectations' | 'parc' = 'reclamations';
 
-  // Modal Nouvelle Réclamation
+  // Affectation des Profs aux Labos (Mode Normal & Mode Bac Pratique)
+  affectationsList: LaboAffectation[] = [
+    {
+      id: 'AFF-01',
+      labo: 'Laboratoire Informatique 1',
+      profTitulaire: 'Sami Mansour',
+      profBacPratique: 'Sami Mansour & Amel Ben Ali',
+      tachesBac: 'Formatage certifié, installation Python 3 & MySQL, vérification 24 postes',
+      etatPreparationBac: 'ENGAGEMENT_SOUMIS',
+      bacValideParDirecteur: false
+    },
+    {
+      id: 'AFF-02',
+      labo: 'Laboratoire Informatique 2 (Salle Examen)',
+      profTitulaire: 'Monia Khelifi',
+      profBacPratique: 'Monia Khelifi',
+      tachesBac: 'Installation master image, isolation réseau Internet, test imprimante locale',
+      etatPreparationBac: 'VALIDE_CONFORME',
+      bacValideParDirecteur: true
+    },
+    {
+      id: 'AFF-03',
+      labo: 'Salle Réseau & Multimédia',
+      profTitulaire: 'Hichem Saidi',
+      profBacPratique: 'Hichem Saidi',
+      tachesBac: 'Câblage secours et configuration Flybox 4G pour le centre de tirage',
+      etatPreparationBac: 'NON_COMMENCE',
+      bacValideParDirecteur: false
+    }
+  ];
+
+  // Modal Nouvelle Réclamation (avec N° de série obligatoire)
   showReclamationModal = false;
   nouvelleReclamation = {
     type: 'PANNE_EQUIPEMENT',
     titre: '',
     labo: 'Labo Informatique 1',
     equipement: '',
+    numeroSerie: '',
     criticite: 'HAUTE',
     bacPratique: true,
     description: ''
@@ -93,6 +135,12 @@ export class DirecteurDashboardComponent implements OnInit {
     periode: 'Mai 2026',
     cibleNom: 'CRE Manouba'
   };
+
+  // Modal Modification Affectation Prof
+  selectedAffectation: LaboAffectation | null = null;
+  editProfTitulaire = '';
+  editProfBac = '';
+  editTachesBac = '';
 
   successToast = '';
 
@@ -120,11 +168,16 @@ export class DirecteurDashboardComponent implements OnInit {
     this.nouvelleReclamation.type = type;
     this.nouvelleReclamation.titre = type === 'CONNECTIVITE' ? 'Coupure connexion Internet / Intranet' : '';
     this.nouvelleReclamation.equipement = type === 'CONNECTIVITE' ? 'Circuit Fibre Edunet ou Routeur principal' : '';
+    this.nouvelleReclamation.numeroSerie = type === 'CONNECTIVITE' ? 'CIRCUIT-TT-8841' : '';
     this.showReclamationModal = true;
   }
 
   soumettreReclamation(): void {
     if (!this.nouvelleReclamation.titre.trim()) return;
+    if (!this.nouvelleReclamation.numeroSerie.trim()) {
+      alert('Le Numéro de Série du ou des équipements est obligatoire pour toute réclamation.');
+      return;
+    }
 
     this.http.post<any>('http://localhost:3000/reclamations/create', this.nouvelleReclamation).subscribe({
       next: (rec) => {
@@ -134,11 +187,12 @@ export class DirecteurDashboardComponent implements OnInit {
           titre: '',
           labo: 'Labo Informatique 1',
           equipement: '',
+          numeroSerie: '',
           criticite: 'HAUTE',
           bacPratique: true,
           description: ''
         };
-        this.afficherToast('✅ Réclamation envoyée à la Sous-Direction TIC (en attente d\'Ordre de Mission).');
+        this.afficherToast('✅ Réclamation transmise au SD TIC avec N° de série (affectation d\'Ordre de Mission en cours).');
         this.loadData();
       }
     });
@@ -168,7 +222,7 @@ export class DirecteurDashboardComponent implements OnInit {
   repondrePret(pretId: string, accept: boolean): void {
     this.http.post('http://localhost:3000/prets/repondre', { pretId, accept }).subscribe({
       next: () => {
-        this.afficherToast(accept ? '✅ Demande d\'emprunt acceptée pour le lycée partenaire.' : 'ℹ️ Demande de prêt déclinée.');
+        this.afficherToast(accept ? '✅ Accord donné pour le prêt au lycée partenaire.' : 'ℹ️ Sollicitation de prêt déclinée.');
         this.loadData();
       }
     });
@@ -182,6 +236,29 @@ export class DirecteurDashboardComponent implements OnInit {
         this.loadData();
       }
     });
+  }
+
+  // Affectation des Profs par le Directeur
+  ouvrirModificationAffectation(aff: LaboAffectation): void {
+    this.selectedAffectation = aff;
+    this.editProfTitulaire = aff.profTitulaire;
+    this.editProfBac = aff.profBacPratique;
+    this.editTachesBac = aff.tachesBac;
+  }
+
+  enregistrerAffectation(): void {
+    if (!this.selectedAffectation) return;
+    this.selectedAffectation.profTitulaire = this.editProfTitulaire;
+    this.selectedAffectation.profBacPratique = this.editProfBac;
+    this.selectedAffectation.tachesBac = this.editTachesBac;
+    this.selectedAffectation = null;
+    this.afficherToast('✅ Affectation des professeurs au laboratoire mise à jour avec succès.');
+  }
+
+  validerConformiteLaboBac(aff: LaboAffectation): void {
+    aff.bacValideParDirecteur = true;
+    aff.etatPreparationBac = 'VALIDE_CONFORME';
+    this.afficherToast(`✅ Les travaux de préparation de ${aff.labo} ont été validés conformes par le Directeur pour le Bac Pratique.`);
   }
 
   afficherToast(msg: string): void {

@@ -1,19 +1,63 @@
-<p>login works!</p>
-<div class="login-container">
+<div class="login-page-wrapper">
   <div class="login-card">
-    <h2>SuiviTic</h2>
-    <p>Connectez-vous à votre espace</p>
-    <form (ngSubmit)="onSubmit()">
+    <div class="login-header">
+      <span class="flag-icon">🇹🇳</span>
+      <h1 class="portal-title">SuiviTic</h1>
+      <p class="portal-sub">Ministère de l'Éducation · République Tunisienne</p>
+      <div class="portal-desc">Portail National de Gestion du Parc Informatique & Connectivité</div>
+    </div>
+
+    <!-- Formulaire officiel de connexion -->
+    <form (ngSubmit)="onSubmit()" class="login-form">
       <div class="form-group">
-        <label>Email</label>
-        <input type="email" [(ngModel)]="email" name="email" required placeholder="admin@edunet.tn">
+        <label for="identifiant">Adresse E-mail (&#64;edunet.tn) ou Matricule</label>
+        <input type="text" 
+               id="identifiant" 
+               name="identifiant" 
+               [(ngModel)]="identifiant" 
+               placeholder="ex: prenom.nom@edunet.tn ou matricule"
+               required 
+               class="form-control" />
       </div>
+
       <div class="form-group">
-        <label>Mot de passe</label>
-        <input type="password" [(ngModel)]="password" name="password" required>
+        <label for="motDePasse">Mot de passe</label>
+        <input type="password" 
+               id="motDePasse" 
+               name="motDePasse" 
+               [(ngModel)]="motDePasse" 
+               placeholder="••••••••••••"
+               class="form-control" />
       </div>
-      <p *ngIf="errorMessage" class="error-msg">{{ errorMessage }}</p>
-      <button type="submit" class="btn-primary">Se connecter</button>
+
+      <div *ngIf="errorMessage" class="error-alert">
+        ⚠️ {{ errorMessage }}
+      </div>
+
+      <button type="submit" class="btn-submit">
+        🔐 Se connecter à mon espace
+      </button>
     </form>
+
+    <!-- Sélecteur rapide des profils selon les rôles hiérarchiques -->
+    <div class="quick-access-section">
+      <div class="divider">
+        <span>Ou choisir un compte type pour accéder à son Dashboard :</span>
+      </div>
+
+      <div class="presets-list">
+        <div *ngFor="let acc of presetAccounts" 
+             class="preset-item" 
+             (click)="selectPreset(acc)">
+          <div class="preset-avatar">{{ acc.avatar }}</div>
+          <div class="preset-details">
+            <div class="preset-name">{{ acc.prenom }} {{ acc.nom }}</div>
+            <div class="preset-role">{{ acc.roleLabel }}</div>
+            <div class="preset-perimetre">{{ acc.perimetre }}</div>
+          </div>
+          <div class="preset-action">➜</div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

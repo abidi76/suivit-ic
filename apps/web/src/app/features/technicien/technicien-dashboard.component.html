@@ -1,0 +1,184 @@
+<div class="tech-container">
+  <!-- Toast -->
+  <div *ngIf="toastMessage" class="toast-notification">
+    {{ toastMessage }}
+  </div>
+
+  <!-- En-tête Technicien Mobile -->
+  <header class="tech-header">
+    <div class="tech-header-left">
+      <span class="tech-icon">🔧</span>
+      <div>
+        <div class="sup-title">CRE Manouba · Équipe Technique Mobile</div>
+        <h1 class="main-title">Espace Technicien de Maintenance</h1>
+        <div class="user-info">
+          Technicien : <strong>{{ currentUser?.prenom }} {{ currentUser?.nom }}</strong> · Périmètre restreint à mes interventions
+        </div>
+      </div>
+    </div>
+
+    <div class="tech-header-right">
+      <div class="stat-pill">
+        <span>{{ missionsList.length }} interventions assignées</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Onglets -->
+  <div class="tech-tabs">
+    <button class="tech-tab-btn" [class.active]="activeTab === 'missions'" (click)="activeTab = 'missions'">
+      📋 Mes Missions & Véhicules Assignés ({{ missionsList.length }})
+    </button>
+    <button *ngIf="selectedMissionForReport" class="tech-tab-btn" [class.active]="activeTab === 'saisie-rapport'" (click)="activeTab = 'saisie-rapport'">
+      ✍️ Saisie Rapport Technique ({{ selectedMissionForReport.id }})
+    </button>
+  </div>
+
+  <!-- ONGLET 1 : MES MISSIONS ET VÉHICULES -->
+  <div *ngIf="activeTab === 'missions'" class="tech-panel">
+    <div class="panel-intro">
+      <p>
+        Règle : <em>« Le technicien voit seulement et juste où il intervient : les réclamations et les ordres de missions, les demandes de voitures et les plannings gérés par le SD TIC. »</em>
+      </p>
+    </div>
+
+    <div class="missions-cards-grid">
+      <div *ngFor="let m of missionsList" class="mission-card" [class.done]="m.statut === 'TERMINEE_ATTENTE_VALIDATION'">
+        <div class="card-top-bar">
+          <span class="ref-id">{{ m.id }}</span>
+          <span class="om-tag">Ordre de Mission : <strong>{{ m.omNumero }}</strong></span>
+          <span *ngIf="m.bacPratique" class="bac-tag">🎯 Priorité Bac Pratique</span>
+        </div>
+
+        <h3 class="etab-heading">🏫 {{ m.etablissement }}</h3>
+        <div class="loc-sub">Localisation : <strong>{{ m.labo }}</strong></div>
+
+        <!-- Détails Véhicule et Planning SD TIC -->
+        <div class="vehicle-planning-box">
+          <div class="vp-row">
+            <span>🚗 Véhicule affecté : <strong>{{ m.vehicule }}</strong></span>
+            <span>👤 Chauffeur : <strong>{{ m.chauffeur }}</strong></span>
+          </div>
+          <div class="vp-row">
+            <span>📅 Planning passage : <strong>{{ m.datePrevue }}</strong></span>
+            <span class="criticite-badge" [class.critique]="m.criticite === 'CRITIQUE'">Criticité : {{ m.criticite }}</span>
+          </div>
+        </div>
+
+        <div class="panne-box">
+          <span class="panne-label">Panne signalée par le Directeur :</span>
+          <div class="panne-text">« {{ m.panneSignalee }} »</div>
+        </div>
+
+        <div class="equip-info-row">
+          <span>Matériel : <strong>{{ m.equipementNom }}</strong></span>
+          <span>N° Série : <strong class="font-mono text-primary">{{ m.numeroSerieEquipement }}</strong></span>
+        </div>
+
+        <!-- Si rapport déjà soumis -->
+        <div *ngIf="m.statut === 'TERMINEE_ATTENTE_VALIDATION'" class="report-submitted-box">
+          <span class="check-icon">✓</span>
+          <div>
+            <strong>Rapport technique soumis :</strong> « {{ m.rapportDetaille }} »
+            <div *ngIf="m.pieceAjouteeDesignation" class="pieces-info">
+              Pièce posée : {{ m.pieceAjouteeDesignation }} (S/N: {{ m.pieceAjouteeNumeroSerie }}) · Déposée: (S/N: {{ m.pieceRetireeNumeroSerie }})
+            </div>
+            <div class="waiting-dir">En attente de validation par le Directeur d'Établissement.</div>
+          </div>
+        </div>
+
+        <!-- Action Bouton -->
+        <div class="card-actions">
+          <button *ngIf="m.statut !== 'TERMINEE_ATTENTE_VALIDATION'" 
+                  class="btn btn-primary" 
+                  (click)="ouvrirFormulaireRapport(m)">
+            📝 Rédiger le Rapport Technique d'Intervention
+          </button>
+          <button *ngIf="m.statut === 'TERMINEE_ATTENTE_VALIDATION'" 
+                  class="btn btn-secondary" 
+                  (click)="ouvrirFormulaireRapport(m)">
+            👁️ Modifier / Consulter le Rapport
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ONGLET 2 : SAISIE DU RAPPORT D'INTERVENTION DÉTAILLÉ -->
+  <div *ngIf="activeTab === 'saisie-rapport' && selectedMissionForReport" class="tech-panel">
+    <div class="report-form-header">
+      <h3>Rapport d'Intervention Détaillé — Intervention {{ selectedMissionForReport.id }}</h3>
+      <p>Établissement : <strong>{{ selectedMissionForReport.etablissement }}</strong> ({{ selectedMissionForReport.labo }})</p>
+    </div>
+
+    <form (ngSubmit)="soumettreRapport()" class="report-form">
+      <!-- N° DE SÉRIE OBLIGATOIRE SELON LES RÈGLES -->
+      <div class="form-group alert-group">
+        <label for="snEquip">
+          <span class="required-star">*</span> <strong>Numéro de Série de l'Équipement (Strictement Obligatoire) :</strong>
+        </label>
+        <input type="text" 
+               id="snEquip" 
+               [(ngModel)]="formRapport.numeroSerieEquipement" 
+               name="snEquip"
+               placeholder="Ex: SN-DELL-883921" 
+               class="form-control font-mono font-bold" 
+               required />
+        <span class="field-hint">Chaque déclaration, réclamation ou intervention doit impérativement comporter le N° de série pour la traçabilité.</span>
+      </div>
+
+      <div class="form-group">
+        <label for="rapportDetaille">
+          <span class="required-star">*</span> <strong>Rapport technique détaillé des travaux réalisés :</strong>
+        </label>
+        <textarea id="rapportDetaille" 
+                  [(ngModel)]="formRapport.rapportDetaille" 
+                  name="rapportDetaille"
+                  rows="4" 
+                  placeholder="Décrivez les tests de diagnostic effectués, la cause de la panne, les réparations exécutées et les vérifications de bon fonctionnement..."
+                  class="form-control" 
+                  required></textarea>
+      </div>
+
+      <!-- Traçabilité des pièces de rechange (Règle 7.4, 7.5, 7.6) -->
+      <div class="pieces-fieldset">
+        <h4 class="fieldset-title">🔧 Mouvement de Pièces de Rechange (Composition du Matériel)</h4>
+        
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Désignation de la pièce posée :</label>
+            <input type="text" 
+                   [(ngModel)]="formRapport.pieceAjouteeDesignation" 
+                   name="pieceAjouteeDesignation"
+                   placeholder="Ex: Bloc d'alimentation 300W ATX ou Carte Réseau" 
+                   class="form-control" />
+          </div>
+          <div class="form-group flex-1">
+            <label>N° Série de la pièce neuve (Unique) :</label>
+            <input type="text" 
+                   [(ngModel)]="formRapport.pieceAjouteeNumeroSerie" 
+                   name="pieceAjouteeNumeroSerie"
+                   placeholder="Ex: PWR-2026-98741" 
+                   class="form-control font-mono" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>N° Série de la pièce défectueuse retirée (Mise au rebut) :</label>
+          <input type="text" 
+                 [(ngModel)]="formRapport.pieceRetireeNumeroSerie" 
+                 name="pieceRetireeNumeroSerie"
+                 placeholder="Ex: OLD-PWR-5521" 
+                 class="form-control font-mono" />
+        </div>
+      </div>
+
+      <div class="form-actions-row">
+        <button type="button" class="btn btn-secondary" (click)="activeTab = 'missions'">Annuler</button>
+        <button type="submit" class="btn btn-success">
+          📤 Transmettre le Rapport au Directeur d'Établissement
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,264 @@
+.tech-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #1e293b;
+}
+
+/* Toast */
+.toast-notification {
+  position: fixed;
+  top: 75px;
+  right: 20px;
+  background-color: #065f46;
+  color: #ffffff;
+  padding: 1rem 1.4rem;
+  border-radius: 8px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+/* Header */
+.tech-header {
+  background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+  color: #ffffff;
+  padding: 1.5rem 1.8rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  box-shadow: 0 4px 12px rgba(6, 95, 70, 0.15);
+
+  .tech-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+
+    .tech-icon { font-size: 2.8rem; }
+    .sup-title { font-size: 0.8rem; font-weight: 700; color: #a7f3d0; text-transform: uppercase; }
+    .main-title { font-size: 1.5rem; font-weight: 800; margin: 0.2rem 0; }
+    .user-info { font-size: 0.85rem; color: #e6fffa; }
+  }
+
+  .stat-pill {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+}
+
+/* Onglets */
+.tech-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+
+  .tech-tab-btn {
+    background: #e2e8f0;
+    border: none;
+    padding: 0.65rem 1.2rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #475569;
+    cursor: pointer;
+
+    &.active {
+      background: #065f46;
+      color: #ffffff;
+    }
+  }
+}
+
+.tech-panel {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+
+  .panel-intro {
+    background: #f8fafc;
+    border-left: 4px solid #065f46;
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    color: #334155;
+    margin-bottom: 1.5rem;
+    p { margin: 0; }
+  }
+}
+
+/* Cartes de Missions */
+.missions-cards-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.mission-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.25rem;
+  background: #ffffff;
+  transition: all 0.15s ease;
+
+  &.done {
+    background: #f0fdf4;
+    border-color: #86efac;
+  }
+
+  .card-top-bar {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 0.6rem;
+
+    .ref-id { font-family: monospace; font-weight: 700; color: #047857; }
+    .om-tag { font-size: 0.8rem; background: #e0f2fe; color: #0369a1; padding: 0.2rem 0.5rem; border-radius: 4px; }
+    .bac-tag { font-size: 0.75rem; font-weight: 700; background: #fee2e2; color: #991b1b; padding: 0.2rem 0.5rem; border-radius: 4px; }
+  }
+
+  .etab-heading { margin: 0 0 0.2rem; font-size: 1.15rem; color: #0f172a; }
+  .loc-sub { font-size: 0.825rem; color: #64748b; margin-bottom: 0.75rem; }
+
+  .vehicle-planning-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.825rem;
+
+    .vp-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.3rem;
+      flex-wrap: wrap;
+    }
+
+    .criticite-badge {
+      font-weight: 700;
+      color: #d97706;
+      &.critique { color: #dc2626; }
+    }
+  }
+
+  .panne-box {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    padding: 0.65rem 0.9rem;
+    border-radius: 6px;
+    font-size: 0.825rem;
+    margin-bottom: 0.75rem;
+    .panne-label { font-weight: 700; color: #92400e; display: block; margin-bottom: 0.2rem; }
+    .panne-text { color: #78350f; font-style: italic; }
+  }
+
+  .equip-info-row {
+    display: flex;
+    gap: 1.5rem;
+    font-size: 0.825rem;
+    margin-bottom: 1rem;
+  }
+
+  .report-submitted-box {
+    background: #ffffff;
+    border: 1px solid #a7f3d0;
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    display: flex;
+    gap: 0.75rem;
+    font-size: 0.825rem;
+    margin-bottom: 1rem;
+
+    .check-icon { color: #059669; font-weight: 800; font-size: 1.1rem; }
+    .pieces-info { margin-top: 0.3rem; color: #047857; font-size: 0.8rem; }
+    .waiting-dir { margin-top: 0.3rem; color: #64748b; font-style: italic; }
+  }
+
+  .card-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+/* Formulaire de rapport */
+.report-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+
+    label { font-size: 0.85rem; font-weight: 600; color: #334155; }
+    .required-star { color: #ef4444; }
+    .field-hint { font-size: 0.75rem; color: #64748b; }
+
+    .form-control {
+      padding: 0.65rem 0.85rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      outline: none;
+      &:focus { border-color: #059669; }
+    }
+  }
+
+  .alert-group {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    padding: 1rem;
+    border-radius: 8px;
+  }
+
+  .pieces-fieldset {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1.2rem;
+    background: #f8fafc;
+
+    .fieldset-title { margin: 0 0 1rem; font-size: 0.95rem; color: #0f172a; }
+  }
+
+  .form-row {
+    display: flex;
+    gap: 1rem;
+    .flex-1 { flex: 1; }
+  }
+
+  .form-actions-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+}
+
+.btn {
+  padding: 0.6rem 1.1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &-primary { background-color: #047857; color: #fff; &:hover { background-color: #065f46; } }
+  &-success { background-color: #10b981; color: #fff; &:hover { background-color: #059669; } }
+  &-secondary { background-color: #e2e8f0; color: #334155; &:hover { background-color: #cbd5e1; } }
+}
+
+.font-mono { font-family: monospace; }
+.font-bold { font-weight: 700; }
+.text-primary { color: #047857; }
