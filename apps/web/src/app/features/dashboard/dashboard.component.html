@@ -1,339 +1,464 @@
-<div class="dashboard-container">
-  <!-- En-tête officiel -->
-  <header class="dashboard-header">
-    <div class="header-titles">
-      <div class="republic-sub">République Tunisienne · Ministère de l'Éducation</div>
-      <h1 class="main-title">Commissariat Régional de l'Éducation — Manouba</h1>
-      <h2 class="sub-title">Tableau de Bord du Parc Informatique & Connectivité</h2>
+<div class="sdtic-dashboard-container">
+  <!-- Toast -->
+  <div *ngIf="toastMessage" class="toast-notification">
+    {{ toastMessage }}
+  </div>
+
+  <!-- Header SD TIC / Directeur TIC -->
+  <header class="sdtic-header">
+    <div class="sdtic-header-left">
+      <span class="flag-icon">🇹🇳</span>
+      <div>
+        <div class="sup-title">Commissariat Régional de l'Éducation — Manouba</div>
+        <h1 class="main-title">Espace Sous-Directeur TIC / Directeur TIC</h1>
+        <div class="user-meta">
+          Superviseur : <strong>{{ currentUser?.prenom }} {{ currentUser?.nom }}</strong> · Périmètre : Siège Central CRE & Établissements Rattachés
+        </div>
+      </div>
     </div>
-    <div class="header-actions">
-      <span class="date-badge">📅 {{ currentDate | date:'dd/MM/yyyy' }}</span>
-      <button class="btn btn-secondary" (click)="loadStats()" [disabled]="isLoading" title="Rafraîchir les données">
-        🔄 Actualiser
-      </button>
-      <button class="btn btn-primary" (click)="imprimerRapport()" title="Imprimer ou exporter le rapport">
-        🖨️ Exporter rapport
-      </button>
+
+    <div class="sdtic-header-right">
+      <div class="summary-pill">
+        <span class="pill-num">{{ etablissementsCre.length }}</span>
+        <span class="pill-lbl">Établissements & Siège CRE</span>
+      </div>
     </div>
   </header>
 
-  <!-- État de chargement / Erreur -->
-  <div *ngIf="isLoading" class="loading-state">
-    <div class="spinner"></div>
-    <p>Chargement des données du parc informatique...</p>
+  <!-- Navigation par Onglets SD TIC -->
+  <div class="sdtic-tabs-bar">
+    <button class="sdtic-tab" [class.active]="activeTab === 'supervision'" (click)="activeTab = 'supervision'">
+      🏫 Supervision CRE & Établissements ({{ etablissementsCre.length }})
+    </button>
+    <button class="sdtic-tab" [class.active]="activeTab === 'planning'" (click)="activeTab = 'planning'">
+      📅 Planning Opérationnel Techniciens ({{ planningList.length }})
+    </button>
+    <button class="sdtic-tab" [class.active]="activeTab === 'ordres-mission'" (click)="activeTab = 'ordres-mission'">
+      🚗 Ordres de Mission & Voitures SD-Bâtiments ({{ ordresMissionList.length }})
+    </button>
+    <button class="sdtic-tab" [class.active]="activeTab === 'flux-emprunts'" (click)="activeTab = 'flux-emprunts'">
+      🔄 Validation Flux d'Emprunts & Restitutions ({{ fluxEmprunts.length }})
+    </button>
+    <button class="sdtic-tab" [class.active]="activeTab === 'comptes-locaux'" (click)="activeTab = 'comptes-locaux'">
+      👥 Gestion des Comptes Locaux CRE ({{ comptesLocaux.length }})
+    </button>
   </div>
 
-  <div *ngIf="errorMessage && !isLoading" class="error-banner">
-    ⚠️ {{ errorMessage }}
-    <button class="btn btn-sm btn-outline" (click)="loadStats()">Réessayer</button>
-  </div>
-
-  <div *ngIf="stats && !isLoading" class="dashboard-content">
-    <!-- Bloc 15.2 : Actions Prioritaires « À Traiter » -->
-    <section class="section-actions-a-traiter">
-      <div class="section-title-row">
-        <h3 class="section-heading">⚡ Actions Prioritaires & Alertes</h3>
-        <span class="badge-total">{{ stats.actionsATraiter?.length || 0 }} catégories d'action</span>
-      </div>
-      <div class="actions-grid">
-        <div *ngFor="let act of stats.actionsATraiter" 
-             class="action-card" 
-             [class.urgent]="act.urgence === 'Critique' || act.urgence === 'Haute'">
-          <div class="action-count">{{ act.count }}</div>
-          <div class="action-info">
-            <div class="action-text">{{ act.titre }}</div>
-            <span class="urgency-tag" [class.badge-critical]="act.urgence === 'Critique'" [class.badge-high]="act.urgence === 'Haute'">
-              {{ act.urgence }}
-            </span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Cartes KPI Principales : Nombre total d'équipements et leur état -->
-    <section class="kpi-grid">
-      <!-- Total Équipements -->
-      <div class="kpi-card card-total" [class.active-card]="selectedStatFilter === null" (click)="filterByStatus(null)">
-        <div class="kpi-top">
-          <span class="kpi-label">TOTAL ÉQUIPEMENTS</span>
-          <span class="kpi-icon">📦</span>
-        </div>
-        <div class="kpi-value">{{ stats.equipements.total }}</div>
-        <div class="kpi-footer">
-          <span>Inventoriés sur toute la région</span>
-        </div>
+  <!-- ONGLET 1 : SUPERVISION DU PARC DE LA CRE ET DE TOUS LES ÉTABLISSEMENTS -->
+  <div *ngIf="activeTab === 'supervision'" class="sdtic-panel">
+    <div class="panel-header-row">
+      <div>
+        <h3>Parc de la CRE Manouba (Siège central & Tous types d'établissements)</h3>
+        <p class="panel-desc">
+          Supervision consolidée : Écoles primaires, collèges d'enseignement général, collèges techniques et lycées secondaires.
+        </p>
       </div>
 
-      <!-- En Service / Fonctionnels -->
-      <div class="kpi-card card-service" [class.active-card]="selectedStatFilter === 'service'" (click)="filterByStatus('service')">
-        <div class="kpi-top">
-          <span class="kpi-label">EN SERVICE (FONCTIONNELS)</span>
-          <span class="kpi-icon">✅</span>
+      <div class="filters-wrap">
+        <div class="filter-group">
+          <label>Catégorie :</label>
+          <select [(ngModel)]="selectedCategorie" class="form-select">
+            <option value="TOUTES">Toutes les catégories</option>
+            <option value="CENTRAL_CRE">Siège Central CRE</option>
+            <option value="LYCEE">Lycées Secondaires</option>
+            <option value="COLLEGE">Collèges Généraux</option>
+            <option value="COLLEGE_TECHNIQUE">Collèges Techniques</option>
+            <option value="ECOLE_PRIMAIRE">Écoles Primaires</option>
+          </select>
         </div>
-        <div class="kpi-value text-success">{{ stats.equipements.enService }}</div>
-        <div class="kpi-footer">
-          <span class="pill pill-success">{{ tauxDisponibilite }}% du parc disponible</span>
-        </div>
-      </div>
 
-      <!-- En Panne -->
-      <div class="kpi-card card-panne" [class.active-card]="selectedStatFilter === 'panne'" (click)="filterByStatus('panne')">
-        <div class="kpi-top">
-          <span class="kpi-label">EN PANNE (HORS SERVICE)</span>
-          <span class="kpi-icon">⚠️</span>
-        </div>
-        <div class="kpi-value text-danger">{{ stats.equipements.enPanne }}</div>
-        <div class="kpi-footer">
-          <span class="pill pill-danger">{{ tauxPanne }}% du parc à dépanner</span>
-        </div>
-      </div>
-
-      <!-- En attente de confirmation / Arrivages -->
-      <div class="kpi-card card-attente" [class.active-card]="selectedStatFilter === 'attente'" (click)="filterByStatus('attente')">
-        <div class="kpi-top">
-          <span class="kpi-label">EN ATTENTE DE CONFIRMATION</span>
-          <span class="kpi-icon">⏳</span>
-        </div>
-        <div class="kpi-value text-warning">{{ stats.equipements.enAttenteConfirmation }}</div>
-        <div class="kpi-footer">
-          <span class="pill pill-warning">Arrivages en cours de validation</span>
-        </div>
-      </div>
-
-      <!-- Dommages Totaux / Pertes -->
-      <div class="kpi-card card-dommage" [class.active-card]="selectedStatFilter === 'dommage'" (click)="filterByStatus('dommage')">
-        <div class="kpi-top">
-          <span class="kpi-label">DOMMAGE TOTAL / RÉFORME</span>
-          <span class="kpi-icon">🛑</span>
-        </div>
-        <div class="kpi-value text-muted">
-          {{ (stats.equipements.totalementEndommage || 0) + (stats.equipements.perdus || 0) }}
-        </div>
-        <div class="kpi-footer">
-          <span>{{ stats.equipements.totalementEndommage }} irrécupérables · {{ stats.equipements.perdus }} pertes</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Jauge de synthèse visuelle de l'état du parc -->
-    <section class="health-bar-container">
-      <div class="health-header">
-        <span class="health-title">État d'exploitation globale du parc ({{ stats.equipements.total }} matériels)</span>
-        <span class="health-stats">
-          <strong class="text-success">{{ stats.equipements.enService }} en service ({{ tauxDisponibilite }}%)</strong> · 
-          <strong class="text-danger">{{ stats.equipements.enPanne }} en panne ({{ tauxPanne }}%)</strong> · 
-          <strong class="text-warning">{{ stats.equipements.enAttenteConfirmation }} en attente</strong>
-        </span>
-      </div>
-      <div class="progress-bar-stacked">
-        <div class="bar-segment bar-success" 
-             [style.width.%]="(stats.equipements.enService / stats.equipements.total) * 100" 
-             title="En service: {{ stats.equipements.enService }}">
-        </div>
-        <div class="bar-segment bar-danger" 
-             [style.width.%]="(stats.equipements.enPanne / stats.equipements.total) * 100" 
-             title="En panne: {{ stats.equipements.enPanne }}">
-        </div>
-        <div class="bar-segment bar-warning" 
-             [style.width.%]="(stats.equipements.enAttenteConfirmation / stats.equipements.total) * 100" 
-             title="En attente: {{ stats.equipements.enAttenteConfirmation }}">
-        </div>
-        <div class="bar-segment bar-muted" 
-             [style.width.%]="((stats.equipements.totalementEndommage + stats.equipements.perdus) / stats.equipements.total) * 100" 
-             title="Dommage total / perte">
-        </div>
-      </div>
-      <div class="legend-row">
-        <span class="legend-item"><span class="color-dot dot-success"></span> En service</span>
-        <span class="legend-item"><span class="color-dot dot-danger"></span> En panne</span>
-        <span class="legend-item"><span class="color-dot dot-warning"></span> En attente triple confirmation</span>
-        <span class="legend-item"><span class="color-dot dot-muted"></span> Dommage total / Perte</span>
-      </div>
-    </section>
-
-    <!-- Filtres & Onglets d'analyse -->
-    <div class="dashboard-tabs-bar">
-      <div class="tabs-group">
-        <button class="tab-btn" [class.active]="activeTab === 'vue-ensemble'" (click)="activeTab = 'vue-ensemble'">
-          📊 Répartition par Type d'Équipement
-        </button>
-        <button class="tab-btn" [class.active]="activeTab === 'etablissements'" (click)="activeTab = 'etablissements'">
-          🏫 Par Établissement & Délégation
-        </button>
-        <button class="tab-btn" [class.active]="activeTab === 'pannes'" (click)="activeTab = 'pannes'">
-          🚨 Incidents & Pannes Signalées ({{ stats.pannesRecentes?.length || 0 }})
-        </button>
-      </div>
-
-      <div class="search-filter-box">
-        <input type="text" 
-               [(ngModel)]="searchTerm" 
-               placeholder="🔍 Rechercher établissement, type, n°..." 
-               class="search-input" />
-      </div>
-    </div>
-
-    <!-- Onglet 1 : Répartition par Type d'Équipement -->
-    <section *ngIf="activeTab === 'vue-ensemble'" class="tab-panel">
-      <div class="panel-header-row">
-        <h3>Ventilation du matériel par catégorie (Section 3.3)</h3>
-        <div class="filter-pills">
-          <button class="pill-btn" [class.active]="selectedType === 'TOUS'" (click)="selectedType = 'TOUS'">Tous les types</button>
-          <button *ngFor="let t of stats.parType" class="pill-btn" [class.active]="selectedType === t.type" (click)="selectedType = t.type">
-            {{ t.icon }} {{ t.type }}
-          </button>
-        </div>
-      </div>
-
-      <div class="types-grid">
-        <div *ngFor="let item of filteredTypes" class="type-card">
-          <div class="type-card-head">
-            <span class="type-icon-large">{{ item.icon }}</span>
-            <div class="type-title-block">
-              <h4 class="type-name">{{ item.type }}</h4>
-              <span class="type-total">{{ item.total }} unités</span>
-            </div>
-          </div>
-
-          <div class="type-stats-bars">
-            <div class="stat-row">
-              <span class="stat-name">En service</span>
-              <span class="stat-num text-success font-bold">{{ item.enService }}</span>
-            </div>
-            <div class="mini-bar">
-              <div class="mini-bar-fill fill-success" [style.width.%]="(item.enService / item.total) * 100"></div>
-            </div>
-
-            <div class="stat-row">
-              <span class="stat-name">En panne</span>
-              <span class="stat-num text-danger font-bold">{{ item.enPanne }}</span>
-            </div>
-            <div class="mini-bar">
-              <div class="mini-bar-fill fill-danger" [style.width.%]="(item.enPanne / item.total) * 100"></div>
-            </div>
-
-            <div class="stat-row" *ngIf="item.enAttente > 0">
-              <span class="stat-name">En attente</span>
-              <span class="stat-num text-warning font-bold">{{ item.enAttente }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Onglet 2 : Par Établissement & Délégation -->
-    <section *ngIf="activeTab === 'etablissements'" class="tab-panel">
-      <div class="panel-header-row">
-        <h3>État du parc par Établissement (CRE Manouba)</h3>
-        <div class="delegation-select-wrap">
-          <label for="delegationSelect">Délégation :</label>
-          <select id="delegationSelect" [(ngModel)]="selectedDelegation" class="form-select">
+        <div class="filter-group">
+          <label>Délégation :</label>
+          <select [(ngModel)]="selectedDelegation" class="form-select">
             <option value="TOUTES">Toutes les délégations</option>
             <option value="Manouba">Manouba</option>
             <option value="Oued Ellil">Oued Ellil</option>
-            <option value="Borj El Amri">Borj El Amri</option>
             <option value="Mornaguia">Mornaguia</option>
-            <option value="Tebourba">Tebourba</option>
+            <option value="Borj El Amri">Borj El Amri</option>
           </select>
         </div>
+
+        <input type="text" [(ngModel)]="searchTerm" placeholder="🔍 Rechercher établissement..." class="search-input" />
       </div>
+    </div>
 
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Établissement</th>
-            <th>Délégation</th>
-            <th class="text-center">Total Équipements</th>
-            <th class="text-center">En Service</th>
-            <th class="text-center">En Panne</th>
-            <th class="text-center">Taux Opérationnel</th>
-            <th class="text-center">Bac Pratique</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let etab of filteredEtablissements">
-            <td class="font-bold">🏫 {{ etab.nom }}</td>
-            <td><span class="badge-neutral">{{ etab.delegation }}</span></td>
-            <td class="text-center font-bold">{{ etab.total }}</td>
-            <td class="text-center text-success font-bold">{{ etab.enService }}</td>
-            <td class="text-center">
-              <span [class.text-danger]="etab.enPanne > 0" [class.font-bold]="etab.enPanne > 0">
-                {{ etab.enPanne }}
-              </span>
-            </td>
-            <td class="text-center">
-              <div class="ratio-cell">
-                <span>{{ ((etab.enService / etab.total) * 100 | number:'1.0-0') }}%</span>
-                <div class="table-bar">
-                  <div class="table-bar-fill" [style.width.%]="(etab.enService / etab.total) * 100"></div>
-                </div>
-              </div>
-            </td>
-            <td class="text-center">
-              <span *ngIf="etab.bacPratiquePret" class="pill pill-success" title="Parc suffisant">Prêt</span>
-              <span *ngIf="!etab.bacPratiquePret" class="pill pill-danger" title="Besoin renfort ou prêts">Manque signalé</span>
-            </td>
-          </tr>
-          <tr *ngIf="filteredEtablissements.length === 0">
-            <td colspan="7" class="text-center empty-cell">Aucun établissement ne correspond aux filtres.</td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
+    <table class="sdtic-table">
+      <thead>
+        <tr>
+          <th>Établissement / Structure</th>
+          <th>Type de Structure</th>
+          <th>Délégation</th>
+          <th>Responsable</th>
+          <th class="text-center">Total Équipements</th>
+          <th class="text-center">En Service</th>
+          <th class="text-center">En Panne</th>
+          <th class="text-center">Connectivité Réseau</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let etab of filteredEtablissements">
+          <td class="font-bold">🏫 {{ etab.nom }}</td>
+          <td>
+            <span class="category-badge" [class.badge-lycee]="etab.typeCategorie === 'LYCEE'" [class.badge-col]="etab.typeCategorie === 'COLLEGE'" [class.badge-pri]="etab.typeCategorie === 'ECOLE_PRIMAIRE'">
+              {{ etab.categorieLabel }}
+            </span>
+          </td>
+          <td>{{ etab.delegation }}</td>
+          <td>{{ etab.directeurNom }}</td>
+          <td class="text-center font-bold">{{ etab.total }}</td>
+          <td class="text-center text-success font-bold">{{ etab.enService }}</td>
+          <td class="text-center">
+            <span [class.text-danger]="etab.enPanne > 0" [class.font-bold]="etab.enPanne > 0">{{ etab.enPanne }}</span>
+          </td>
+          <td class="text-center">
+            <span class="cnx-pill" [class.cnx-ok]="etab.circuitStatut === 'FIBRE_OK'" [class.cnx-flybox]="etab.circuitStatut === 'FLYBOX_SECOURS'" [class.cnx-down]="etab.circuitStatut === 'COUPURE'">
+              {{ etab.circuitStatut === 'FIBRE_OK' ? 'Fibre TT Active' : (etab.circuitStatut === 'FLYBOX_SECOURS' ? 'Flybox 4G Secours' : 'Coupure Signalée') }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 
-    <!-- Onglet 3 : Incidents & Pannes Récents -->
-    <section *ngIf="activeTab === 'pannes'" class="tab-panel">
-      <div class="panel-header-row">
-        <h3>Dernières pannes nécessitant intervention (Section 6 & 7)</h3>
-        <span class="badge-total">{{ filteredPannes.length }} incidents enregistrés</span>
+  <!-- ONGLET 2 : PLANNING OPÉRATIONNEL DU SD TIC -->
+  <div *ngIf="activeTab === 'planning'" class="sdtic-panel">
+    <div class="panel-header-row">
+      <div>
+        <h3>Planning des Interventions Opérationnelles (SD TIC)</h3>
+        <p class="panel-desc">
+          Planification des actions de maintenance : [ Tâche, Technicien, Date, Établissement, Action technique ].
+        </p>
       </div>
+      <button class="btn btn-primary" (click)="showAddPlanningModal = true">
+        + Planifier une Intervention
+      </button>
+    </div>
 
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>N° Équipement</th>
-            <th>Type & Modèle</th>
-            <th>Établissement & Labo</th>
-            <th>Description de la Panne</th>
-            <th>Date Signalement</th>
-            <th>Priorité</th>
-            <th>Statut Intervention</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let p of filteredPannes">
-            <td class="font-mono text-primary font-bold">{{ p.id }}</td>
-            <td>
-              <div class="device-cell">
-                <span class="device-type font-bold">{{ p.type }}</span>
-                <span class="device-model text-muted">{{ p.marque }}</span>
-              </div>
-            </td>
-            <td>
-              <div class="loc-cell">
-                <span>{{ p.etablissement }}</span>
-                <span class="text-muted small">{{ p.labo }}</span>
-              </div>
-            </td>
-            <td class="panne-desc">{{ p.panne }}</td>
-            <td>{{ p.date | date:'dd/MM/yyyy' }}</td>
-            <td>
-              <span class="priority-tag" 
-                    [class.prio-critique]="p.priorite === 'Critique'"
-                    [class.prio-haute]="p.priorite === 'Élevée'"
-                    [class.prio-moyenne]="p.priorite === 'Moyenne'">
-                {{ p.priorite }}
-              </span>
-            </td>
-            <td>
-              <span class="status-pill">{{ p.statut }}</span>
-            </td>
-          </tr>
-          <tr *ngIf="filteredPannes.length === 0">
-            <td colspan="7" class="text-center empty-cell">Aucun incident trouvé.</td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
+    <table class="sdtic-table">
+      <thead>
+        <tr>
+          <th>Tâche & Motif</th>
+          <th>Technicien Assigné</th>
+          <th>Date & Heure</th>
+          <th>Établissement Cible</th>
+          <th>Action Technique Spécifiée</th>
+          <th class="text-center">Priorité</th>
+          <th class="text-center">Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of planningList">
+          <td class="font-bold">📋 {{ p.tache }}</td>
+          <td><span class="badge-tech">🔧 {{ p.technicien }}</span></td>
+          <td class="font-bold text-primary">{{ p.date }}</td>
+          <td>🏫 {{ p.etablissement }}</td>
+          <td class="action-desc">« {{ p.action }} »</td>
+          <td class="text-center">
+            <span class="prio-tag" [class.prio-urgente]="p.priorite === 'URGENTE'">{{ p.priorite }}</span>
+          </td>
+          <td class="text-center">
+            <span class="statut-pill" [class.statut-en-cours]="p.statut === 'EN_COURS'">{{ p.statut }}</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ONGLET 3 : ORDRES DE MISSION ET CIRCUIT SD-BÂTIMENTS -->
+  <div *ngIf="activeTab === 'ordres-mission'" class="sdtic-panel">
+    <div class="panel-header-row">
+      <div>
+        <h3>Gestion des Ordres de Mission (OM) & Demandes de Voitures</h3>
+        <p class="panel-desc">
+          Règle : <em>« Le SD TIC gère les ordres de mission et les demandes de voitures. Une fois envoyé, le SD-Bâtiments ajoute le chauffeur et la voiture et valide, ou ajourne la demande à une autre date. »</em>
+        </p>
+      </div>
+      <button class="btn btn-primary" (click)="showAddOmModal = true">
+        + Créer un Ordre de Mission
+      </button>
+    </div>
+
+    <div class="om-cards-list">
+      <div *ngFor="let om of ordresMissionList" class="om-card" [class.card-valide]="om.statutBatiments === 'VALIDE_AVEC_VEHICULE'" [class.card-ajourne]="om.statutBatiments === 'AJOURNE_REPORTE'">
+        <div class="om-head">
+          <div class="om-head-left">
+            <span class="om-num">{{ om.omNumero }}</span>
+            <span class="om-target">🏫 {{ om.etablissement }}</span>
+            <span class="om-tech">Technicien : <strong>{{ om.technicienNom }}</strong></span>
+          </div>
+          <div class="om-status-badge" [class.badge-green]="om.statutBatiments === 'VALIDE_AVEC_VEHICULE'" [class.badge-red]="om.statutBatiments === 'AJOURNE_REPORTE'">
+            {{ om.statutBatiments === 'VALIDE_AVEC_VEHICULE' ? '✓ Validé avec Véhicule & Chauffeur' : (om.statutBatiments === 'AJOURNE_REPORTE' ? '⚠️ Ajourné par le SD-Bâtiments' : '⏳ En attente affectation SD-Bâtiments') }}
+          </div>
+        </div>
+
+        <div class="om-body">
+          <div class="om-motif"><strong>Motif de la mission :</strong> {{ om.motifMission }}</div>
+          <div class="om-date">Date et heure demandées par le SD TIC : <strong>{{ om.dateDemandee }}</strong></div>
+
+          <!-- Section Réponse SD-Bâtiments -->
+          <div *ngIf="om.statutBatiments === 'VALIDE_AVEC_VEHICULE'" class="batiments-details-box ok-box">
+            <div class="box-title">🚗 Validation & Affectation du SD-Bâtiments :</div>
+            <div class="box-data">
+              <span>Véhicule de service attribué : <strong>{{ om.vehiculeAffecte }}</strong></span>
+              <span>Chauffeur affecté : <strong>{{ om.chauffeurAffecte }}</strong></span>
+            </div>
+          </div>
+
+          <div *ngIf="om.statutBatiments === 'AJOURNE_REPORTE'" class="batiments-details-box alert-box">
+            <div class="box-title">⚠️ Décision d'Ajournement du SD-Bâtiments :</div>
+            <div class="box-data">
+              <span>Nouvelle date de report imposée : <strong class="text-danger">{{ om.dateAjournee }}</strong></span>
+              <span>Motif d'indisponibilité : <em>« {{ om.motifAjournement }} »</em></span>
+            </div>
+          </div>
+
+          <!-- Simulation d'interaction SD-Bâtiments -->
+          <div *ngIf="om.statutBatiments === 'EN_ATTENTE_SD_BATIMENTS'" class="batiments-actions-sim">
+            <span>Action du SD-Bâtiments :</span>
+            <button class="btn btn-sm btn-success" (click)="simulerReponseSdBatiments(om, true)">
+              ✓ Valider et affecter Voiture & Chauffeur
+            </button>
+            <button class="btn btn-sm btn-danger" (click)="simulerReponseSdBatiments(om, false)">
+              ⚠️ Ajourner la mission à une autre date
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ONGLET 4 : VALIDATION DES FLUX D'EMPRUNTS & RESTITUTIONS -->
+  <div *ngIf="activeTab === 'flux-emprunts'" class="sdtic-panel">
+    <div class="panel-header-row">
+      <div>
+        <h3>Validation des Flux d'Emprunts (Demandes, Accords & Restitutions)</h3>
+        <p class="panel-desc">
+          Règle : <em>« Le SD TIC valide les flux des emprunts (demandes et accord et réception entre les deux directeurs d'établissements) et de même pour la procédure de récupération / restitution. »</em>
+        </p>
+      </div>
+    </div>
+
+    <div class="flux-list">
+      <div *ngFor="let flux of fluxEmprunts" class="flux-card">
+        <div class="flux-top-bar">
+          <span class="flux-id">{{ flux.id }}</span>
+          <span class="flux-date">Initié le : {{ flux.dateCreation | date:'dd/MM/yyyy' }}</span>
+          <span class="flux-stage-tag">{{ flux.etapeLabel }}</span>
+        </div>
+
+        <div class="flux-actors-row">
+          <div class="actor-block">
+            <span class="actor-role">Établissement Demandeur :</span>
+            <span class="actor-name">🏫 {{ flux.emprunteurNom }}</span>
+          </div>
+          <div class="transfer-arrow">➔</div>
+          <div class="actor-block">
+            <span class="actor-role">Établissement Prêteur Sollicité :</span>
+            <span class="actor-name">🏫 {{ flux.preteurNom }}</span>
+          </div>
+        </div>
+
+        <div class="flux-info-content">
+          <p>Matériel concerné : <strong class="text-primary">{{ flux.materiel }}</strong> (Quantité: {{ flux.quantite }})</p>
+          <p>Motif pédagogique : <em>« {{ flux.motif }} »</em> (Période: {{ flux.periode }})</p>
+        </div>
+
+        <!-- Actions de validation du SD TIC selon l'étape -->
+        <div class="flux-actions-bar">
+          <!-- Étape 1 : Valider le transfert une fois l'accord du prêteur reçu -->
+          <button *ngIf="flux.etapeFlux === 'ACCORD_PRETEUR'" class="btn btn-success" (click)="validerTransfertEmprunt(flux)">
+            ✍️ Valider le Transfert d'Équipement / Flybox (SD TIC)
+          </button>
+
+          <!-- Étape 2 : Valider la procédure de récupération / restitution finale -->
+          <button *ngIf="flux.etapeFlux === 'RECU_PAR_EMPRUNTEUR' || flux.etapeFlux === 'VALIDE_TRANSFERT_SDTIC'" class="btn btn-primary" (click)="validerRecuperationRestitution(flux)">
+            📦 Valider la Procédure de Récupération & Restitution Conforme
+          </button>
+
+          <span *ngIf="flux.etapeFlux === 'RESTITUTION_VALIDEE'" class="closed-msg">
+            ✅ Dossier d'emprunt et restitution entièrement clôturé et validé par le SD TIC.
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ONGLET 5 : GESTION DES COMPTES LOCAUX DE LA CRE -->
+  <div *ngIf="activeTab === 'comptes-locaux'" class="sdtic-panel">
+    <div class="panel-header-row">
+      <div>
+        <h3>Gestion des Comptes Locaux de la CRE Manouba</h3>
+        <p class="panel-desc">
+          Règle : <em>« Le SD TIC gère les comptes locaux : Directeur d'établissement, Techniciens (internes et prestataires), Agent admin, Prof, Secrétaire Général, Responsable Examens, Inspecteur et SD-Bâtiments. »</em>
+        </p>
+      </div>
+      <button class="btn btn-primary" (click)="showAddCompteModal = true">
+        + Créer un Compte Local
+      </button>
+    </div>
+
+    <table class="sdtic-table">
+      <thead>
+        <tr>
+          <th>Matricule</th>
+          <th>Nom & Prénom</th>
+          <th>Rôle Officiel</th>
+          <th>Établissement / Affectation</th>
+          <th>Adresse E-mail Institutionnelle</th>
+          <th class="text-center">Statut Compte</th>
+          <th class="text-center">Action SD TIC</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let u of comptesLocaux">
+          <td class="font-mono font-bold">{{ u.matricule }}</td>
+          <td class="font-bold">{{ u.nom }}</td>
+          <td><span class="role-pill">{{ u.roleLabel }}</span></td>
+          <td>{{ u.etablissement }}</td>
+          <td class="text-muted">{{ u.email }}</td>
+          <td class="text-center">
+            <span class="status-pill" [class.pill-ok]="u.actif" [class.pill-ko]="!u.actif">
+              {{ u.actif ? 'Actif' : 'Suspendu' }}
+            </span>
+          </td>
+          <td class="text-center">
+            <button class="btn btn-sm" [class.btn-danger]="u.actif" [class.btn-success]="!u.actif" (click)="toggleCompteStatus(u)">
+              {{ u.actif ? 'Désactiver' : 'Activer' }}
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- MODAL 1 : PLANIFIER INTERVENTION -->
+  <div *ngIf="showAddPlanningModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Planifier une Intervention Technique</h3>
+        <button class="modal-close" (click)="showAddPlanningModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Titre de la tâche :</label>
+          <input type="text" [(ngModel)]="nouveauPlanning.tache" placeholder="Ex: Réparation imprimante réseau salle tirage" class="form-input" />
+        </div>
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Technicien assigné :</label>
+            <select [(ngModel)]="nouveauPlanning.technicien" class="form-input">
+              <option value="Sami Khelifi (Tech Interne)">Sami Khelifi (Tech Interne CRE)</option>
+              <option value="Société MICRO-TECH (Prestataire)">Société MICRO-TECH (Prestataire)</option>
+              <option value="Karim Bouazizi (Ingénieur Réseau)">Karim Bouazizi (Ingénieur Réseau SD TIC)</option>
+            </select>
+          </div>
+          <div class="form-group flex-1">
+            <label>Date et heure :</label>
+            <input type="text" [(ngModel)]="nouveauPlanning.date" class="form-input" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Établissement concerné :</label>
+          <select [(ngModel)]="nouveauPlanning.etablissement" class="form-input">
+            <option *ngFor="let e of etablissementsCre" [value]="e.nom">{{ e.nom }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Action technique prescrite :</label>
+          <textarea [(ngModel)]="nouveauPlanning.action" rows="3" placeholder="Détail des actions à réaliser..." class="form-input"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showAddPlanningModal = false">Annuler</button>
+        <button class="btn btn-primary" (click)="ajouterTachePlanning()">Enregistrer au Planning</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2 : NOUVEL ORDRE DE MISSION -->
+  <div *ngIf="showAddOmModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Émettre un Ordre de Mission (OM) vers le SD-Bâtiments</h3>
+        <button class="modal-close" (click)="showAddOmModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Établissement à visiter :</label>
+          <select [(ngModel)]="nouvelOm.etablissement" class="form-input">
+            <option *ngFor="let e of etablissementsCre" [value]="e.nom">{{ e.nom }}</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Technicien missionné :</label>
+            <input type="text" [(ngModel)]="nouvelOm.technicienNom" class="form-input" />
+          </div>
+          <div class="form-group flex-1">
+            <label>Date & heure souhaitées :</label>
+            <input type="text" [(ngModel)]="nouvelOm.dateDemandee" class="form-input" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Motif de la mission technique :</label>
+          <input type="text" [(ngModel)]="nouvelOm.motifMission" placeholder="Ex: Intervention d'urgence postes Bac Pratique" class="form-input" />
+        </div>
+        <div class="info-note">
+          📢 Cette demande sera transmise au <strong>Sous-Directeur Bâtiments & Chef de Parc</strong> pour assignation du véhicule de service et du chauffeur.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showAddOmModal = false">Annuler</button>
+        <button class="btn btn-primary" (click)="creerDemandeOrdreMission()">Transmettre au SD-Bâtiments</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3 : CRÉER UN COMPTE LOCAL -->
+  <div *ngIf="showAddCompteModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Créer un Compte Local CRE Manouba</h3>
+        <button class="modal-close" (click)="showAddCompteModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Matricule officiel :</label>
+            <input type="text" [(ngModel)]="nouveauCompte.matricule" class="form-input" />
+          </div>
+          <div class="form-group flex-1">
+            <label>Rôle local :</label>
+            <select [(ngModel)]="nouveauCompte.roleLocal" class="form-input">
+              <option value="DIRECTEUR">Directeur d'Établissement</option>
+              <option value="TECHNICIEN_INTERNE">Technicien Interne CRE</option>
+              <option value="TECHNICIEN_PRESTATAIRE">Technicien Prestataire</option>
+              <option value="PROF">Professeur Responsable Labo</option>
+              <option value="AGENT_ADMIN">Agent Administratif</option>
+              <option value="SECRETAIRE_GENERAL">Secrétaire Général CRE</option>
+              <option value="RESPONSABLE_EXAMEN">Responsable Examens (Bac)</option>
+              <option value="INSPECTEUR">Inspecteur Pédagogique TIC</option>
+              <option value="SD_BATIMENTS">Sous-Directeur Bâtiments</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Nom et Prénom :</label>
+          <input type="text" [(ngModel)]="nouveauCompte.nom" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label>Établissement / Affectation :</label>
+          <input type="text" [(ngModel)]="nouveauCompte.etablissement" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label>Adresse E-mail institutionnelle (&#64;edunet.tn) :</label>
+          <input type="email" [(ngModel)]="nouveauCompte.email" class="form-input" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showAddCompteModal = false">Annuler</button>
+        <button class="btn btn-primary" (click)="ajouterCompteLocal()">Créer le Compte</button>
+      </div>
+    </div>
   </div>
 </div>
