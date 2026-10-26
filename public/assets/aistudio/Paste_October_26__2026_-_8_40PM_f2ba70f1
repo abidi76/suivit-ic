@@ -1,0 +1,324 @@
+Règles de gestion — SuiviTic
+CRE Manouba · Sous-direction TIC · Version finale, octobre 2026
+Chaque règle a un numéro. Version finale des règles, regroupées en 15 sections. Dans la colonne de droite, cochez « OK » ou « À modifier » et notez la correction. Les lignes sur fond jaune sont des hypothèses, à confirmer en priorité ; elles sont reprises dans la section 16.
+1. Rôles et droits
+N°	Règle	Vérification
+1.1	Admin central : crée des admins adjoints, enregistre les arrivages, voit tout, gère les établissements, les appels d'offres, les référentiels et les litiges d'arrivage. Il peut réinitialiser un mot de passe et modifier l'adresse e-mail ou le numéro d'un compte, avec trace.	☐ OK
+☐ À modifier
+1.2	Admin central adjoint : consulte tout et suit les inventaires, les pannes, les pertes et les dommages totaux. Il ne peut ni créer d'autre admin ni enregistrer un arrivage.	☐ OK
+☐ À modifier
+1.3	Seul un admin central peut créer un compte d'admin central adjoint.	☐ OK
+☐ À modifier
+1.4	Sous-Directeur TIC : confirme les arrivages, approuve les formatages (après acceptation de la charte), valide les pertes et suit les interventions.	☐ OK
+☐ À modifier
+1.5	Superviseur local : examine les demandes du Bac Pratique, les transmet à un autre établissement et valide les transferts. Je suppose que ce rôle est tenu par le Sous-Directeur TIC de la CRE.	☐ OK
+☐ À modifier
+1.6	Directeur d'établissement : confirme les arrivages de son établissement, valide les interventions et les dommages totaux, remplit le formulaire Bac Pratique. Il ne voit que son établissement.	☐ OK
+☐ À modifier
+1.7	Prof responsable de labo : rattaché à un seul établissement. Il inventorie les équipements, déclare pannes et pertes, confirme les arrivages et valide les dommages totaux. Il ne peut ni modifier un arrivage ni voir les autres établissements. Un établissement peut avoir plusieurs profs responsables (un par labo).	☐ OK
+☐ À modifier
+1.8	Technicien interne : technicien de la CRE. Il intervient sur les tickets, demande les formatages et valide les dommages totaux.	☐ OK
+☐ À modifier
+1.9	Technicien prestataire : rattaché à une société et à un marché. Il n'accède qu'aux équipements des établissements où il est mandaté et saisit ses interventions. Son avis sur un dommage total est optionnel.	☐ OK
+☐ À modifier
+1.10	Chef de parc : valide les missions de transport (droits déjà en place).	☐ OK
+☐ À modifier
+1.12	Sous-Directeur TIC, chef de parc et technicien interne sont rattachés à un seul CRE, affecté par l'admin central. Leur compte n'est valable que pour ce CRE : ils ne voient, ne traitent et ne valident que les établissements de ce CRE (tickets, équipements, arrivages, missions, interventions, prêts, comptes numériques, circuits réseau). Un compte sans CRE ne voit rien. Seul l'admin central affecte ou réaffecte un CRE ; chaque affectation est tracée. Le Sous-Directeur ne peut solliciter pour un prêt que des établissements de son CRE.	☐ OK
+☐ À modifier
+1.11	Chaque rôle ne voit que son périmètre (établissement, mandat ou direction). Un compte se désactive, il ne se supprime jamais.	☐ OK
+☐ À modifier
+2. Comptes, connexion et mot de passe
+N°	Règle	Vérification
+2.1	L'adresse e-mail d'un compte doit se terminer par @edunet.tn ou @ecolenumerique.tn. Toute autre adresse est refusée à la création et à la modification.	☐ OK
+☐ À modifier
+2.2	Une adresse e-mail n'appartient qu'à un seul compte.	☐ OK
+☐ À modifier
+2.3	L'adresse est vérifiée par un lien de confirmation envoyé à la première connexion. Tant qu'elle n'est pas confirmée, la récupération par e-mail est désactivée.	☐ OK
+☐ À modifier
+2.4	Seul l'admin central modifie l'adresse e-mail d'un compte, avec trace (auteur, date, ancienne et nouvelle adresse).	☐ OK
+☐ À modifier
+2.5	La connexion se fait par adresse e-mail ou par matricule.	☐ OK
+☐ À modifier
+2.6	Pour les techniciens prestataires, une adresse hors de ces deux domaines (par exemple celle de leur société) est possible avec validation de l'admin central.	☐ OK
+☐ À modifier
+2.7	Le mot de passe initial est à changer obligatoirement à la première connexion.	☐ OK
+☐ À modifier
+2.8	Critères du mot de passe : 10 caractères minimum avec majuscule, minuscule, chiffre et symbole. Le nouveau mot de passe doit différer de l'ancien.	☐ OK
+☐ À modifier
+2.9	Pas plus de 5 tentatives de connexion par minute.	☐ OK
+☐ À modifier
+2.10	Mot de passe oublié (page de connexion) : l'utilisateur saisit son e-mail ou son matricule. Le message affiché est toujours le même (« Si ce compte existe, un e-mail a été envoyé »), pour ne pas révéler quels comptes existent.	☐ OK
+☐ À modifier
+2.11	Le lien de réinitialisation est valable 60 minutes, ne sert qu'une fois et est annulé par une nouvelle demande. Le jeton n'est jamais conservé en clair. Limite de 3 demandes par heure et par compte.	☐ OK
+☐ À modifier
+2.12	Après un changement de mot de passe : les autres sessions du compte sont fermées, un e-mail d'information est envoyé, et l'événement est tracé (auteur, date, méthode).	☐ OK
+☐ À modifier
+2.13	Un utilisateur connecté qui change son mot de passe saisit d'abord son mot de passe actuel.	☐ OK
+☐ À modifier
+2.14	Si la boîte e-mail est inaccessible, l'admin central réinitialise le mot de passe SuiviTic (mot de passe provisoire à changer à la connexion suivante), avec trace.	☐ OK
+☐ À modifier
+2.15	Pour les rôles sensibles (admin central, adjoints, Sous-Directeur), une validation supplémentaire est exigée lors d'une réinitialisation par e-mail.	☐ OK
+☐ À modifier
+2.16	Option ultérieure par SMS : numéro unique par compte et vérifié, code à 6 chiffres valable 10 minutes, 3 essais, 3 SMS par heure et 5 par jour. Elle n'est activée que si la CRE obtient une passerelle SMS.	☐ OK
+☐ À modifier
+3. Fiche équipement
+N°	Règle	Vérification
+3.1	Aucun équipement n'existe sans : numéro de série, marque, modèle, numéro d'appel d'offres, type, établissement et labo.	☐ OK
+☐ À modifier
+3.2	Le numéro de série est unique dans tout le système et ne se modifie pas après création. Seul l'admin central corrige une erreur, avec motif et trace.	☐ OK
+☐ À modifier
+3.3	Types d'équipement : imprimante, PC fixe, laptop, écran, souris, clavier, switch, matériel réseau local, flybox.	☐ OK
+☐ À modifier
+3.4	États : en attente de confirmation, fonctionnel, en panne, perdu, totalement endommagé, réformé.	☐ OK
+☐ À modifier
+3.5	Un équipement n'est jamais supprimé : il est réformé, perdu ou totalement endommagé, pour garder l'historique.	☐ OK
+☐ À modifier
+3.6	Marque, modèle, type et appel d'offres viennent des référentiels. Seul le numéro de série est saisi.	☐ OK
+☐ À modifier
+3.7	Un équipement prêté à un autre établissement reste la propriété de son établissement d'origine (voir section 10).	☐ OK
+☐ À modifier
+4. Arrivages
+N°	Règle	Vérification
+4.1	Un arrivage a un numéro et une désignation. Le numéro est généré par le système (par exemple ARR-2026-0001) et la désignation est saisie par l'admin central.	☐ OK
+☐ À modifier
+4.2	Un arrivage contient une liste d'équipements. Chaque équipement a un numéro de série unique, une marque, un modèle et un numéro d'appel d'offres.	☐ OK
+☐ À modifier
+4.3	Seul l'admin central enregistre un arrivage, établissement par établissement, avec le bon de livraison.	☐ OK
+☐ À modifier
+4.4	Les équipements sont créés à l'état « en attente de confirmation ».	☐ OK
+☐ À modifier
+4.5	Trois confirmations sont requises : Sous-Directeur TIC, directeur de l'établissement et prof responsable. Chacune est datée et attribuée à son auteur.	☐ OK
+☐ À modifier
+4.6	Les équipements passent à « fonctionnel » seulement quand les trois ont confirmé.	☐ OK
+☐ À modifier
+4.7	Une confirmation avec réserve (manque, casse, mauvaise référence) ouvre un litige avec motif obligatoire, traité par l'admin central.	☐ OK
+☐ À modifier
+4.8	Un arrivage confirmé ne se modifie plus. Une erreur se corrige par un arrivage rectificatif.	☐ OK
+☐ À modifier
+4.9	Un arrivage non confirmé au-delà d'un délai (par exemple 15 jours) est signalé à l'admin central.	☐ OK
+☐ À modifier
+4.10	Si l'appel d'offres définit marques, modèles et quantités par lot, le système signale un arrivage qui dépasse le marché. Sinon l'appel d'offres reste un simple numéro de rattachement.	☐ OK
+☐ À modifier
+5. Inventaire par le prof responsable
+N°	Règle	Vérification
+5.1	L'inventaire se fait par campagne (annuelle ou à la demande de l'admin central), avec une date limite.	☐ OK
+☐ À modifier
+5.2	Pour chaque équipement de son établissement, le prof déclare un statut : fonctionnel, en panne ou perdu.	☐ OK
+☐ À modifier
+5.3	L'inventaire couvre : imprimantes, PC, laptops, écrans, souris, claviers, switchs et réseau local.	☐ OK
+☐ À modifier
+5.4	Un équipement non déclaré à la date limite est marqué « non déclaré ». Cette catégorie sert à relancer l'établissement.	☐ OK
+☐ À modifier
+5.5	Le prof ne crée pas d'équipement. Un équipement trouvé sur place mais absent du système est signalé à l'admin central.	☐ OK
+☐ À modifier
+6. Pannes, pertes et dommage total
+N°	Règle	Vérification
+6.1	Une panne exige un type de panne (référentiel) et peut créer automatiquement un ticket.	☐ OK
+☐ À modifier
+6.2	Un équipement en panne repasse à « fonctionnel » seulement après une intervention validée.	☐ OK
+☐ À modifier
+6.3	Une perte exige un PDF de justification juridique (par exemple procès-verbal ou déclaration de vol), obligatoire. Le type de justificatif vient d'un référentiel.	☐ OK
+☐ À modifier
+6.4	Le PDF est conservé, rattaché à l'équipement, non supprimable, et visible seulement des rôles autorisés. La perte reste « déclarée » jusqu'à validation par le Sous-Directeur TIC.	☐ OK
+☐ À modifier
+6.5	Totalement endommagé : équipement présent mais irrécupérable (par exemple carte mère irrécupérable). Ce n'est pas une perte, qui est une disparition. Un motif est obligatoire.	☐ OK
+☐ À modifier
+6.6	Le dommage total est validé par le prof responsable, le directeur d'établissement et un technicien interne. L'avis du technicien prestataire est optionnel : joint au dossier s'il est donné, sans bloquer s'il manque.	☐ OK
+☐ À modifier
+6.7	Tant que les trois validations obligatoires manquent, l'équipement reste « en panne » avec la mention « dommage total proposé ». Un refus ferme la demande avec motif.	☐ OK
+☐ À modifier
+6.8	Une fois validé, l'équipement n'est plus compté ni fonctionnel ni en panne, n'est plus proposé pour des interventions et attend la réforme. N'importe lequel des trois valideurs peut proposer le dommage total, l'ordre des validations est libre.	☐ OK
+☐ À modifier
+7. Interventions des techniciens prestataires
+N°	Règle	Vérification
+7.1	Le prestataire choisit l'établissement, le labo et l'équipement concerné.	☐ OK
+☐ À modifier
+7.2	L'action se choisit dans une liste fermée (référentiel) : câblage réseau, entretien, changement de pièce, installation système, nettoyage préventif, etc. L'admin central peut faire évoluer la liste.	☐ OK
+☐ À modifier
+7.3	Il saisit le numéro de série et la marque de l'équipement. Le système vérifie que le numéro existe et appartient à l'établissement ; sinon l'intervention est bloquée et signalée. Type, marque et modèle s'affichent automatiquement.	☐ OK
+☐ À modifier
+7.4	Pour un changement de pièce, il ajoute une ligne par pièce avec numéro de série et désignation, et indique si la pièce est ajoutée ou retirée.	☐ OK
+☐ À modifier
+7.5	Le numéro de série d'une pièce est unique et ne peut pas être réutilisé.	☐ OK
+☐ À modifier
+7.6	À la validation, le stock est mis à jour : la pièce ajoutée entre dans la composition de l'équipement, la pièce retirée en sort et est tracée comme rebut.	☐ OK
+☐ À modifier
+7.7	L'intervention est validée par le directeur de l'établissement et rattachée à un ticket quand elle y répond.	☐ OK
+☐ À modifier
+7.8	Le bon d'intervention PDF est archivé comme les autres documents.	☐ OK
+☐ À modifier
+7.9	Le « stock » mis à jour est la composition de l'équipement. Un stock de pièces détenu par l'établissement ou le prestataire, avec entrées et sorties, serait un module en plus.	☐ OK
+☐ À modifier
+8. Formatage et charte numérique
+N°	Règle	Vérification
+8.1	Un formatage exige l'approbation préalable du Sous-Directeur. Sans elle, le ticket ne peut pas être clôturé.	☐ OK
+☐ À modifier
+8.2	Pour approuver, le Sous-Directeur doit accepter la charte numérique : le technicien n'assume aucune responsabilité en cas de perte d'information.	☐ OK
+☐ À modifier
+8.3	L'acceptation est une case obligatoire, datée et attribuée à son auteur. La version de la charte est conservée. Un refus de formatage ne nécessite pas la charte.	☐ OK
+☐ À modifier
+8.4	La charte est acceptée à chaque demande de formatage, et son texte figure sur le bon d'intervention PDF.	☐ OK
+☐ À modifier
+8.5	Le contrôle porte sur la clôture. Une étape « formatage effectué », saisie seulement après approbation, empêcherait de formater avant l'accord. À décider : contrôle à la clôture seulement, ou étape supplémentaire.	☐ OK
+☐ À modifier
+9. Bac Pratique : formulaire indépendant
+N°	Règle	Vérification
+9.1	Le formulaire Bac Pratique est indépendant des tickets. Seul le directeur de l'établissement le saisit, les autres rôles le consultent.	☐ OK
+☐ À modifier
+9.2	Section 1, informations de l'établissement : en lecture seule, issues des référentiels (code, noms FR/AR, délégation, etc.).	☐ OK
+☐ À modifier
+9.3	Section 2, équipements groupés par type : le nombre par type et le nombre par marque sont calculés automatiquement, jamais saisis.	☐ OK
+☐ À modifier
+9.4	Un clic ouvre le détail de chaque équipement : série, marque, modèle, état, appel d'offres.	☐ OK
+☐ À modifier
+9.5	Les équipements perdus et totalement endommagés sont affichés mais ne comptent pas comme disponibles.	☐ OK
+☐ À modifier
+9.6	Section 3, manques par type : le directeur clique sur (+) pour ajouter une ligne avec un type (liste déroulante) et une quantité manquante (par exemple PC : 15, souris : 20).	☐ OK
+☐ À modifier
+9.7	Un même type n'apparaît qu'une fois par déclaration. Une ligne peut être supprimée tant que la déclaration n'est pas soumise.	☐ OK
+☐ À modifier
+9.8	Section 4, connexion internet : le directeur déclare l'état de la connexion, s'il a besoin d'un flybox (oui ou non) et d'une connexion de secours (oui ou non). Cet état se compare aux circuits du module Réseaux.	☐ OK
+☐ À modifier
+9.9	Après soumission, le formulaire passe à « soumis » et le directeur ne peut plus le modifier.	☐ OK
+☐ À modifier
+10. Prêts entre établissements (équipements et flybox)
+N°	Règle	Vérification
+10.1	Le superviseur local examine la demande soumise : il l'accepte ou la refuse avec motif.	☐ OK
+☐ À modifier
+10.2	S'il l'accepte, il envoie la demande d'équipement à un autre établissement.	☐ OK
+☐ À modifier
+10.3	L'établissement sollicité accepte ou refuse. S'il refuse, le superviseur peut en solliciter un autre. C'est le directeur de l'établissement sollicité qui répond.	☐ OK
+☐ À modifier
+10.4	S'il accepte, le superviseur valide le transfert.	☐ OK
+☐ À modifier
+10.5	Un prêt provisoire est alors créé : équipements identifiés par numéro de série, établissement prêteur, établissement emprunteur, dates de début et de fin, statut (en cours, retourné, en retard).	☐ OK
+☐ À modifier
+10.6	Pendant le prêt, l'équipement reste la propriété du prêteur. Il apparaît « prêté » chez le prêteur et « emprunté » chez l'emprunteur, sans gonfler le total de l'emprunteur.	☐ OK
+☐ À modifier
+10.7	Au retour, les deux établissements confirment la restitution. Un prêt dépassant sa date de fin est signalé.	☐ OK
+☐ À modifier
+10.8	Le flybox suit le même circuit : demande, acceptation par le superviseur, envoi à un établissement qui en possède un, validation, puis prêt provisoire avec période.	☐ OK
+☐ À modifier
+11. Supervision (superviseur et admin central)
+N°	Règle	Vérification
+11.1	Le tableau de bord affiche : équipements fonctionnels, en panne, perdus déclarés, totalement endommagés, non déclarés, arrivages en attente ou en litige, prêts en cours ou en retard.	☐ OK
+☐ À modifier
+11.2	Les chiffres se ventilent par établissement, type d'équipement et marché (appel d'offres), avec des filtres.	☐ OK
+☐ À modifier
+11.3	Un export est disponible pour les rapports officiels.	☐ OK
+☐ À modifier
+12. Référentiels et formulaires
+N°	Règle	Vérification
+12.1	Les données de référence sont saisies une seule fois par l'admin central. Les formulaires ne font que les lire.	☐ OK
+☐ À modifier
+12.2	Un champ de référence est une liste déroulante avec recherche, jamais un champ libre.	☐ OK
+☐ À modifier
+12.3	Restent en saisie : numéro de série, date, commentaire, numéro de bon de livraison, description de la panne.	☐ OK
+☐ À modifier
+12.4	Une valeur déjà utilisée est désactivée, pas supprimée : elle disparaît des listes, l'historique la garde.	☐ OK
+☐ À modifier
+12.5	L'admin central gère les listes. Les adjoints les consultent. Les autres rôles les voient en lecture seule.	☐ OK
+☐ À modifier
+12.6	Référentiels : gouvernorat, délégation, CRE (code et désignation FR/AR), établissement, direction, service, type d'équipement, marque, modèle, appel d'offres, lot d'appel d'offres, action de maintenance, type de panne, type de justificatif de perte, fournisseur et société prestataire, labo.	☐ OK
+☐ À modifier
+12.7	Cascade localisation : CRE → délégation → établissement → labo (une délégation appartient à un CRE ; l'admin central charge CRE, délégations et établissements en une fois depuis un fichier Excel). Directeur et prof voient leur établissement présélectionné.	☐ OK
+☐ À modifier
+12.8	Cascade organisation : direction → service.	☐ OK
+☐ À modifier
+12.9	Cascade équipement : type → marque → modèle, le modèle n'étant proposé que pour la marque et le type choisis.	☐ OK
+☐ À modifier
+12.10	Cascade achats : appel d'offres → lot → marque et modèle autorisés.	☐ OK
+☐ À modifier
+12.11	Cascade intervention : établissement → labo → équipement. Marque, type et modèle de l'équipement s'affichent automatiquement.	☐ OK
+☐ À modifier
+12.12	Cascade pièces : type de pièce → marque → désignation. Seul le numéro de série de la pièce est saisi.	☐ OK
+☐ À modifier
+12.13	Quand le parent change, le champ enfant se vide et se recharge. Si une liste est vide, un message indique qu'il faut la demander à l'admin central.	☐ OK
+☐ À modifier
+12.14	Le code et la désignation de la CRE se remplissent depuis l'établissement et ne sont pas modifiables. Gouvernorat, délégation, direction et service se déduisent du compte quand c'est possible, et seul l'admin central peut les modifier. Date du jour, auteur et statut initial sont posés par le système.	☐ OK
+☐ À modifier
+12.15	Valeur introuvable : l'utilisateur ne l'invente pas, il envoie une demande d'ajout à l'admin central, qui accepte ou refuse avec motif. L'opération reste en attente de cette décision.	☐ OK
+☐ À modifier
+13. Traçabilité
+N°	Règle	Vérification
+13.1	Chaque changement d'état d'un équipement, chaque confirmation, chaque validation, chaque prêt, chaque pièce ajoutée ou retirée et chaque PDF déposé est enregistré avec son auteur et sa date, sans modification possible.	☐ OK
+☐ À modifier
+13.2	Chaque document PDF généré est archivé avec une empreinte (SHA-256) pour garantir son inviolabilité.	☐ OK
+☐ À modifier
+14. Règles déjà en place dans l'application
+N°	Règle	Vérification
+14.1	Ticket : déclaré par l'établissement avec type de panne, criticité et mention Bac Pratique.	☐ OK
+☐ À modifier
+14.2	Clôture : numéro de série obligatoire, note de satisfaction de 1 à 5 et commentaire, puis validation par le directeur.	☐ OK
+☐ À modifier
+14.3	Pièces de rechange d'un ticket : provenance, numéro de bon de livraison et numéro de série unique.	☐ OK
+☐ À modifier
+14.4	Comptes numériques (Elissa, Edunet, Écoles numériques) : formulaire bilingue avec anciennes tâches et anciens lieux. La remarque confidentielle n'est visible que du superviseur et de l'admin, et n'est jamais envoyée au CNTE.	☐ OK
+☐ À modifier
+14.5	Missions : rattachées à un ticket ; validation par le chef de parc ou le Sous-Directeur avec véhicule, chauffeur et accompagnants ; référence OM-AAAA-XXXX.	☐ OK
+☐ À modifier
+14.6	Connexions : circuits internet ou intranet, principal ou secours, fournisseur, dates d'activation et de fin. Un circuit expiré est signalé.	☐ OK
+☐ À modifier
+14.7	Les PDF (bon d'intervention, ordre de mission, décharge) portent l'en-tête républicain officiel.	☐ OK
+☐ À modifier
+15. Tableaux de bord par rôle
+N°	Règle	Vérification
+15.1	Chaque tableau de bord ne montre que le périmètre de son rôle (un établissement, un mandat, un CRE pour le Sous-Directeur, le chef de parc et le technicien interne, ou tout le parc).	☐ OK
+☐ À modifier
+15.2	Un bloc « À traiter » en haut liste les actions en attente du rôle, avec un compteur.	☐ OK
+☐ À modifier
+15.3	Chaque chiffre est cliquable : il ouvre la liste filtrée, puis le détail de l'élément.	☐ OK
+☐ À modifier
+15.4	Les filtres sont en cascade (gouvernorat → délégation → établissement) et on peut choisir une période.	☐ OK
+☐ À modifier
+15.5	Les retards et les échéances proches s'affichent en rouge.	☐ OK
+☐ À modifier
+15.6	Les chiffres se recalculent à chaque ouverture de la page, pas en temps réel.	☐ OK
+☐ À modifier
+15.7	Admin central, chiffres : nombre d'établissements ; équipements par état (fonctionnel, en panne, perdu déclaré, totalement endommagé, non déclaré, réformé) ; tickets ouverts et clôturés ; arrivages (en attente, en litige, confirmés) ; prêts en cours et en retard ; demandes Bac Pratique.	☐ OK
+☐ À modifier
+15.8	Admin central, à traiter : litiges d'arrivage, demandes d'ajout dans les référentiels, réinitialisations de mot de passe, comptes à créer ou à vérifier, corrections de numéros de série.	☐ OK
+☐ À modifier
+15.9	Admin central, répartitions : par type, marque, appel d'offres et délégation ; évolution des pannes par mois ; établissements avec le plus de pannes ou d'équipements non déclarés. Actions directes : enregistrer un arrivage, créer un admin adjoint, gérer les référentiels, lancer une campagne d'inventaire.	☐ OK
+☐ À modifier
+15.10	Admin central adjoint : mêmes chiffres et répartitions que l'admin central, en lecture seule, sans bouton pour créer un admin ni enregistrer un arrivage. Un bloc « À suivre » remplace « À traiter » : campagnes en cours, taux d'inventaire déclaré par établissement, pannes, pertes et dommages totaux. Export des rapports.	☐ OK
+☐ À modifier
+15.11	Sous-Directeur TIC, chiffres : tickets en cours et résolus ; interventions en attente de validation ; demandes de comptes en attente ; circuits réseau expirant sous 30 jours ; établissements sans circuit de secours.	☐ OK
+☐ À modifier
+15.12	Sous-Directeur TIC, à traiter : formatages à approuver (avec la charte à accepter), arrivages à confirmer, pertes à valider, demandes Bac Pratique à examiner, transferts de prêt à valider, tickets à assigner, demandes de comptes (remarque confidentielle, transmission au CNTE). Pilotage : charge par technicien, délai moyen de résolution, satisfaction moyenne.	☐ OK
+☐ À modifier
+15.13	Sous-Directeur Bâtiments et chef de parc partagent le même tableau de bord : missions à valider, validées, du jour et de la semaine ; véhicules et chauffeurs affectés ou libres ; missions sans véhicule ou sans chauffeur à assigner ; calendrier par jour pour éviter les doubles affectations ; établissements à visiter avec lien d'itinéraire et partage WhatsApp ; ordres de mission générés (OM-AAAA-XXXX) avec accès au PDF.	☐ OK
+☐ À modifier
+15.14	Technicien interne (écran pensé pour le téléphone) : mes tickets triés par criticité (Bac Pratique en premier) ; mes demandes de formatage et leur statut ; interventions à clôturer ; dommages totaux à valider ; interventions en attente de validation du directeur ; tournée du jour avec itinéraire et mission liée ; mes chiffres (tickets résolus, satisfaction moyenne).	☐ OK
+☐ À modifier
+15.15	Technicien prestataire : uniquement les établissements où il est mandaté, avec les équipements en panne ; mes interventions (brouillon, en attente de validation du directeur, validées, refusées) ; bouton « Nouvelle intervention » (établissement → labo → équipement) ; pièces posées ce mois-ci avec numéros de série ; avis demandés sur des dommages totaux (optionnels) ; période de validité de son marché avec alerte avant l'expiration. Il ne voit ni les autres prestataires ni le reste du parc.	☐ OK
+☐ À modifier
+15.16	Directeur d'établissement : équipements par état et par type de son établissement ; connexion internet (circuit principal et de secours, dates de validité) ; à traiter (interventions, dommages totaux, arrivages) ; statut du formulaire Bac Pratique, manques déclarés et besoin de flybox ; prêts d'équipements et de flybox avec dates de retour ; tickets ouverts, demandes de comptes, missions prévues, avancement de l'inventaire par labo ; alerte sur les équipements non déclarés après la date limite.	☐ OK
+☐ À modifier
+15.17	Prof responsable de labo : progression de l'inventaire (équipements déclarés sur le total) avec compte à rebours jusqu'à la date limite ; équipements à déclarer (fonctionnel, en panne, perdu) ; pertes en attente du PDF de justification ; dommages totaux et arrivages à confirmer ; pannes en cours dans son labo ; équipements prêtés ou empruntés. Il ne voit que ses labos.	☐ OK
+☐ À modifier
+16. Hypothèses et points encore ouverts
+Quatre points restent à trancher : le rôle exact du superviseur local (1.5), l'adresse e-mail des prestataires (2.6), le contrôle du formatage (8.5) et la passerelle SMS (2.16). Récapitulatif de toutes les règles sur fond jaune :
+1.2  Admin central adjoint : consulte tout et suit les inventaires, les pannes, les pertes et les dommages totaux. Il ne peut ni créer d'autre admin ni enregistrer un arrivage.
+1.4  Sous-Directeur TIC : confirme les arrivages, approuve les formatages (après acceptation de la charte), valide les pertes et suit les interventions.
+1.5  Superviseur local : examine les demandes du Bac Pratique, les transmet à un autre établissement et valide les transferts. Je suppose que ce rôle est tenu par le Sous-Directeur TIC de la CRE.
+1.7  Prof responsable de labo : rattaché à un seul établissement. Il inventorie les équipements, déclare pannes et pertes, confirme les arrivages et valide les dommages totaux. Il ne peut ni modifier un arrivage ni voir les autres établissements. Un établissement peut avoir plusieurs profs responsables (un par labo).
+1.8  Technicien interne : technicien de la CRE. Il intervient sur les tickets, demande les formatages et valide les dommages totaux.
+2.6  Pour les techniciens prestataires, une adresse hors de ces deux domaines (par exemple celle de leur société) est possible avec validation de l'admin central.
+2.11  Le lien de réinitialisation est valable 60 minutes, ne sert qu'une fois et est annulé par une nouvelle demande. Le jeton n'est jamais conservé en clair. Limite de 3 demandes par heure et par compte.
+2.15  Pour les rôles sensibles (admin central, adjoints, Sous-Directeur), une validation supplémentaire est exigée lors d'une réinitialisation par e-mail.
+2.16  Option ultérieure par SMS : numéro unique par compte et vérifié, code à 6 chiffres valable 10 minutes, 3 essais, 3 SMS par heure et 5 par jour. Elle n'est activée que si la CRE obtient une passerelle SMS.
+3.3  Types d'équipement : imprimante, PC fixe, laptop, écran, souris, clavier, switch, matériel réseau local, flybox.
+4.1  Un arrivage a un numéro et une désignation. Le numéro est généré par le système (par exemple ARR-2026-0001) et la désignation est saisie par l'admin central.
+4.9  Un arrivage non confirmé au-delà d'un délai (par exemple 15 jours) est signalé à l'admin central.
+4.10  Si l'appel d'offres définit marques, modèles et quantités par lot, le système signale un arrivage qui dépasse le marché. Sinon l'appel d'offres reste un simple numéro de rattachement.
+6.4  Le PDF est conservé, rattaché à l'équipement, non supprimable, et visible seulement des rôles autorisés. La perte reste « déclarée » jusqu'à validation par le Sous-Directeur TIC.
+6.8  Une fois validé, l'équipement n'est plus compté ni fonctionnel ni en panne, n'est plus proposé pour des interventions et attend la réforme. N'importe lequel des trois valideurs peut proposer le dommage total, l'ordre des validations est libre.
+7.9  Le « stock » mis à jour est la composition de l'équipement. Un stock de pièces détenu par l'établissement ou le prestataire, avec entrées et sorties, serait un module en plus.
+8.4  La charte est acceptée à chaque demande de formatage, et son texte figure sur le bon d'intervention PDF.
+8.5  Le contrôle porte sur la clôture. Une étape « formatage effectué », saisie seulement après approbation, empêcherait de formater avant l'accord. À décider : contrôle à la clôture seulement, ou étape supplémentaire.
+9.5  Les équipements perdus et totalement endommagés sont affichés mais ne comptent pas comme disponibles.
+9.7  Un même type n'apparaît qu'une fois par déclaration. Une ligne peut être supprimée tant que la déclaration n'est pas soumise.
+10.3  L'établissement sollicité accepte ou refuse. S'il refuse, le superviseur peut en solliciter un autre. C'est le directeur de l'établissement sollicité qui répond.
+15.6  Les chiffres se recalculent à chaque ouverture de la page, pas en temps réel.
+15.13  Sous-Directeur Bâtiments et chef de parc partagent le même tableau de bord : missions à valider, validées, du jour et de la semaine ; véhicules et chauffeurs affectés ou libres ; missions sans véhicule ou sans chauffeur à assigner ; calendrier par jour pour éviter les doubles affectations ; établissements à visiter avec lien d'itinéraire et partage WhatsApp ; ordres de mission générés (OM-AAAA-XXXX) avec accès au PDF.

@@ -1,10 +1,49 @@
-<div style="font-family: sans-serif;">
-  <nav style="background-color: #0056b3; padding: 15px; display: flex; gap: 20px;">
-    <a routerLink="/dashboard" style="color: white; text-decoration: none; font-weight: bold;">Tableau de bord</a>
-    <a routerLink="/interventions" style="color: white; text-decoration: none; font-weight: bold;">Interventions</a>
-  </nav>
+<div class="app-shell">
+  <header class="app-topbar">
+    <div class="topbar-left">
+      <div class="brand-block">
+        <span class="flag-icon">🇹🇳</span>
+        <div class="brand-text">
+          <span class="brand-app">SuiviTic</span>
+          <span class="brand-desc">Ministère de l'Éducation · CRE Manouba</span>
+        </div>
+      </div>
 
-  <div style="padding: 20px;">
+      <nav class="main-nav">
+        <a routerLink="/dashboard" routerLinkActive="nav-active" class="nav-link">
+          📊 Supervision Régionale (SD TIC)
+        </a>
+        <a routerLink="/directeur" routerLinkActive="nav-active" class="nav-link nav-highlight">
+          🏫 Espace Directeur d'Établissement
+        </a>
+        <a routerLink="/interventions" routerLinkActive="nav-active" class="nav-link">
+          🔧 Interventions & Maintenance
+        </a>
+      </nav>
+    </div>
+
+    <div class="topbar-right">
+      <div class="profile-switcher">
+        <span class="role-badge">Session active</span>
+        <div class="user-profile-badge">
+          <div class="user-avatar">👤</div>
+          <div class="user-details">
+            <span class="user-name">M. Moncef Ben Salem</span>
+            <span class="user-role">Directeur · Lycée Ibn Abi Dhiaf</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main-content">
     <router-outlet></router-outlet>
-  </div>
+  </main>
+
+  <footer class="app-footer">
+    <div class="footer-inner">
+      <span>Système de gestion et suivi du parc informatique éducatif — SuiviTic (CRE Manouba · Version 2026)</span>
+      <span>Sous-direction TIC · Support & Assistance</span>
+    </div>
+  </footer>
 </div>

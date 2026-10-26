@@ -1,15 +1,339 @@
-<div *ngIf="!stats">Chargement...</div>
+<div class="dashboard-container">
+  <!-- En-tête officiel -->
+  <header class="dashboard-header">
+    <div class="header-titles">
+      <div class="republic-sub">République Tunisienne · Ministère de l'Éducation</div>
+      <h1 class="main-title">Commissariat Régional de l'Éducation — Manouba</h1>
+      <h2 class="sub-title">Tableau de Bord du Parc Informatique & Connectivité</h2>
+    </div>
+    <div class="header-actions">
+      <span class="date-badge">📅 {{ currentDate | date:'dd/MM/yyyy' }}</span>
+      <button class="btn btn-secondary" (click)="loadStats()" [disabled]="isLoading" title="Rafraîchir les données">
+        🔄 Actualiser
+      </button>
+      <button class="btn btn-primary" (click)="imprimerRapport()" title="Imprimer ou exporter le rapport">
+        🖨️ Exporter rapport
+      </button>
+    </div>
+  </header>
 
-<div *ngIf="stats" style="display: flex; gap: 20px;">
-  <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; flex: 1; border-top: 4px solid #0056b3;">
-    <h3>INTERVENTIONS</h3>
-    <p style="font-size: 32px; margin: 0;">{{ stats.interventions.total }}</p>
-    <p style="color: orange;">{{ stats.interventions.enAttente }} en attente</p>
+  <!-- État de chargement / Erreur -->
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Chargement des données du parc informatique...</p>
   </div>
-  
-  <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; flex: 1; border-top: 4px solid #0056b3;">
-    <h3>ÉQUIPEMENTS</h3>
-    <p style="font-size: 32px; margin: 0;">{{ stats.equipements.total }}</p>
-    <p style="color: red;">{{ stats.equipements.enPanne }} en panne</p>
+
+  <div *ngIf="errorMessage && !isLoading" class="error-banner">
+    ⚠️ {{ errorMessage }}
+    <button class="btn btn-sm btn-outline" (click)="loadStats()">Réessayer</button>
+  </div>
+
+  <div *ngIf="stats && !isLoading" class="dashboard-content">
+    <!-- Bloc 15.2 : Actions Prioritaires « À Traiter » -->
+    <section class="section-actions-a-traiter">
+      <div class="section-title-row">
+        <h3 class="section-heading">⚡ Actions Prioritaires & Alertes</h3>
+        <span class="badge-total">{{ stats.actionsATraiter?.length || 0 }} catégories d'action</span>
+      </div>
+      <div class="actions-grid">
+        <div *ngFor="let act of stats.actionsATraiter" 
+             class="action-card" 
+             [class.urgent]="act.urgence === 'Critique' || act.urgence === 'Haute'">
+          <div class="action-count">{{ act.count }}</div>
+          <div class="action-info">
+            <div class="action-text">{{ act.titre }}</div>
+            <span class="urgency-tag" [class.badge-critical]="act.urgence === 'Critique'" [class.badge-high]="act.urgence === 'Haute'">
+              {{ act.urgence }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cartes KPI Principales : Nombre total d'équipements et leur état -->
+    <section class="kpi-grid">
+      <!-- Total Équipements -->
+      <div class="kpi-card card-total" [class.active-card]="selectedStatFilter === null" (click)="filterByStatus(null)">
+        <div class="kpi-top">
+          <span class="kpi-label">TOTAL ÉQUIPEMENTS</span>
+          <span class="kpi-icon">📦</span>
+        </div>
+        <div class="kpi-value">{{ stats.equipements.total }}</div>
+        <div class="kpi-footer">
+          <span>Inventoriés sur toute la région</span>
+        </div>
+      </div>
+
+      <!-- En Service / Fonctionnels -->
+      <div class="kpi-card card-service" [class.active-card]="selectedStatFilter === 'service'" (click)="filterByStatus('service')">
+        <div class="kpi-top">
+          <span class="kpi-label">EN SERVICE (FONCTIONNELS)</span>
+          <span class="kpi-icon">✅</span>
+        </div>
+        <div class="kpi-value text-success">{{ stats.equipements.enService }}</div>
+        <div class="kpi-footer">
+          <span class="pill pill-success">{{ tauxDisponibilite }}% du parc disponible</span>
+        </div>
+      </div>
+
+      <!-- En Panne -->
+      <div class="kpi-card card-panne" [class.active-card]="selectedStatFilter === 'panne'" (click)="filterByStatus('panne')">
+        <div class="kpi-top">
+          <span class="kpi-label">EN PANNE (HORS SERVICE)</span>
+          <span class="kpi-icon">⚠️</span>
+        </div>
+        <div class="kpi-value text-danger">{{ stats.equipements.enPanne }}</div>
+        <div class="kpi-footer">
+          <span class="pill pill-danger">{{ tauxPanne }}% du parc à dépanner</span>
+        </div>
+      </div>
+
+      <!-- En attente de confirmation / Arrivages -->
+      <div class="kpi-card card-attente" [class.active-card]="selectedStatFilter === 'attente'" (click)="filterByStatus('attente')">
+        <div class="kpi-top">
+          <span class="kpi-label">EN ATTENTE DE CONFIRMATION</span>
+          <span class="kpi-icon">⏳</span>
+        </div>
+        <div class="kpi-value text-warning">{{ stats.equipements.enAttenteConfirmation }}</div>
+        <div class="kpi-footer">
+          <span class="pill pill-warning">Arrivages en cours de validation</span>
+        </div>
+      </div>
+
+      <!-- Dommages Totaux / Pertes -->
+      <div class="kpi-card card-dommage" [class.active-card]="selectedStatFilter === 'dommage'" (click)="filterByStatus('dommage')">
+        <div class="kpi-top">
+          <span class="kpi-label">DOMMAGE TOTAL / RÉFORME</span>
+          <span class="kpi-icon">🛑</span>
+        </div>
+        <div class="kpi-value text-muted">
+          {{ (stats.equipements.totalementEndommage || 0) + (stats.equipements.perdus || 0) }}
+        </div>
+        <div class="kpi-footer">
+          <span>{{ stats.equipements.totalementEndommage }} irrécupérables · {{ stats.equipements.perdus }} pertes</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Jauge de synthèse visuelle de l'état du parc -->
+    <section class="health-bar-container">
+      <div class="health-header">
+        <span class="health-title">État d'exploitation globale du parc ({{ stats.equipements.total }} matériels)</span>
+        <span class="health-stats">
+          <strong class="text-success">{{ stats.equipements.enService }} en service ({{ tauxDisponibilite }}%)</strong> · 
+          <strong class="text-danger">{{ stats.equipements.enPanne }} en panne ({{ tauxPanne }}%)</strong> · 
+          <strong class="text-warning">{{ stats.equipements.enAttenteConfirmation }} en attente</strong>
+        </span>
+      </div>
+      <div class="progress-bar-stacked">
+        <div class="bar-segment bar-success" 
+             [style.width.%]="(stats.equipements.enService / stats.equipements.total) * 100" 
+             title="En service: {{ stats.equipements.enService }}">
+        </div>
+        <div class="bar-segment bar-danger" 
+             [style.width.%]="(stats.equipements.enPanne / stats.equipements.total) * 100" 
+             title="En panne: {{ stats.equipements.enPanne }}">
+        </div>
+        <div class="bar-segment bar-warning" 
+             [style.width.%]="(stats.equipements.enAttenteConfirmation / stats.equipements.total) * 100" 
+             title="En attente: {{ stats.equipements.enAttenteConfirmation }}">
+        </div>
+        <div class="bar-segment bar-muted" 
+             [style.width.%]="((stats.equipements.totalementEndommage + stats.equipements.perdus) / stats.equipements.total) * 100" 
+             title="Dommage total / perte">
+        </div>
+      </div>
+      <div class="legend-row">
+        <span class="legend-item"><span class="color-dot dot-success"></span> En service</span>
+        <span class="legend-item"><span class="color-dot dot-danger"></span> En panne</span>
+        <span class="legend-item"><span class="color-dot dot-warning"></span> En attente triple confirmation</span>
+        <span class="legend-item"><span class="color-dot dot-muted"></span> Dommage total / Perte</span>
+      </div>
+    </section>
+
+    <!-- Filtres & Onglets d'analyse -->
+    <div class="dashboard-tabs-bar">
+      <div class="tabs-group">
+        <button class="tab-btn" [class.active]="activeTab === 'vue-ensemble'" (click)="activeTab = 'vue-ensemble'">
+          📊 Répartition par Type d'Équipement
+        </button>
+        <button class="tab-btn" [class.active]="activeTab === 'etablissements'" (click)="activeTab = 'etablissements'">
+          🏫 Par Établissement & Délégation
+        </button>
+        <button class="tab-btn" [class.active]="activeTab === 'pannes'" (click)="activeTab = 'pannes'">
+          🚨 Incidents & Pannes Signalées ({{ stats.pannesRecentes?.length || 0 }})
+        </button>
+      </div>
+
+      <div class="search-filter-box">
+        <input type="text" 
+               [(ngModel)]="searchTerm" 
+               placeholder="🔍 Rechercher établissement, type, n°..." 
+               class="search-input" />
+      </div>
+    </div>
+
+    <!-- Onglet 1 : Répartition par Type d'Équipement -->
+    <section *ngIf="activeTab === 'vue-ensemble'" class="tab-panel">
+      <div class="panel-header-row">
+        <h3>Ventilation du matériel par catégorie (Section 3.3)</h3>
+        <div class="filter-pills">
+          <button class="pill-btn" [class.active]="selectedType === 'TOUS'" (click)="selectedType = 'TOUS'">Tous les types</button>
+          <button *ngFor="let t of stats.parType" class="pill-btn" [class.active]="selectedType === t.type" (click)="selectedType = t.type">
+            {{ t.icon }} {{ t.type }}
+          </button>
+        </div>
+      </div>
+
+      <div class="types-grid">
+        <div *ngFor="let item of filteredTypes" class="type-card">
+          <div class="type-card-head">
+            <span class="type-icon-large">{{ item.icon }}</span>
+            <div class="type-title-block">
+              <h4 class="type-name">{{ item.type }}</h4>
+              <span class="type-total">{{ item.total }} unités</span>
+            </div>
+          </div>
+
+          <div class="type-stats-bars">
+            <div class="stat-row">
+              <span class="stat-name">En service</span>
+              <span class="stat-num text-success font-bold">{{ item.enService }}</span>
+            </div>
+            <div class="mini-bar">
+              <div class="mini-bar-fill fill-success" [style.width.%]="(item.enService / item.total) * 100"></div>
+            </div>
+
+            <div class="stat-row">
+              <span class="stat-name">En panne</span>
+              <span class="stat-num text-danger font-bold">{{ item.enPanne }}</span>
+            </div>
+            <div class="mini-bar">
+              <div class="mini-bar-fill fill-danger" [style.width.%]="(item.enPanne / item.total) * 100"></div>
+            </div>
+
+            <div class="stat-row" *ngIf="item.enAttente > 0">
+              <span class="stat-name">En attente</span>
+              <span class="stat-num text-warning font-bold">{{ item.enAttente }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Onglet 2 : Par Établissement & Délégation -->
+    <section *ngIf="activeTab === 'etablissements'" class="tab-panel">
+      <div class="panel-header-row">
+        <h3>État du parc par Établissement (CRE Manouba)</h3>
+        <div class="delegation-select-wrap">
+          <label for="delegationSelect">Délégation :</label>
+          <select id="delegationSelect" [(ngModel)]="selectedDelegation" class="form-select">
+            <option value="TOUTES">Toutes les délégations</option>
+            <option value="Manouba">Manouba</option>
+            <option value="Oued Ellil">Oued Ellil</option>
+            <option value="Borj El Amri">Borj El Amri</option>
+            <option value="Mornaguia">Mornaguia</option>
+            <option value="Tebourba">Tebourba</option>
+          </select>
+        </div>
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Établissement</th>
+            <th>Délégation</th>
+            <th class="text-center">Total Équipements</th>
+            <th class="text-center">En Service</th>
+            <th class="text-center">En Panne</th>
+            <th class="text-center">Taux Opérationnel</th>
+            <th class="text-center">Bac Pratique</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let etab of filteredEtablissements">
+            <td class="font-bold">🏫 {{ etab.nom }}</td>
+            <td><span class="badge-neutral">{{ etab.delegation }}</span></td>
+            <td class="text-center font-bold">{{ etab.total }}</td>
+            <td class="text-center text-success font-bold">{{ etab.enService }}</td>
+            <td class="text-center">
+              <span [class.text-danger]="etab.enPanne > 0" [class.font-bold]="etab.enPanne > 0">
+                {{ etab.enPanne }}
+              </span>
+            </td>
+            <td class="text-center">
+              <div class="ratio-cell">
+                <span>{{ ((etab.enService / etab.total) * 100 | number:'1.0-0') }}%</span>
+                <div class="table-bar">
+                  <div class="table-bar-fill" [style.width.%]="(etab.enService / etab.total) * 100"></div>
+                </div>
+              </div>
+            </td>
+            <td class="text-center">
+              <span *ngIf="etab.bacPratiquePret" class="pill pill-success" title="Parc suffisant">Prêt</span>
+              <span *ngIf="!etab.bacPratiquePret" class="pill pill-danger" title="Besoin renfort ou prêts">Manque signalé</span>
+            </td>
+          </tr>
+          <tr *ngIf="filteredEtablissements.length === 0">
+            <td colspan="7" class="text-center empty-cell">Aucun établissement ne correspond aux filtres.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Onglet 3 : Incidents & Pannes Récents -->
+    <section *ngIf="activeTab === 'pannes'" class="tab-panel">
+      <div class="panel-header-row">
+        <h3>Dernières pannes nécessitant intervention (Section 6 & 7)</h3>
+        <span class="badge-total">{{ filteredPannes.length }} incidents enregistrés</span>
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>N° Équipement</th>
+            <th>Type & Modèle</th>
+            <th>Établissement & Labo</th>
+            <th>Description de la Panne</th>
+            <th>Date Signalement</th>
+            <th>Priorité</th>
+            <th>Statut Intervention</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of filteredPannes">
+            <td class="font-mono text-primary font-bold">{{ p.id }}</td>
+            <td>
+              <div class="device-cell">
+                <span class="device-type font-bold">{{ p.type }}</span>
+                <span class="device-model text-muted">{{ p.marque }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="loc-cell">
+                <span>{{ p.etablissement }}</span>
+                <span class="text-muted small">{{ p.labo }}</span>
+              </div>
+            </td>
+            <td class="panne-desc">{{ p.panne }}</td>
+            <td>{{ p.date | date:'dd/MM/yyyy' }}</td>
+            <td>
+              <span class="priority-tag" 
+                    [class.prio-critique]="p.priorite === 'Critique'"
+                    [class.prio-haute]="p.priorite === 'Élevée'"
+                    [class.prio-moyenne]="p.priorite === 'Moyenne'">
+                {{ p.priorite }}
+              </span>
+            </td>
+            <td>
+              <span class="status-pill">{{ p.statut }}</span>
+            </td>
+          </tr>
+          <tr *ngIf="filteredPannes.length === 0">
+            <td colspan="7" class="text-center empty-cell">Aucun incident trouvé.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
   </div>
 </div>

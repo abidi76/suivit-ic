@@ -1,0 +1,7 @@
+{
+  "name": "SuiviTic",
+  "description": "Application de gestion du parc informatique du Ministère de l'Éducation — Tunisie",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

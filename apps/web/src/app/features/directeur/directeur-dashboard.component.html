@@ -1,0 +1,474 @@
+<div class="directeur-container">
+  <!-- Toast message -->
+  <div *ngIf="successToast" class="toast-notification">
+    {{ successToast }}
+  </div>
+
+  <!-- Chargement -->
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Chargement du dossier de l'établissement...</p>
+  </div>
+
+  <div *ngIf="data && !isLoading">
+    <!-- En-tête officiel de l'établissement -->
+    <header class="establishment-header">
+      <div class="header-main">
+        <div class="school-badge">🏫</div>
+        <div class="school-info">
+          <div class="school-pre">Établissement Scolaire · Gouvernorat de la Manouba</div>
+          <h1 class="school-name">{{ data.etablissement.nom }}</h1>
+          <div class="school-meta">
+            <span>Code : <strong>{{ data.etablissement.code }}</strong></span>
+            <span>Délégation : <strong>{{ data.etablissement.delegation }}</strong></span>
+            <span>Directeur : <strong>{{ data.etablissement.directeur }}</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Circuits réseau & Connexion -->
+      <div class="network-status-box">
+        <div class="network-title">📡 Connectivité & Circuits Réseau</div>
+        <div class="circuits-list">
+          <div *ngFor="let c of data.etablissement.circuits" class="circuit-item">
+            <span class="status-indicator-dot dot-active"></span>
+            <div class="circuit-text">
+              <span class="circuit-name">{{ c.type }}</span>
+              <span class="circuit-specs">{{ c.operateur }} · {{ c.debit }} (Validité: {{ c.expiration }})</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Barre d'actions prioritaires pour le Directeur (Seul émetteur des réclamations) -->
+    <div class="director-action-bar">
+      <div class="action-bar-label">
+        <span class="label-title">Gestionnaire de l'Établissement</span>
+        <span class="label-sub">Déclaration officielle des incidents auprès de la Sous-Direction TIC</span>
+      </div>
+      <div class="action-buttons-group">
+        <button class="btn btn-danger-action" (click)="openReclamationModal('PANNE_EQUIPEMENT')">
+          🚨 Déclarer une Panne Équipement
+        </button>
+        <button class="btn btn-warning-action" (click)="openReclamationModal('CONNECTIVITE')">
+          🌐 Déclarer Coupure Connexion (CNX)
+        </button>
+        <button class="btn btn-secondary-action" (click)="showPretModal = true">
+          📶 Demander Prêt Équipement / Flybox
+        </button>
+      </div>
+    </div>
+
+    <!-- 4 Métriques Clés de l'Établissement -->
+    <div class="kpi-row">
+      <div class="kpi-mini-card" [class.highlight-alert]="data.stats.enPanne > 0">
+        <div class="kpi-mini-top">
+          <span>ÉQUIPEMENTS EN PANNE</span>
+          <span class="icon">⚠️</span>
+        </div>
+        <div class="kpi-mini-val text-danger">{{ data.stats.enPanne }}</div>
+        <div class="kpi-mini-sub">Sur {{ data.stats.totalEquipements }} matériels</div>
+      </div>
+
+      <div class="kpi-mini-card" [class.highlight-action]="data.interventionsAValider.length > 0">
+        <div class="kpi-mini-top">
+          <span>INTERVENTIONS À VALIDER</span>
+          <span class="icon">✍️</span>
+        </div>
+        <div class="kpi-mini-val text-primary">{{ data.interventionsAValider.length }}</div>
+        <div class="kpi-mini-sub">Validation directeur requise</div>
+      </div>
+
+      <div class="kpi-mini-card">
+        <div class="kpi-mini-top">
+          <span>RÉCLAMATIONS EN COURS</span>
+          <span class="icon">📋</span>
+        </div>
+        <div class="kpi-mini-val">{{ data.reclamations.length }}</div>
+        <div class="kpi-mini-sub">Suivi SD TIC & Ordres de mission</div>
+      </div>
+
+      <div class="kpi-mini-card">
+        <div class="kpi-mini-top">
+          <span>PRÊTS & EMPRUNTS</span>
+          <span class="icon">🔄</span>
+        </div>
+        <div class="kpi-mini-val">{{ data.demandesPrets.length }}</div>
+        <div class="kpi-mini-sub">Équipements & Flybox Bac Pratique</div>
+      </div>
+    </div>
+
+    <!-- Navigation des Sections -->
+    <div class="sections-nav">
+      <button class="nav-tab" [class.active]="activeSection === 'reclamations'" (click)="activeSection = 'reclamations'">
+        📋 Réclamations & Traitement SD TIC ({{ data.reclamations.length }})
+      </button>
+      <button class="nav-tab" [class.active]="activeSection === 'interventions'" (click)="activeSection = 'interventions'">
+        ✍️ Interventions Technicien à Valider
+        <span *ngIf="data.interventionsAValider.length > 0" class="badge-count">
+          {{ data.interventionsAValider.length }}
+        </span>
+      </button>
+      <button class="nav-tab" [class.active]="activeSection === 'prets'" (click)="activeSection = 'prets'">
+        🤝 Demandes d'Emprunts & Flybox ({{ data.demandesPrets.length }})
+      </button>
+      <button class="nav-tab" [class.active]="activeSection === 'parc'" (click)="activeSection = 'parc'">
+        🏢 Parc Informatique & Salles
+      </button>
+    </div>
+
+    <!-- SECTION 1 : Suivi des Réclamations & Traitement SD TIC -->
+    <section *ngIf="activeSection === 'reclamations'" class="content-panel">
+      <div class="panel-header">
+        <div>
+          <h3>Suivi des Réclamations déclarées par le Directeur</h3>
+          <p class="panel-desc">
+            Prise en charge par la Sous-Direction TIC (attribution d'Ordres de Mission et véhicules) et interventions des techniciens internes.
+          </p>
+        </div>
+        <button class="btn btn-sm btn-primary" (click)="openReclamationModal('PANNE_EQUIPEMENT')">
+          + Nouvelle déclaration
+        </button>
+      </div>
+
+      <div class="reclamations-list">
+        <div *ngFor="let rec of data.reclamations" class="reclamation-card">
+          <div class="rec-header">
+            <div class="rec-title-wrap">
+              <span class="rec-id">{{ rec.id }}</span>
+              <span class="badge-type" [class.badge-cnx]="rec.type === 'CONNECTIVITE'">
+                {{ rec.type === 'CONNECTIVITE' ? '🌐 Réseau / Connexion' : '🖥️ Panne Matériel' }}
+              </span>
+              <span *ngIf="rec.bacPratique" class="badge-bac">🎯 Priorité Bac Pratique</span>
+              <h4 class="rec-title">{{ rec.titre }}</h4>
+            </div>
+            <div class="rec-date">
+              Signalé le {{ rec.dateDeclaration | date:'dd/MM/yyyy HH:mm' }}
+            </div>
+          </div>
+
+          <div class="rec-details-grid">
+            <div class="detail-block">
+              <span class="detail-label">Emplacement & Matériel :</span>
+              <span class="detail-val">{{ rec.labo }} — <strong>{{ rec.equipement }}</strong></span>
+            </div>
+            <div class="detail-block">
+              <span class="detail-label">Niveau de criticité :</span>
+              <span class="priority-pill" [class.prio-critique]="rec.criticite === 'CRITIQUE'">
+                {{ rec.criticite }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Timeline du Traitement SD TIC & Technicien -->
+          <div class="processing-workflow-box">
+            <div class="workflow-title">
+              <span>Flux de Traitement Régional :</span>
+              <span class="workflow-status-badge">{{ rec.statutTexte }}</span>
+            </div>
+
+            <!-- Détails de l'Ordre de Mission SD TIC -->
+            <div *ngIf="rec.sdTicDetails" class="sd-tic-box">
+              <div class="box-icon">🚗</div>
+              <div class="box-content">
+                <div class="box-headline">
+                  Ordre de Mission émis par le SD TIC : <strong>{{ rec.sdTicDetails.omNumero }}</strong>
+                </div>
+                <div class="box-meta">
+                  <span>Véhicule : <strong>{{ rec.sdTicDetails.vehicule }}</strong></span>
+                  <span>Chauffeur : <strong>{{ rec.sdTicDetails.chauffeur }}</strong></span>
+                  <span>Technicien assigné : <strong>{{ rec.sdTicDetails.technicien }}</strong></span>
+                  <span>Passage prévu : <strong>{{ rec.sdTicDetails.dateMission }}</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Rapport d'Intervention Détaillé du Technicien -->
+            <div *ngIf="rec.rapportTechnicien" class="tech-report-box">
+              <div class="tech-report-head">
+                <span class="tech-report-title">📝 Rapport d'Intervention du Technicien Interne :</span>
+              </div>
+              <div class="tech-report-body">
+                « {{ rec.rapportTechnicien }} »
+              </div>
+            </div>
+
+            <!-- Si aucun ordre de mission encore émis -->
+            <div *ngIf="!rec.sdTicDetails" class="waiting-sd-tic">
+              ⏳ En attente de planification par la Sous-Direction TIC (affectation véhicule et technicien).
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2 : Interventions Technicien à Valider -->
+    <section *ngIf="activeSection === 'interventions'" class="content-panel">
+      <div class="panel-header">
+        <div>
+          <h3>Validation des Interventions Réalisées (Règle 7.7 & 14.2)</h3>
+          <p class="panel-desc">
+            Le Directeur d'établissement examine le rapport de travail, valide la remise en service et attribue une note de satisfaction.
+          </p>
+        </div>
+      </div>
+
+      <div *ngIf="data.interventionsAValider.length === 0" class="empty-state">
+        ✅ Aucune intervention en attente de votre validation. Toutes les fiches sont à jour.
+      </div>
+
+      <div class="interventions-pending-list">
+        <div *ngFor="let item of data.interventionsAValider" class="intervention-action-card">
+          <div class="int-header">
+            <span class="int-id">{{ item.id }}</span>
+            <span class="int-date">Date intervention : {{ item.dateIntervention | date:'dd/MM/yyyy' }}</span>
+          </div>
+
+          <div class="int-body">
+            <h4 class="int-title">{{ item.type }}</h4>
+            <p class="int-equip">Matériel : <strong>{{ item.equipementNom }}</strong> (Réf: {{ item.equipementId }})</p>
+            <p class="int-tech">Intervenant : <strong>{{ item.technicien }}</strong></p>
+
+            <div class="report-quote">
+              <div class="quote-label">Rapport détaillé de l'intervenant :</div>
+              <p class="quote-text">« {{ item.rapportDetaille }} »</p>
+            </div>
+
+            <div *ngIf="item.piecesPosees" class="pieces-tag">
+              🔧 Pièces de rechange tracées : <strong>{{ item.piecesPosees }}</strong>
+            </div>
+          </div>
+
+          <div class="int-footer">
+            <button class="btn btn-success" (click)="ouvrirValidationIntervention(item)">
+              ✍️ Valider et Noter cette intervention
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3 : Demandes d'Emprunts & Prêts (Équipements & Flybox) -->
+    <section *ngIf="activeSection === 'prets'" class="content-panel">
+      <div class="panel-header">
+        <div>
+          <h3>Prêts d'Équipements & Connexions Flybox (Sections 9 & 10)</h3>
+          <p class="panel-desc">
+            Gestion des transferts inter-établissements validés par le Superviseur SD TIC dans le cadre du Bac Pratique ou de renforts.
+          </p>
+        </div>
+        <button class="btn btn-sm btn-primary" (click)="showPretModal = true">
+          + Nouvelle demande d'emprunt
+        </button>
+      </div>
+
+      <div class="prets-grid">
+        <div *ngFor="let p of data.demandesPrets" class="pret-card" [class.pret-recu]="p.direction === 'RECU'">
+          <div class="pret-direction-banner">
+            <span *ngIf="p.direction === 'RECU'">📥 Sollicitation reçue d'un autre établissement</span>
+            <span *ngIf="p.direction === 'ENVOYE'">📤 Notre demande d'emprunt transmise</span>
+          </div>
+
+          <div class="pret-body">
+            <div class="pret-id">{{ p.id }}</div>
+            <h4 class="pret-materiel">{{ p.typeMateriel }}</h4>
+            <p class="pret-motif"><strong>Motif :</strong> {{ p.motif }}</p>
+            <p class="pret-date"><strong>Période demandée :</strong> {{ p.periode }}</p>
+
+            <div *ngIf="p.direction === 'RECU'" class="pret-sollicitant">
+              Établissement demandeur : <strong>{{ p.demandeurNom }}</strong>
+            </div>
+
+            <div class="pret-status-pill">
+              Statut : <strong>{{ p.statut }}</strong>
+            </div>
+
+            <!-- Actions pour le directeur si demande reçue -->
+            <div *ngIf="p.direction === 'RECU' && p.statut === 'EN_ATTENTE_REPONSE_DIRECTEUR'" class="pret-actions">
+              <button class="btn btn-sm btn-success" (click)="repondrePret(p.id, true)">
+                ✅ Accepter le prêt
+              </button>
+              <button class="btn btn-sm btn-danger" (click)="repondrePret(p.id, false)">
+                ❌ Refuser
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4 : Parc de l'établissement -->
+    <section *ngIf="activeSection === 'parc'" class="content-panel">
+      <div class="panel-header">
+        <div>
+          <h3>Inventaire Synthétique de l'Établissement</h3>
+          <p class="panel-desc">
+            Total : {{ data.stats.totalEquipements }} équipements · {{ data.stats.enService }} en service · {{ data.stats.enPanne }} en panne
+          </p>
+        </div>
+      </div>
+
+      <div class="rooms-grid">
+        <div class="room-card">
+          <h4>🖥️ Laboratoire Informatique 1</h4>
+          <p class="room-desc">24 Postes PC Dell Optiplex · 1 Switch Cisco 24p · 1 Vidéoprojecteur</p>
+          <span class="badge-status-ok">100% Fonctionnel</span>
+        </div>
+        <div class="room-card">
+          <h4>🖥️ Laboratoire Informatique 2 (Salle Bac)</h4>
+          <p class="room-desc">26 Postes PC · 1 Imprimante Réseau · 5 Écrans en panne signalés</p>
+          <span class="badge-status-warn">5 Écrans en attente dépannage</span>
+        </div>
+        <div class="room-card">
+          <h4>🏢 Administration & Secrétariat</h4>
+          <p class="room-desc">12 PC Bureautique · 4 Imprimantes HP · 1 Flybox 4G Secours</p>
+          <span class="badge-status-ok">Opérationnel</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- MODAL 1 : Nouvelle Réclamation Panne ou Connectivité -->
+  <div *ngIf="showReclamationModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>
+          {{ nouvelleReclamation.type === 'CONNECTIVITE' ? '🌐 Signaler une Coupure Réseau / Connexion' : '🚨 Déclarer une Panne Équipement' }}
+        </h3>
+        <button class="modal-close" (click)="showReclamationModal = false">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Type de réclamation :</label>
+          <select [(ngModel)]="nouvelleReclamation.type" class="form-input">
+            <option value="PANNE_EQUIPEMENT">Panne Équipement Matériel (PC, Écran, Imprimante, Switch)</option>
+            <option value="CONNECTIVITE">Coupure Connectivité (Fibre Edunet, Routeur, Flybox)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Titre de l'incident :</label>
+          <input type="text" 
+                 [(ngModel)]="nouvelleReclamation.titre" 
+                 placeholder="Ex: Coupure complète de connexion dans le labo 1" 
+                 class="form-input" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Laboratoire / Local :</label>
+            <input type="text" [(ngModel)]="nouvelleReclamation.labo" class="form-input" />
+          </div>
+          <div class="form-group flex-1">
+            <label>Niveau de Criticité :</label>
+            <select [(ngModel)]="nouvelleReclamation.criticite" class="form-input">
+              <option value="CRITIQUE">CRITIQUE (Bloque les cours / Bac)</option>
+              <option value="HAUTE">HAUTE (Urgente)</option>
+              <option value="MOYENNE">MOYENNE (Normale)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Désignation équipement / circuit concerné :</label>
+          <input type="text" 
+                 [(ngModel)]="nouvelleReclamation.equipement" 
+                 placeholder="Ex: Circuit Fibre Edunet ou N° Série Matériel" 
+                 class="form-input" />
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label>
+            <input type="checkbox" [(ngModel)]="nouvelleReclamation.bacPratique" />
+            <strong>Impact sur la préparation du Bac Pratique</strong> (priorité d'affectation véhicule SD TIC)
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showReclamationModal = false">Annuler</button>
+        <button class="btn btn-danger-action" 
+                (click)="soumettreReclamation()" 
+                [disabled]="!nouvelleReclamation.titre.trim()">
+          📤 Envoyer au SD TIC
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2 : Validation d'Intervention avec Note 1-5 -->
+  <div *ngIf="selectedIntervention" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Validation de l'Intervention {{ selectedIntervention.id }}</h3>
+        <button class="modal-close" (click)="selectedIntervention = null">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <p><strong>Intervenant :</strong> {{ selectedIntervention.technicien }}</p>
+        <p><strong>Matériel :</strong> {{ selectedIntervention.equipementNom }}</p>
+        <p class="quote-text">« {{ selectedIntervention.rapportDetaille }} »</p>
+
+        <div class="form-group" style="margin-top: 1rem;">
+          <label><strong>Note de satisfaction du Directeur (1 à 5 étoiles) :</strong></label>
+          <div class="star-rating">
+            <button *ngFor="let s of [1,2,3,4,5]" 
+                    type="button" 
+                    class="star-btn" 
+                    [class.filled]="validationNote >= s" 
+                    (click)="validationNote = s">
+              ★
+            </button>
+            <span class="rating-label">{{ validationNote }} / 5 étoiles</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Commentaire de validation & clôture :</label>
+          <textarea [(ngModel)]="validationCommentaire" rows="3" class="form-input"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="selectedIntervention = null">Annuler</button>
+        <button class="btn btn-success" (click)="confirmerValidationIntervention()">
+          ✍️ Confirmer la Validation & Clôturer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3 : Demande de prêt / Flybox -->
+  <div *ngIf="showPretModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Demander un Prêt d'Équipement ou Flybox (Bac Pratique)</h3>
+        <button class="modal-close" (click)="showPretModal = false">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Matériel souhaité :</label>
+          <input type="text" [(ngModel)]="nouveauPret.typeMateriel" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label>Motif de la demande :</label>
+          <input type="text" [(ngModel)]="nouveauPret.motif" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label>Période nécessaire :</label>
+          <input type="text" [(ngModel)]="nouveauPret.periode" class="form-input" />
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showPretModal = false">Annuler</button>
+        <button class="btn btn-primary" (click)="soumettreDemandePret()">
+          📤 Transmettre au Superviseur SD TIC
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
