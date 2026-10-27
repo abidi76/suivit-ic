@@ -1,0 +1,474 @@
+<div class="prestataire-container">
+  <!-- Toast alert -->
+  <div *ngIf="toastMessage" class="toast-alert">
+    {{ toastMessage }}
+  </div>
+
+  <!-- Header Card Prestataire -->
+  <header class="prestataire-header-card">
+    <div class="header-main">
+      <div class="prestataire-avatar-box">
+        <span class="avatar-icon">{{ currentUser?.avatar || '🧰' }}</span>
+      </div>
+
+      <div class="prestataire-info">
+        <div class="badge-role">
+          <span class="flag">🇹🇳</span>
+          <span>PRESTATAIRE EXTERNE DE MAINTENANCE AGRÉÉ</span>
+        </div>
+        <h1 class="prestataire-name">{{ currentUser?.prenom }} {{ currentUser?.nom }}</h1>
+        <p class="prestataire-sub">
+          <strong>Entité :</strong> {{ currentUser?.prestataireProfile?.societeNom }} · 
+          <strong>Marché :</strong> {{ currentUser?.prestataireProfile?.numeroMarche }}
+        </p>
+      </div>
+
+      <!-- Cadre réglementaire : Dispense stricte d'OM et de Voiture du CRE -->
+      <div class="rule-box-om-exempt">
+        <div class="rule-icon">🛡️</div>
+        <div class="rule-text">
+          <div class="rule-title">RÈGLE SPÉCIFIQUE PRESTATAIRES EXTÉRIEURS</div>
+          <div class="rule-body">
+            Interventions réservées <strong>directement auprès des Directeurs d'Établissement</strong>.
+            <div class="exempt-tag">
+              ⚡ SANS BESOIN D'ORDRE DE MISSION (OM) NI VÉHICULE CRE
+            </div>
+            La validation finale est effectuée par le <strong>Directeur de l'établissement</strong>.
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- KPI Overview -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon">📅</div>
+      <div class="kpi-details">
+        <div class="kpi-value">{{ interventions.length }}</div>
+        <div class="kpi-label">Interventions Réservées</div>
+      </div>
+    </div>
+
+    <div class="kpi-card highlight">
+      <div class="kpi-icon">✍️</div>
+      <div class="kpi-details">
+        <div class="kpi-value">
+          {{ (interventions | slice:0:10).length }}
+        </div>
+        <div class="kpi-label">Soumises aux Directeurs</div>
+      </div>
+    </div>
+
+    <div class="kpi-card success">
+      <div class="kpi-icon">✅</div>
+      <div class="kpi-details">
+        <div class="kpi-value">1</div>
+        <div class="kpi-label">Validées & Signées</div>
+      </div>
+    </div>
+
+    <div class="kpi-action-card">
+      <button class="btn-book-direct" (click)="ouvrirModalReservation()">
+        ➕ Réserver une Intervention Directe avec un Directeur
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabs Nav -->
+  <nav class="prestataire-tabs-nav">
+    <button class="tab-btn" 
+            [class.active]="activeTab === 'reservations'" 
+            (click)="activeTab = 'reservations'">
+      📋 Planning & Réservations Directes ({{ interventions.length }})
+    </button>
+    <button class="tab-btn" 
+            [class.active]="activeTab === 'nouveau-rapport'" 
+            (click)="activeTab = 'nouveau-rapport'">
+      📝 Saisie Rapport d'Intervention & Pièces de Rechange
+    </button>
+    <button class="tab-btn" 
+            [class.active]="activeTab === 'historique-valide'" 
+            (click)="activeTab = 'historique-valide'">
+      📜 Fiches Validées & Visas des Directeurs
+    </button>
+  </nav>
+
+  <!-- TAB 1: Réservations directes -->
+  <section *ngIf="activeTab === 'reservations'" class="tab-content">
+    <div class="section-card">
+      <div class="section-header space-between">
+        <div>
+          <h2>Mes Interventions Planifiées Directement avec les Directeurs</h2>
+          <p class="section-subtitle">
+            Aucun Ordre de Mission CRE ni voiture du parc automobile requis. Déplacement avec les moyens propres de la société prestataire.
+          </p>
+        </div>
+        <button class="btn-primary" (click)="ouvrirModalReservation()">
+          ➕ Nouvelle Réservation
+        </button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="interventions-table">
+          <thead>
+            <tr>
+              <th>Réf. Intervention</th>
+              <th>Établissement & Directeur</th>
+              <th>Date & Créneau Convenu</th>
+              <th>Objet des Travaux</th>
+              <th>Dispense OM / Voiture</th>
+              <th>Statut</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of interventions">
+              <td class="font-mono font-bold">{{ item.codeIntervention }}</td>
+              <td>
+                <div class="etab-name">{{ item.etablissementNom }}</div>
+                <div class="dir-name">Directeur : <strong>{{ item.directeurNom }}</strong> ({{ item.contactDirecteur }})</div>
+                <div class="del-tag">Délégation : {{ item.delegation }}</div>
+              </td>
+              <td>
+                <div class="date-bold">{{ item.dateReservationPrevue }}</div>
+                <div class="hour-sub">{{ item.creneauHoraire }}</div>
+              </td>
+              <td>
+                <div class="motif-text">{{ item.motifIntervention }}</div>
+                <div *ngIf="item.equipementsServis?.length" class="eq-count-badge">
+                  💻 {{ item.equipementsServis.length }} équipement(s) tracé(s)
+                </div>
+              </td>
+              <td>
+                <span class="exempt-badge">
+                  ✓ Sans OM / Sans Voiture CRE
+                </span>
+              </td>
+              <td>
+                <span class="status-badge"
+                      [class.reservee]="item.statut === 'RESERVEE_DIRECTEUR'"
+                      [class.attente]="item.statut === 'ATTENTE_VALIDATION_DIRECTEUR'"
+                      [class.validee]="item.statut === 'VALIDEE_PAR_DIRECTEUR'">
+                  {{ item.statutLabel }}
+                </span>
+                <div *ngIf="item.visaDirecteurDate" class="visa-meta">
+                  Signé le {{ item.visaDirecteurDate }}
+                </div>
+              </td>
+              <td>
+                <button *ngIf="item.statut === 'RESERVEE_DIRECTEUR'" 
+                        class="btn-action-fill" 
+                        (click)="commencerRapport(item)">
+                  ✍️ Saisir Rapport & Pièces
+                </button>
+
+                <button *ngIf="item.statut === 'ATTENTE_VALIDATION_DIRECTEUR'" 
+                        class="btn-action-view" 
+                        (click)="commencerRapport(item)">
+                  🔍 Modifier / Voir Fiche
+                </button>
+
+                <button *ngIf="item.statut === 'VALIDEE_PAR_DIRECTEUR'" 
+                        class="btn-action-done">
+                  ✅ Fiche Clôturée
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 2: Saisie Rapport d'Intervention & Pièces Détachées -->
+  <section *ngIf="activeTab === 'nouveau-rapport'" class="tab-content">
+    <div class="section-card">
+      <div *ngIf="!selectedInterventionForReport" class="empty-selection-state">
+        <div class="empty-icon">📂</div>
+        <h3>Veuillez sélectionner une intervention réservée</h3>
+        <p>Cliquez sur l'onglet "Planning & Réservations" puis sur le bouton <strong>"✍️ Saisir Rapport & Pièces"</strong> en face de l'établissement concerné.</p>
+        <button class="btn-primary" (click)="activeTab = 'reservations'">
+          Voir la liste des réservations
+        </button>
+      </div>
+
+      <div *ngIf="selectedInterventionForReport" class="form-rapport-wrapper">
+        <div class="rapport-header-box">
+          <div class="rh-left">
+            <span class="rh-badge">FICHE TECHNIQUE PRESTATAIRE #{{ selectedInterventionForReport.codeIntervention }}</span>
+            <h2 class="rh-title">{{ selectedInterventionForReport.etablissementNom }}</h2>
+            <p class="rh-meta">
+              Directeur Référent : <strong>{{ selectedInterventionForReport.directeurNom }}</strong> · 
+              Date convenue : {{ selectedInterventionForReport.dateReservationPrevue }}
+            </p>
+          </div>
+          <div class="rh-right">
+            <div class="badge-dispense">
+              🚗 Moyens propres du prestataire (Aucune demande de voiture ni Ordre de Mission CRE)
+            </div>
+          </div>
+        </div>
+
+        <!-- Date et observations globales -->
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Date de réalisation de l'intervention * :</label>
+            <input type="text" class="form-control" [(ngModel)]="formRapport.dateExecution" placeholder="JJ/MM/AAAA" />
+          </div>
+          <div class="form-group flex-2">
+            <label>Observations générales du technicien prestataire :</label>
+            <input type="text" 
+                   class="form-control" 
+                   [(ngModel)]="formRapport.observationsTechnicien" 
+                   placeholder="Ex: Travaux effectués en présence du directeur et du chef de labo..." />
+          </div>
+        </div>
+
+        <hr class="divider" />
+
+        <!-- LISTE D'ÉQUIPEMENTS SERVIS (NUMÉRO DE SÉRIE OBLIGATOIRE) -->
+        <div class="equipments-section-title">
+          <div>
+            <h3>Liste des Équipements Pris en Charge & Actions Effectuées</h3>
+            <p class="sub-rule">
+              Règle stricte : <strong>Le Numéro de Série est OBLIGATOIRE</strong> pour chaque équipement ainsi que pour chaque pièce de rechange posée.
+            </p>
+          </div>
+          <button class="btn-add-eq" (click)="ajouterEquipementRapport()">
+            ➕ Ajouter un Équipement à cette Intervention
+          </button>
+        </div>
+
+        <div class="eq-form-cards">
+          <div *ngFor="let eq of formRapport.equipements; let i = index" class="eq-item-card">
+            <div class="eq-item-header">
+              <span class="eq-number">Équipement #{{ i + 1 }}</span>
+              <button *ngIf="formRapport.equipements.length > 1" 
+                      class="btn-remove-eq" 
+                      (click)="supprimerEquipementRapport(i)" 
+                      title="Supprimer cet équipement">
+                🗑️ Supprimer
+              </button>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label>Type d'Équipement * :</label>
+                <select class="form-control" [(ngModel)]="eq.type">
+                  <option *ngFor="let t of typesEquipements" [value]="t">{{ t }}</option>
+                </select>
+              </div>
+
+              <div class="form-group flex-1">
+                <label>Marque & Modèle * :</label>
+                <input type="text" 
+                       class="form-control" 
+                       [(ngModel)]="eq.marqueModele" 
+                       placeholder="Ex: Dell OptiPlex 3080 / HP LaserJet" 
+                       required />
+              </div>
+
+              <div class="form-group flex-1">
+                <label class="required-sn">N° DE SÉRIE ÉQUIPEMENT (OBLIGATOIRE) * :</label>
+                <input type="text" 
+                       class="form-control font-mono font-bold sn-input" 
+                       [(ngModel)]="eq.numeroSerie" 
+                       placeholder="Ex: SN-DELL-883921" 
+                       required />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label>Action Effectuée * :</label>
+                <select class="form-control action-select" [(ngModel)]="eq.actionEffectuee">
+                  <option value="FORMATAGE">Formatage & Réinstallation Système</option>
+                  <option value="REPARATION">Réparation Composant / Soudure</option>
+                  <option value="REMPLACEMENT_PIECE">Remplacement Pièce de Rechange Défectueuse</option>
+                  <option value="NETTOYAGE">Nettoyage Approfondi & Dépoussiérage</option>
+                  <option value="PARAMETRAGE">Paramétrage Logiciel / Réseau</option>
+                </select>
+              </div>
+
+              <div class="form-group flex-2">
+                <label>Détails de l'Action Réalisée * :</label>
+                <input type="text" 
+                       class="form-control" 
+                       [(ngModel)]="eq.actionDetails" 
+                       placeholder="Ex: Formatage certifié Edunet + mise à jour pilotes ou réparation carte mère..." />
+              </div>
+            </div>
+
+            <!-- PIÈCES DE RECHANGE POUR CET ÉQUIPEMENT -->
+            <div class="spare-parts-box">
+              <div class="spare-parts-header">
+                <div>
+                  <span class="sp-icon">🔩</span>
+                  <strong>Pièces de Rechange Remplacées pour cet équipement ({{ eq.piecesRechange.length }})</strong>
+                </div>
+                <button class="btn-add-part" (click)="ajouterPieceRechange(i)">
+                  ➕ Ajouter une pièce de rechange
+                </button>
+              </div>
+
+              <div *ngIf="eq.piecesRechange.length === 0" class="no-parts-hint">
+                Aucune pièce de rechange posée (Intervention de type maintenance logicielle, formatage ou nettoyage sans composant).
+              </div>
+
+              <div *ngIf="eq.piecesRechange.length > 0" class="parts-table-wrap">
+                <table class="parts-mini-table">
+                  <thead>
+                    <tr>
+                      <th>Désignation de la Pièce de Rechange</th>
+                      <th>N° DE SÉRIE DE LA PIÈCE (OBLIGATOIRE)</th>
+                      <th>Référence Garantie</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let part of eq.piecesRechange; let pIdx = index">
+                      <td>
+                        <input type="text" 
+                               class="form-control" 
+                               [(ngModel)]="part.designation" 
+                               placeholder="Ex: Bloc alimentation ATX 260W / Disque SSD 512GB" 
+                               required />
+                      </td>
+                      <td>
+                        <input type="text" 
+                               class="form-control font-mono font-bold sn-part-input" 
+                               [(ngModel)]="part.numeroSerie" 
+                               placeholder="Ex: SN-PART-994112" 
+                               required />
+                      </td>
+                      <td>
+                        <input type="text" 
+                               class="form-control" 
+                               [(ngModel)]="part.prixUnitaireRef" 
+                               placeholder="Garantie Marché AO-2025" />
+                      </td>
+                      <td>
+                        <button class="btn-remove-part" (click)="supprimerPieceRechange(i, pIdx)">✕</button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions-bar">
+          <button class="btn-secondary" (click)="activeTab = 'reservations'">
+            Annuler / Retour
+          </button>
+          <button class="btn-submit-to-dir" (click)="soumettreRapportAuDirecteur()">
+            🚀 Transmettre la Fiche Complète au Directeur d'Établissement pour Validation
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 3: Historique & Fiches Validées -->
+  <section *ngIf="activeTab === 'historique-valide'" class="tab-content">
+    <div class="section-card">
+      <div class="section-header">
+        <div>
+          <h2>Historique des Interventions Validées & Visas des Directeurs</h2>
+          <p class="section-subtitle">
+            Attestations de service fait certifiées par les directeurs d'établissement pour facturation au titre du marché public.
+          </p>
+        </div>
+      </div>
+
+      <div class="validated-cards">
+        <ng-container *ngFor="let item of interventions">
+          <div *ngIf="item.statut === 'VALIDEE_PAR_DIRECTEUR'" class="val-card">
+            <div class="val-top">
+              <span class="val-badge">✓ VISA DIRECTEUR CONFORME</span>
+              <span class="val-date">{{ item.visaDirecteurDate }}</span>
+            </div>
+            <h3 class="val-title">{{ item.etablissementNom }} ({{ item.codeIntervention }})</h3>
+            <p class="val-dir">Validé par : <strong>{{ item.directeurNom }}</strong></p>
+            <div class="val-comment">
+              "{{ item.commentaireDirecteur || 'Service fait et conforme au cahier des charges.' }}"
+            </div>
+            <div class="val-rating">
+              Note attribuée : ⭐⭐⭐⭐⭐ ({{ item.noteDirecteur || 5 }}/5)
+            </div>
+            <div class="val-eq-summary">
+              <strong>Équipements traités :</strong>
+              <ul>
+                <li *ngFor="let eq of item.equipementsServis">
+                  {{ eq.type }} - {{ eq.marqueModele }} (S/N: <code>{{ eq.numeroSerie }}</code>) : {{ eq.actionDetails }}
+                  <span *ngIf="eq.piecesRechange.length">
+                    — Pièces : {{ eq.piecesRechange[0]?.designation }} (S/N: <code>{{ eq.piecesRechange[0]?.numeroSerie }}</code>)
+                  </span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODAL NOUVELLE RÉSERVATION DIRECTE AVEC LE DIRECTEUR -->
+  <div *ngIf="showReservationModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span class="modal-icon">📅</span>
+          <div>
+            <h3>Réserver une Intervention avec un Directeur d'Établissement</h3>
+            <span class="modal-sub">Règle de gestion : Pas d'Ordre de Mission CRE ni demande de véhicule requis</span>
+          </div>
+        </div>
+        <button class="btn-close" (click)="showReservationModal = false">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="alert-info-box">
+          ℹ️ En tant que technicien de la <strong>Société MICRO-TECH (Prestataire agréé)</strong>, vos interventions se conviennent directement avec la direction des lycées, collèges ou écoles primaires de la CRE Manouba.
+        </div>
+
+        <div class="form-group">
+          <label>Établissement scolaire concerné * :</label>
+          <select class="form-control" [(ngModel)]="nouvelleReservation.etablissementId">
+            <option *ngFor="let etab of etablissementsPartenaires" [value]="etab.id">
+              {{ etab.nom }} (Directeur : {{ etab.directeur }} · {{ etab.delegation }})
+            </option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Date convenue * :</label>
+            <input type="date" class="form-control" [(ngModel)]="nouvelleReservation.dateReservation" required />
+          </div>
+          <div class="form-group flex-1">
+            <label>Créneau horaire convenu * :</label>
+            <input type="text" class="form-control" [(ngModel)]="nouvelleReservation.creneauHoraire" placeholder="Ex: 09h00 - 13h00" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Objet et nature des travaux programmés * :</label>
+          <textarea rows="3" 
+                    class="form-control" 
+                    [(ngModel)]="nouvelleReservation.motifIntervention" 
+                    placeholder="Ex: Maintenance préventive Labo Informatique 2, remplacement de blocs d'alimentation et formatage postes d'examen..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="showReservationModal = false">Annuler</button>
+        <button class="btn-confirm-booking" (click)="confirmerReservationDirecte()">
+          ✓ Enregistrer la Réservation Directe
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

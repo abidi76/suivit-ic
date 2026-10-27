@@ -1,0 +1,319 @@
+<div class="batiments-container">
+  <!-- Toast alert -->
+  <div *ngIf="toastMessage" class="toast-alert">
+    {{ toastMessage }}
+  </div>
+
+  <!-- Header Card SD Bâtiments & Parc Auto -->
+  <header class="batiments-header-card">
+    <div class="header-main">
+      <div class="batiments-avatar-box">
+        <span class="avatar-icon">{{ currentUser?.avatar || '🚐' }}</span>
+      </div>
+
+      <div class="batiments-info">
+        <div class="badge-role">
+          <span class="flag">🇹🇳</span>
+          <span>SOUS-DIRECTION DES BÂTIMENTS, ÉQUIPEMENTS & PARC AUTO</span>
+        </div>
+        <h1 class="batiments-name">{{ currentUser?.prenom }} {{ currentUser?.nom }}</h1>
+        <p class="batiments-sub">
+          <strong>Service :</strong> {{ currentUser?.batimentsProfile?.service }} · 
+          <strong>Bureau :</strong> {{ currentUser?.batimentsProfile?.bureau }}
+        </p>
+      </div>
+
+      <!-- Règle de gestion navette et OM -->
+      <div class="workflow-info-badge">
+        <div class="wf-title">FLUX ORDRES DE MISSION & VÉHICULES DU CRE</div>
+        <div class="wf-desc">
+          Le <strong>SD-TIC</strong> émet les Ordres de Mission pour les techniciens internes ➜ 
+          Le <strong>SD-Bâtiments</strong> affecte le chauffeur & le véhicule ou ajourne à une autre date.
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- KPI Overview -->
+  <div class="kpi-grid">
+    <div class="kpi-card highlight">
+      <div class="kpi-icon">⏳</div>
+      <div class="kpi-details">
+        <div class="kpi-value">
+          1
+        </div>
+        <div class="kpi-label">Demandes en Attente Véhicule</div>
+      </div>
+    </div>
+
+    <div class="kpi-card success">
+      <div class="kpi-icon">🚐</div>
+      <div class="kpi-details">
+        <div class="kpi-value">2</div>
+        <div class="kpi-label">Véhicules Disponibles</div>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon">👨‍✈️</div>
+      <div class="kpi-details">
+        <div class="kpi-value">2</div>
+        <div class="kpi-label">Chauffeurs Disponibles</div>
+      </div>
+    </div>
+
+    <div class="kpi-card warning">
+      <div class="kpi-icon">📅</div>
+      <div class="kpi-details">
+        <div class="kpi-value">1</div>
+        <div class="kpi-label">Missions Ajournées / Reportées</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs Navigation -->
+  <nav class="batiments-tabs-nav">
+    <button class="tab-btn" 
+            [class.active]="activeTab === 'demandes-voitures'" 
+            (click)="activeTab = 'demandes-voitures'">
+      🚗 Demandes de Voitures & Ordres de Mission SD-TIC ({{ demandesMissions.length }})
+    </button>
+    <button class="tab-btn" 
+            [class.active]="activeTab === 'flotte-parc'" 
+            (click)="activeTab = 'flotte-parc'">
+      🚐 Flotte Automobile & Véhicules ({{ vehiculesList.length }})
+    </button>
+    <button class="tab-btn" 
+            [class.active]="activeTab === 'chauffeurs'" 
+            (click)="activeTab = 'chauffeurs'">
+      👨‍✈️ Équipe des Chauffeurs du CRE ({{ chauffeursList.length }})
+    </button>
+  </nav>
+
+  <!-- TAB 1: Demandes de Voitures & Ordres de Mission -->
+  <section *ngIf="activeTab === 'demandes-voitures'" class="tab-content">
+    <div class="section-card">
+      <div class="section-header">
+        <div>
+          <h2>Traitement des Demandes de Véhicule transmises par le SD-TIC</h2>
+          <p class="section-subtitle">
+            Attribuez un chauffeur et une voiture du parc pour chaque mission de maintenance interne, ou ajournez à une autre date motivée.
+          </p>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="missions-table">
+          <thead>
+            <tr>
+              <th>Réf. OM & Date</th>
+              <th>Technicien Demandeur</th>
+              <th>Destination & Motif</th>
+              <th>Équipements & N° Série</th>
+              <th>Statut Affectation</th>
+              <th>Actions SD-Bâtiments</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let dem of demandesMissions">
+              <td class="font-mono">
+                <div class="om-tag font-bold">{{ dem.omNumero }}</div>
+                <div class="text-xs text-gray">Transmis: {{ dem.dateTransmissionSdTic }}</div>
+                <div class="text-xs font-semibold text-blue">Date souhaitée: {{ dem.dateDemandee }}</div>
+              </td>
+              <td>
+                <div class="tech-name font-bold">{{ dem.technicienDemandeur }}</div>
+              </td>
+              <td>
+                <div class="etab-target font-bold">{{ dem.etablissementDestination }}</div>
+                <div class="motif-sub">{{ dem.motifMission }}</div>
+              </td>
+              <td>
+                <div class="eq-sub font-mono">{{ dem.equipementsConcernes }}</div>
+              </td>
+              <td>
+                <span class="status-pill"
+                      [class.pending]="dem.statut === 'EN_ATTENTE_SD_BATIMENTS'"
+                      [class.validated]="dem.statut === 'VALIDE_AVEC_VEHICULE'"
+                      [class.postponed]="dem.statut === 'AJOURNE_REPORTE'">
+                  {{ dem.statutLabel }}
+                </span>
+                <div *ngIf="dem.vehiculeAffecte" class="affect-details">
+                  🚗 {{ dem.vehiculeAffecte }}<br/>
+                  👨‍✈️ Chauffeur : {{ dem.chauffeurAffecte }}
+                </div>
+                <div *ngIf="dem.statut === 'AJOURNE_REPORTE'" class="postpone-details">
+                  📅 Reporté au : <strong>{{ dem.dateAjournee }}</strong><br/>
+                  <em>{{ dem.motifAjournement }}</em>
+                </div>
+              </td>
+              <td>
+                <div *ngIf="dem.statut === 'EN_ATTENTE_SD_BATIMENTS'" class="action-btn-group">
+                  <button class="btn-assign" (click)="ouvrirModalValidation(dem)">
+                    ✅ Valider & Affecter Véhicule
+                  </button>
+                  <button class="btn-postpone" (click)="ouvrirModalAjournement(dem)">
+                    ⏱️ Ajourner la Demande
+                  </button>
+                </div>
+                <div *ngIf="dem.statut !== 'EN_ATTENTE_SD_BATIMENTS'" class="done-tag">
+                  Dossier traité
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 2: Flotte Automobile -->
+  <section *ngIf="activeTab === 'flotte-parc'" class="tab-content">
+    <div class="section-card">
+      <div class="section-header">
+        <div>
+          <h2>Parc Automobile & État des Véhicules de Service (CRE Manouba)</h2>
+          <p class="section-subtitle">
+            Suivi des disponibilités, des kilomètres au compteur et des visites techniques obligatoires.
+          </p>
+        </div>
+      </div>
+
+      <div class="fleet-grid">
+        <div *ngFor="let veh of vehiculesList" class="veh-card">
+          <div class="veh-top">
+            <span class="veh-type">{{ veh.type }}</span>
+            <span class="veh-status" 
+                  [class.dispo]="veh.statut === 'DISPONIBLE'"
+                  [class.mission]="veh.statut === 'EN_MISSION'"
+                  [class.revision]="veh.statut === 'EN_REVISION'">
+              {{ veh.statut }}
+            </span>
+          </div>
+          <h3 class="veh-model">{{ veh.marqueModele }}</h3>
+          <div class="veh-plate font-mono">{{ veh.immatriculation }}</div>
+          <div class="veh-meta">
+            <div>🛣️ <strong>{{ veh.kilometrage | number }} km</strong> au compteur</div>
+            <div>👨‍✈️ Chauffeur régulier : <strong>{{ veh.chauffeurAttitre }}</strong></div>
+            <div>🔧 Prochaine visite : {{ veh.prochaineVisiteTechnique }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 3: Chauffeurs -->
+  <section *ngIf="activeTab === 'chauffeurs'" class="tab-content">
+    <div class="section-card">
+      <div class="section-header">
+        <div>
+          <h2>Chauffeurs Officiels de la CRE Manouba</h2>
+          <p class="section-subtitle">
+            Disponibilité opérationnelle pour les ordres de mission des techniciens de maintenance informatique.
+          </p>
+        </div>
+      </div>
+
+      <div class="chauffeurs-grid">
+        <div *ngFor="let chf of chauffeursList" class="chf-card">
+          <div class="chf-avatar">👨‍✈️</div>
+          <div class="chf-info">
+            <h3 class="chf-name">{{ chf.nomPrenom }}</h3>
+            <div class="chf-mat font-mono">Matricule : {{ chf.matricule }}</div>
+            <div class="chf-tel">📞 {{ chf.telephone }}</div>
+            <div class="chf-statut" [class.dispo]="chf.statut === 'DISPONIBLE'" [class.mission]="chf.statut === 'EN_MISSION'">
+              {{ chf.statut === 'DISPONIBLE' ? '✅ Disponible au siège' : (chf.statut === 'EN_MISSION' ? '🚗 En mission : ' + chf.missionEnCours : '🌴 En congé') }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODAL VALIDATION VÉHICULE & CHAUFFEUR -->
+  <div *ngIf="selectedDemandeForValidation" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span class="modal-icon">🚗</span>
+          <div>
+            <h3>Affecter Chauffeur & Voiture pour l'Ordre de Mission</h3>
+            <span class="modal-sub">{{ selectedDemandeForValidation.omNumero }} ➜ {{ selectedDemandeForValidation.etablissementDestination }}</span>
+          </div>
+        </div>
+        <button class="btn-close" (click)="selectedDemandeForValidation = null">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="recap-box">
+          <strong>Mission :</strong> {{ selectedDemandeForValidation.motifMission }}<br/>
+          <strong>Technicien :</strong> {{ selectedDemandeForValidation.technicienDemandeur }}<br/>
+          <strong>Équipements à transporter :</strong> {{ selectedDemandeForValidation.equipementsConcernes }}
+        </div>
+
+        <div class="form-group">
+          <label>Véhicule de service disponible * :</label>
+          <select class="form-control" [(ngModel)]="affectationForm.vehicule">
+            <option *ngFor="let v of vehiculesList" [value]="v.marqueModele + ' (' + v.immatriculation + ')'">
+              {{ v.marqueModele }} ({{ v.immatriculation }}) - {{ v.statut }} ({{ v.kilometrage }} km)
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Chauffeur mobilisé * :</label>
+          <select class="form-control" [(ngModel)]="affectationForm.chauffeur">
+            <option *ngFor="let c of chauffeursList" [value]="c.nomPrenom">
+              {{ c.nomPrenom }} ({{ c.statut }})
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="selectedDemandeForValidation = null">Annuler</button>
+        <button class="btn-confirm-assign" (click)="confirmerValidationVehicule()">
+          ✓ Confirmer l'Affectation & Valider la Mission
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL AJOURNEMENT / REPORT -->
+  <div *ngIf="selectedDemandeForAjournement" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span class="modal-icon">⏱️</span>
+          <div>
+            <h3>Ajourner / Reporter la Demande de Voiture</h3>
+            <span class="modal-sub">{{ selectedDemandeForAjournement.omNumero }} · Décision SD-Bâtiments</span>
+          </div>
+        </div>
+        <button class="btn-close" (click)="selectedDemandeForAjournement = null">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Nouvelle date de mission proposée * :</label>
+          <input type="date" class="form-control" [(ngModel)]="ajournementForm.nouvelleDate" required />
+        </div>
+
+        <div class="form-group">
+          <label>Motif de l'ajournement (Transmis au SD-TIC & au Technicien) * :</label>
+          <textarea rows="3" 
+                    class="form-control" 
+                    [(ngModel)]="ajournementForm.motif" 
+                    placeholder="Ex: Tous les véhicules affectés aux épreuves nationales, passage en révision mécanique..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="selectedDemandeForAjournement = null">Annuler</button>
+        <button class="btn-confirm-postpone" (click)="confirmerAjournement()">
+          ⚠️ Enregistrer l'Ajournement
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

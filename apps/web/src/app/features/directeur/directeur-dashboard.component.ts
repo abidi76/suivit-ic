@@ -77,6 +77,32 @@ export interface LaboAffectation {
   bacValideParDirecteur: boolean;
 }
 
+export interface PrestataireEquipementDetail {
+  type: string;
+  marqueModele: string;
+  numeroSerie: string; // OBLIGATOIRE
+  action: string;
+  piecesRechange: {
+    designation: string;
+    numeroSerie: string; // OBLIGATOIRE
+  }[];
+}
+
+export interface PrestataireInterventionDirecteur {
+  id: string;
+  code: string;
+  prestataireSociete: string;
+  technicienNom: string;
+  contact: string;
+  datePrevue: string;
+  statut: 'RESERVEE' | 'ATTENTE_VALIDATION' | 'VALIDEE' | 'REJETEE';
+  motif: string;
+  equipements: PrestataireEquipementDetail[];
+  dateValidation?: string;
+  noteValidation?: number;
+  commentaireDirecteur?: string;
+}
+
 @Component({
   selector: 'app-directeur-dashboard',
   standalone: true,
@@ -87,7 +113,64 @@ export interface LaboAffectation {
 export class DirecteurDashboardComponent implements OnInit {
   data: any = null;
   isLoading = true;
-  activeSection: 'reclamations' | 'interventions' | 'prets' | 'affectations' | 'parc' = 'reclamations';
+  activeSection: 'reclamations' | 'interventions' | 'prestataires' | 'prets' | 'affectations' | 'parc' = 'reclamations';
+
+  // Interventions des Techniciens Prestataires Extérieurs (Réservées d'avance sans OM, à valider par le directeur)
+  prestataireInterventionsList: PrestataireInterventionDirecteur[] = [
+    {
+      id: 'PREST-INT-01',
+      code: 'PREST-2026-0038',
+      prestataireSociete: 'Société MICRO-TECH (Titulaire Marché National AO-2025-04)',
+      technicienNom: 'Karim Jaziri',
+      contact: '+216 71 889 450',
+      datePrevue: '27/10/2026',
+      statut: 'ATTENTE_VALIDATION',
+      motif: 'Réparation urgente de 3 unités centrales du Labo Info 1 et formatage 2 postes',
+      equipements: [
+        {
+          type: 'PC Fixe (Unité Centrale)',
+          marqueModele: 'Dell OptiPlex 3080',
+          numeroSerie: 'SN-DELL-883921',
+          action: 'Remplacement alimentation grillée et dépoussiérage ventilation',
+          piecesRechange: [
+            { designation: 'Bloc d\'alimentation ATX 260W Dell Original', numeroSerie: 'SN-ALIM-DELL-55201' }
+          ]
+        },
+        {
+          type: 'PC Fixe (Unité Centrale)',
+          marqueModele: 'Dell OptiPlex 3080',
+          numeroSerie: 'SN-DELL-883922',
+          action: 'Formatage complet certifié Edunet, partitionnement SSD et réinstallation Windows 11 Pro',
+          piecesRechange: []
+        },
+        {
+          type: 'Écran LCD / LED',
+          marqueModele: 'Dell 24" P2419H',
+          numeroSerie: 'SN-SCR-4401',
+          action: 'Réparation connecteur HDMI interne et remplacement câble',
+          piecesRechange: [
+            { designation: 'Câble blindé HDMI 2.0 Gold', numeroSerie: 'SN-CBL-HDMI-9904' }
+          ]
+        }
+      ]
+    },
+    {
+      id: 'PREST-INT-02',
+      code: 'PREST-2026-0045',
+      prestataireSociete: 'Société MICRO-TECH',
+      technicienNom: 'Karim Jaziri',
+      contact: '+216 71 889 450',
+      datePrevue: '03/11/2026',
+      statut: 'RESERVEE',
+      motif: 'Contrôle périodique annuel des switchs d\'étage et imprimantes réseau',
+      equipements: []
+    }
+  ];
+
+  // Modal Validation Intervention Prestataire
+  selectedPrestataireForValidation: PrestataireInterventionDirecteur | null = null;
+  prestataireValidationNote = 5;
+  prestataireValidationCommentaire = 'Intervention vérifiée et approuvée. Les pièces remplacées et les numéros de série sont conformes.';
 
   // Types d'équipements disponibles dans le référentiel
   equipementTypes: string[] = [
@@ -316,6 +399,33 @@ export class DirecteurDashboardComponent implements OnInit {
         this.loadData();
       }
     });
+  }
+
+  // Validation des Interventions Prestataires Extérieurs (Directement par le directeur)
+  ouvrirValidationPrestataire(interv: PrestataireInterventionDirecteur): void {
+    this.selectedPrestataireForValidation = interv;
+    this.prestataireValidationNote = 5;
+    this.prestataireValidationCommentaire = 'Intervention vérifiée et approuvée. Travaux conformes, numéros de série des équipements et pièces contrôlés.';
+  }
+
+  confirmerValidationPrestataire(): void {
+    if (!this.selectedPrestataireForValidation) return;
+    this.selectedPrestataireForValidation.statut = 'VALIDEE';
+    this.selectedPrestataireForValidation.dateValidation = new Date().toLocaleDateString('fr-FR') + ' à ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    this.selectedPrestataireForValidation.noteValidation = this.prestataireValidationNote;
+    this.selectedPrestataireForValidation.commentaireDirecteur = this.prestataireValidationCommentaire;
+
+    this.afficherToast(`✅ Intervention prestataire ${this.selectedPrestataireForValidation.code} validée et visée par le Directeur.`);
+    this.selectedPrestataireForValidation = null;
+  }
+
+  refuserPrestataire(interv: PrestataireInterventionDirecteur): void {
+    const motif = prompt('Veuillez indiquer le motif du refus ou de la demande de reprise des travaux :');
+    if (motif) {
+      interv.statut = 'REJETEE';
+      interv.commentaireDirecteur = 'Rejeté par la direction : ' + motif;
+      this.afficherToast(`⚠️ Intervention prestataire ${interv.code} renvoyée pour correction : ${motif}`);
+    }
   }
 
   repondrePret(pretId: string, accept: boolean): void {

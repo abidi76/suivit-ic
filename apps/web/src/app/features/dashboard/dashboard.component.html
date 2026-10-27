@@ -30,6 +30,12 @@
     <button class="sdtic-tab" [class.active]="activeTab === 'supervision'" (click)="activeTab = 'supervision'">
       🏫 Supervision CRE & Établissements ({{ etablissementsCre.length }})
     </button>
+    <button class="sdtic-tab" [class.active]="activeTab === 'agents-admin'" (click)="activeTab = 'agents-admin'">
+      👩‍💼 Agents Administratifs & Délégations ({{ agentsAdminList.length }})
+    </button>
+    <button class="sdtic-tab" [class.active]="activeTab === 'prestataires'" (click)="activeTab = 'prestataires'">
+      🧰 Prestataires Extérieurs ({{ prestatairesSupervisionList.length }})
+    </button>
     <button class="sdtic-tab" [class.active]="activeTab === 'planning'" (click)="activeTab = 'planning'">
       📅 Planning Opérationnel Techniciens ({{ planningList.length }})
     </button>
@@ -339,6 +345,118 @@
     </table>
   </div>
 
+  <!-- ONGLET NOUVEAU : AGENTS ADMINISTRATIFS & GESTION DES DÉLÉGATIONS SD-TIC -->
+  <div *ngIf="activeTab === 'agents-admin'" class="sdtic-panel">
+    <div class="panel-header-row">
+      <div>
+        <h3>Annuaire des Agents Administratifs (Siège CRE, CREFOC & Établissements)</h3>
+        <p class="panel-desc">
+          Profils pré-saisis par le SD-TIC : Matricule, Direction, Service, Bureau, Localisation, Dotation matériels (N° de série) et réseau local. Possibilité pour le SD-TIC de déléguer une ou plusieurs tâches.
+        </p>
+      </div>
+    </div>
+
+    <table class="sdtic-table">
+      <thead>
+        <tr>
+          <th>Agent Administratif</th>
+          <th>Affectation & Bureau</th>
+          <th>Réseau Local CRE (LAN)</th>
+          <th>Dotations Équipements (avec N° Série)</th>
+          <th>Missions / Tâches Déléguées</th>
+          <th>Action SD-TIC</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let ag of agentsAdminList">
+          <td>
+            <div class="font-bold text-dark">{{ ag.prenom }} {{ ag.nom }}</div>
+            <div class="font-mono text-xs text-blue">Matricule : {{ ag.matricule }}</div>
+            <div class="text-xs text-gray">{{ ag.direction }}</div>
+            <div class="text-xs text-gray">{{ ag.service }}</div>
+          </td>
+          <td>
+            <span class="badge-role-local">{{ ag.localisation }}</span>
+            <div class="text-xs font-semibold" style="margin-top:0.25rem;">Bureau : {{ ag.bureau }}</div>
+          </td>
+          <td>
+            <div class="font-mono text-xs">IP : <strong>{{ ag.ipFixe }}</strong></div>
+            <div class="text-xs text-gray">{{ ag.vlan }}</div>
+            <div class="font-mono text-xs text-muted">Prise : {{ ag.priseMurale }}</div>
+          </td>
+          <td>
+            <div *ngFor="let eq of ag.equipementsDotation" class="dotation-item-sub">
+              <strong>{{ eq.type }}</strong> - {{ eq.marque }}<br/>
+              <span class="font-mono text-xs text-red">S/N: {{ eq.sn }}</span>
+            </div>
+          </td>
+          <td>
+            <ul class="tasks-mini-list">
+              <li *ngFor="let t of ag.tachesDeleguees">{{ t }}</li>
+            </ul>
+          </td>
+          <td>
+            <button class="btn btn-sm btn-primary" (click)="ouvrirDelegationTache(ag)">
+              ➕ Déléguer une Tâche
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ONGLET NOUVEAU : SUPERVISION DES PRESTATAIRES EXTÉRIEURS (RÉSERVATIONS DIRECTES SANS OM) -->
+  <div *ngIf="activeTab === 'prestataires'" class="sdtic-panel">
+    <div class="panel-header-row">
+      <div>
+        <h3>Supervision Régionale des Interventions Prestataires Extérieurs</h3>
+        <p class="panel-desc">
+          Règle de gestion : Interventions réservées à l'avance directement avec les Directeurs d'Établissement. <strong>Sans OM ni véhicule du CRE</strong>. Validation par le Directeur avec équipements (N° série) et pièces de rechange (N° série).
+        </p>
+      </div>
+    </div>
+
+    <table class="sdtic-table">
+      <thead>
+        <tr>
+          <th>Réf. Prestataire</th>
+          <th>Société & Technicien</th>
+          <th>Établissement Partenaire</th>
+          <th>Date Prévue</th>
+          <th>Dispense Véhicule / OM</th>
+          <th>Statut Validation Directeur</th>
+          <th>Équipements Traités</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of prestatairesSupervisionList">
+          <td class="font-mono font-bold text-blue">{{ p.code }}</td>
+          <td>
+            <div class="font-bold">{{ p.societe }}</div>
+            <div class="text-xs text-gray">Technicien : {{ p.technicien }}</div>
+          </td>
+          <td>
+            <div class="font-bold">{{ p.etablissement }}</div>
+          </td>
+          <td>{{ p.datePrevue }}</td>
+          <td>
+            <span class="badge-status badge-ok" style="font-size:0.75rem;">
+              ✓ Moyens Société (Pas d'OM / Pas de voiture)
+            </span>
+          </td>
+          <td>
+            <span class="badge-status" 
+                  [class.badge-ok]="p.statut === 'VALIDEE_DIRECTEUR'" 
+                  [class.badge-alert]="p.statut === 'ATTENTE_VALIDATION_DIRECTEUR'">
+              {{ p.statutLabel }}
+            </span>
+          </td>
+          <td class="text-xs">{{ p.equipementsServis }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
   <!-- MODAL 1 : PLANIFIER INTERVENTION -->
   <div *ngIf="showAddPlanningModal" class="modal-backdrop">
     <div class="modal-card">
@@ -466,6 +584,35 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" (click)="showAddCompteModal = false">Annuler</button>
         <button class="btn btn-primary" (click)="ajouterCompteLocal()">Créer le Compte</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4 : DÉLÉGUER UNE TÂCHE À UN AGENT ADMINISTRATIF -->
+  <div *ngIf="showDelegationModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Déléguer une Tâche / Mission à un Agent Administratif</h3>
+        <button class="modal-close" (click)="showDelegationModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="info-note" style="margin-bottom:1rem;">
+          👤 Agent sélectionné : <strong>{{ selectedAgentForDelegation?.prenom }} {{ selectedAgentForDelegation?.nom }}</strong> ({{ selectedAgentForDelegation?.matricule }})<br/>
+          📍 Affectation : {{ selectedAgentForDelegation?.localisation }} · {{ selectedAgentForDelegation?.bureau }}
+        </div>
+        <div class="form-group">
+          <label>Intitulé et instructions de la tâche déléguée :</label>
+          <textarea rows="3" 
+                    [(ngModel)]="nouvelleTacheTexte" 
+                    placeholder="Ex: Mise à jour des fiches d'inventaire postes informatiques, pointage prestataires ou contrôle imprimantes..." 
+                    class="form-input"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showDelegationModal = false">Annuler</button>
+        <button class="btn btn-primary" (click)="confirmerDelegationTache()">
+          🚀 Confirmer la Délégation
+        </button>
       </div>
     </div>
   </div>

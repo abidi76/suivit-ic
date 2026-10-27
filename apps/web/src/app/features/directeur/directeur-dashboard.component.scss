@@ -1061,3 +1061,178 @@
   }
 }
 
+/* Prestataires Extérieurs Styling */
+.prestataires-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.prestataire-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #0d9488;
+  border-radius: 10px;
+  padding: 1.25rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+
+  .prestataire-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+
+    .prest-badge {
+      font-weight: 700;
+      color: #0d9488;
+      background: #ccfbf1;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      margin-right: 0.5rem;
+    }
+
+    .prest-company {
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .prest-status-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.3rem 0.65rem;
+      border-radius: 9999px;
+
+      &.status-pending { background: #fef3c7; color: #b45309; }
+      &.status-booked { background: #e0f2fe; color: #0369a1; }
+      &.status-ok { background: #dcfce7; color: #15803d; }
+    }
+  }
+
+  .prest-meta-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    font-size: 0.85rem;
+    color: #475569;
+    background: #f8fafc;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    margin-bottom: 0.85rem;
+
+    .tag-exempt {
+      color: #166534;
+      font-weight: 700;
+    }
+  }
+
+  .prest-motif-box {
+    font-size: 0.88rem;
+    color: #1e293b;
+    margin-bottom: 1rem;
+  }
+
+  .prest-equipments-details {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+
+    .eq-sub-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0 0 0.75rem;
+    }
+
+    .eq-table-wrapper {
+      overflow-x: auto;
+    }
+
+    .eq-prest-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+
+      th {
+        background: #f1f5f9;
+        padding: 0.5rem 0.75rem;
+        text-align: left;
+        color: #475569;
+        font-weight: 700;
+      }
+
+      td {
+        padding: 0.6rem 0.75rem;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: top;
+      }
+
+      .sn-box-highlight {
+        background: #fef2f2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+        font-weight: 700;
+      }
+
+      .action-tag {
+        background: #eff6ff;
+        color: #1d4ed8;
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        font-weight: 600;
+      }
+
+      .piece-item-box {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        padding: 0.35rem 0.6rem;
+        border-radius: 4px;
+        margin-bottom: 0.3rem;
+
+        .piece-name {
+          font-weight: 600;
+          color: #92400e;
+        }
+        .piece-sn {
+          font-size: 0.75rem;
+          color: #b45309;
+        }
+      }
+    }
+  }
+
+  .validation-visa-box {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+
+    .visa-row {
+      display: flex;
+      justify-content: space-between;
+      color: #166534;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    .visa-comment {
+      font-style: italic;
+      color: #1e293b;
+    }
+  }
+
+  .prest-card-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+}
+

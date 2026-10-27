@@ -79,6 +79,34 @@ export interface PlanningItem {
   statut: 'PLANIFIE' | 'EN_COURS' | 'CLOTURE';
 }
 
+export interface AgentAdminRecord {
+  id: string;
+  matricule: string;
+  nom: string;
+  prenom: string;
+  direction: string;
+  service: string;
+  bureau: string;
+  localisation: 'Siège Central CRE' | 'CREFOC Manouba' | 'Lycée Ibn Abi Dhiaf';
+  ipFixe: string;
+  vlan: string;
+  priseMurale: string;
+  equipementsDotation: { type: string; marque: string; sn: string }[];
+  tachesDeleguees: string[];
+}
+
+export interface PrestataireInterventionSupervision {
+  code: string;
+  societe: string;
+  technicien: string;
+  etablissement: string;
+  datePrevue: string;
+  statut: 'RESERVEE_DIRECTEUR' | 'ATTENTE_VALIDATION_DIRECTEUR' | 'VALIDEE_DIRECTEUR';
+  statutLabel: string;
+  equipementsServis: string;
+  dispenseOmVoiture: true;
+}
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -90,7 +118,7 @@ export class DashboardComponent implements OnInit {
   stats: any = null;
   isLoading = true;
   currentUser: UserAccount | null = null;
-  activeTab: 'supervision' | 'comptes-locaux' | 'flux-emprunts' | 'ordres-mission' | 'planning' = 'supervision';
+  activeTab: 'supervision' | 'comptes-locaux' | 'agents-admin' | 'prestataires' | 'flux-emprunts' | 'ordres-mission' | 'planning' = 'supervision';
 
   // Filtres Supervision CRE
   selectedCategorie: string = 'TOUTES';
@@ -217,6 +245,127 @@ export class DashboardComponent implements OnInit {
     { id: 'U-08', matricule: 'ADM-7101', nom: 'Najla Ben Abdallah', roleLocal: 'AGENT_ADMIN', roleLabel: 'Agent Administratif TIC', etablissement: 'Siège CRE Manouba', email: 'agent.tic.manouba@edunet.tn', actif: true },
     { id: 'U-09', matricule: 'PRF-8101', nom: 'Sami Mansour', roleLocal: 'PROF', roleLabel: 'Professeur Responsable Labo 1', etablissement: 'Lycée Ibn Abi Dhiaf', email: 'prof.sami@edunet.tn', actif: true }
   ];
+
+  // 2b. Annuaire et gestion des Agents Administratifs (Siège, CREFOC, Établissements) pré-saisis par le SD-TIC
+  agentsAdminList: AgentAdminRecord[] = [
+    {
+      id: 'ADM-01',
+      matricule: 'ADM-7101',
+      nom: 'Ben Abdallah',
+      prenom: 'Najla',
+      direction: 'Direction des Affaires Pédagogiques & Formation',
+      service: 'Service de Coordination Pédagogique & CREFOC',
+      bureau: 'Bureau 14 (Aile B)',
+      localisation: 'Siège Central CRE',
+      ipFixe: '192.168.10.45',
+      vlan: 'VLAN 10 - Admin CRE',
+      priseMurale: 'PRISE-RJ45-B14-02',
+      equipementsDotation: [
+        { type: 'PC Bureau', marque: 'HP ProDesk 400 G7', sn: 'SN-HP-PD400-994102' },
+        { type: 'Écran', marque: 'HP EliteDisplay 24"', sn: 'SN-HP-SCR24-338190' },
+        { type: 'Imprimante', marque: 'HP LaserJet MFP M428', sn: 'SN-HP-MFP428-771204' }
+      ],
+      tachesDeleguees: [
+        'Inventaire trimestriel des postes administratifs (Bureaux 10 à 18)',
+        'Pointage de présence des techniciens prestataires externes'
+      ]
+    },
+    {
+      id: 'ADM-02',
+      matricule: 'ADM-7105',
+      nom: 'Dridi',
+      prenom: 'Mounir',
+      direction: 'Direction Régionale de la Formation Continue (CREFOC)',
+      service: 'Service Logistique & Accueil Stagiaires',
+      bureau: 'Secrétariat CREFOC',
+      localisation: 'CREFOC Manouba',
+      ipFixe: '192.168.20.12',
+      vlan: 'VLAN 20 - CREFOC',
+      priseMurale: 'PRISE-RJ45-CF-01',
+      equipementsDotation: [
+        { type: 'PC Bureau', marque: 'Dell OptiPlex 3070', sn: 'SN-DELL-3070-551120' },
+        { type: 'Imprimante', marque: 'Canon i-Sensys LBP223', sn: 'SN-CANON-88419' }
+      ],
+      tachesDeleguees: [
+        'Vérification des accès WiFi des salles de formation continue'
+      ]
+    },
+    {
+      id: 'ADM-03',
+      matricule: 'ADM-7109',
+      nom: 'Kefi',
+      prenom: 'Salma',
+      direction: 'Administration Lycée Ibn Abi Dhiaf',
+      service: 'Secrétariat des Élèves & Inscriptions',
+      bureau: 'Bureau Administration Scolaire',
+      localisation: 'Lycée Ibn Abi Dhiaf',
+      ipFixe: '192.168.30.88',
+      vlan: 'VLAN 30 - Lycée',
+      priseMurale: 'PRISE-RJ45-LYC-B03',
+      equipementsDotation: [
+        { type: 'PC Bureau', marque: 'Lenovo ThinkCentre M720', sn: 'SN-LNV-M720-4491' },
+        { type: 'Écran', marque: 'Lenovo 22"', sn: 'SN-LNV-SCR-1190' }
+      ],
+      tachesDeleguees: [
+        'Transmission des demandes de consommables de l\'établissement'
+      ]
+    }
+  ];
+
+  // 2c. Interventions des Prestataires Extérieurs supervisées par le SD-TIC
+  prestatairesSupervisionList: PrestataireInterventionSupervision[] = [
+    {
+      code: 'PREST-2026-0038',
+      societe: 'Société MICRO-TECH',
+      technicien: 'Karim Jaziri',
+      etablissement: 'Lycée Ibn Abi Dhiaf (Manouba)',
+      datePrevue: '27/10/2026',
+      statut: 'ATTENTE_VALIDATION_DIRECTEUR',
+      statutLabel: 'En attente de validation du Directeur',
+      equipementsServis: '3 PC Dell (S/N: 883921, 883922) + 1 Écran (S/N: 4401)',
+      dispenseOmVoiture: true
+    },
+    {
+      code: 'PREST-2026-0041',
+      societe: 'Société MICRO-TECH',
+      technicien: 'Karim Jaziri',
+      etablissement: 'Lycée Asad Ibn Al Fourat (Oued Ellil)',
+      datePrevue: '28/10/2026',
+      statut: 'RESERVEE_DIRECTEUR',
+      statutLabel: 'Réservée avec le Directeur (Sans OM / Moyen propre)',
+      equipementsServis: 'Lot PC multimédia pour maintenance semestrielle',
+      dispenseOmVoiture: true
+    },
+    {
+      code: 'PREST-2026-0029',
+      societe: 'Société MICRO-TECH',
+      technicien: 'Karim Jaziri',
+      etablissement: 'Collège Pilote Manouba',
+      datePrevue: '20/10/2026',
+      statut: 'VALIDEE_DIRECTEUR',
+      statutLabel: 'Validée & Visée par la Directrice d\'établissement',
+      equipementsServis: 'Imprimante HP Laser (S/N: 9910) - Rouleaux changés',
+      dispenseOmVoiture: true
+    }
+  ];
+
+  // Modal Délégation de Tâche SD-TIC vers un Agent Administratif
+  showDelegationModal = false;
+  selectedAgentForDelegation: AgentAdminRecord | null = null;
+  nouvelleTacheTexte = '';
+
+  ouvrirDelegationTache(agent: AgentAdminRecord): void {
+    this.selectedAgentForDelegation = agent;
+    this.nouvelleTacheTexte = '';
+    this.showDelegationModal = true;
+  }
+
+  confirmerDelegationTache(): void {
+    if (!this.selectedAgentForDelegation || !this.nouvelleTacheTexte.trim()) return;
+    this.selectedAgentForDelegation.tachesDeleguees.push(this.nouvelleTacheTexte.trim());
+    this.afficherToast(`✅ Mission déléguée avec succès à ${this.selectedAgentForDelegation.prenom} ${this.selectedAgentForDelegation.nom} (${this.selectedAgentForDelegation.matricule}).`);
+    this.showDelegationModal = false;
+  }
 
   // 3. Flux des Emprunts (Circuit complet supervisé par le SD TIC)
   fluxEmprunts: FluxEmprunt[] = [

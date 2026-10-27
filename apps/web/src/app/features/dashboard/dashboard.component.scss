@@ -760,3 +760,26 @@
 .font-bold { font-weight: 700; }
 .font-mono { font-family: monospace; }
 .text-center { text-align: center; }
+
+.dotation-item-sub {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  margin-bottom: 0.3rem;
+  font-size: 0.8rem;
+}
+
+.tasks-mini-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.78rem;
+  color: #334155;
+}
+
+.text-dark { color: #0f172a; }
+.text-blue { color: #0284c7; }
+.text-red { color: #b91c1c; }
+.text-xs { font-size: 0.75rem; }
+.text-gray { color: #64748b; }
+

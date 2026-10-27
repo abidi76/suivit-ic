@@ -2,7 +2,25 @@ import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 
-export type UserRole = 'ADMIN_CENTRAL' | 'ADMIN_ADJOINT' | 'SD_TIC' | 'DIRECTEUR' | 'PROF_LABO' | 'TECHNICIEN';
+export type UserRole = 
+  | 'ADMIN_CENTRAL' 
+  | 'ADMIN_ADJOINT' 
+  | 'SD_TIC' 
+  | 'DIRECTEUR' 
+  | 'PROF_LABO' 
+  | 'TECHNICIEN'
+  | 'AGENT_ADMIN'
+  | 'TECHNICIEN_PRESTATAIRE'
+  | 'SD_BATIMENTS';
+
+export interface DotationEquipement {
+  id: string;
+  type: string;
+  marqueModele: string;
+  numeroSerie: string;
+  dateDotation: string;
+  etat: 'FONCTIONNEL' | 'EN_PANNE' | 'A_REMPLACER';
+}
 
 export interface UserAccount {
   id: string;
@@ -26,6 +44,33 @@ export interface UserAccount {
     pannesPertes: boolean;
     comptesLocaux: boolean;
     rapports: boolean;
+  };
+  agentProfile?: {
+    direction: string;
+    service: string;
+    bureau: string;
+    localisationType: 'CENTRAL_CRE' | 'CREFOC' | 'ETABLISSEMENT';
+    localisationNom: string;
+    ipFixe: string;
+    vlan: string;
+    priseMurale: string;
+    switchPort: string;
+    connexionStatut: 'CONNECTE' | 'DEGRADE' | 'COUPE';
+    equipementsDotation: DotationEquipement[];
+    tachesDeleguees?: string[];
+  };
+  prestataireProfile?: {
+    societeNom: string;
+    numeroMarche: string;
+    specialite: string;
+    telephone: string;
+  };
+  batimentsProfile?: {
+    service: string;
+    bureau: string;
+    parcAutomobileResponsable: boolean;
+    vehiculesSupervises: number;
+    chauffeursActifs: number;
   };
 }
 
@@ -67,7 +112,7 @@ export const PRESET_ACCOUNTS: UserAccount[] = [
     email: 'sdtic.manouba@edunet.tn',
     role: 'SD_TIC',
     roleLabel: 'Sous-Directeur TIC / Directeur TIC',
-    perimetre: 'CRE Manouba (Tous les établissements)',
+    perimetre: 'CRE Manouba (Tous les établissements & Local Central)',
     creId: 'CRE-01',
     creNom: 'CRE Manouba',
     avatar: '🏢'
@@ -116,6 +161,109 @@ export const PRESET_ACCOUNTS: UserAccount[] = [
     creId: 'CRE-01',
     creNom: 'CRE Manouba',
     avatar: '🔧'
+  },
+  {
+    id: 'USR-007',
+    matricule: 'ADM-7101',
+    nom: 'Ben Abdallah',
+    prenom: 'Najla',
+    email: 'najla.benabdallah@edunet.tn',
+    role: 'AGENT_ADMIN',
+    roleLabel: 'Agent Administratif (Siège CRE / CREFOC)',
+    perimetre: 'Siège Central CRE Manouba · Service Pédagogique & CREFOC',
+    creId: 'CRE-01',
+    creNom: 'CRE Manouba',
+    avatar: '👩‍💼',
+    agentProfile: {
+      direction: 'Direction des Affaires Pédagogiques, Examens & Formation',
+      service: 'Service de Coordination Pédagogique & Support CREFOC',
+      bureau: 'Bureau 14 (Rez-de-chaussée Aile B)',
+      localisationType: 'CENTRAL_CRE',
+      localisationNom: 'Siège Central CRE Manouba (Rattachée CREFOC)',
+      ipFixe: '192.168.10.45',
+      vlan: 'VLAN 10 - Administration CRE',
+      priseMurale: 'PRISE-RJ45-B14-02',
+      switchPort: 'SW-CORE-B1 / Port 18',
+      connexionStatut: 'CONNECTE',
+      tachesDeleguees: [
+        'Mise à jour des fiches d\'inventaire des postes administratifs',
+        'Réception des consommables et toners pour imprimantes du siège',
+        'Pointage de présence des techniciens prestataires externes'
+      ],
+      equipementsDotation: [
+        {
+          id: 'EQ-ADM-01',
+          type: 'PC de Bureau (Unité Centrale)',
+          marqueModele: 'HP ProDesk 400 G7 SFF',
+          numeroSerie: 'SN-HP-PD400-994102',
+          dateDotation: '10/01/2024',
+          etat: 'FONCTIONNEL'
+        },
+        {
+          id: 'EQ-ADM-02',
+          type: 'Écran 24 pouces',
+          marqueModele: 'HP EliteDisplay E243',
+          numeroSerie: 'SN-HP-SCR24-338190',
+          dateDotation: '10/01/2024',
+          etat: 'FONCTIONNEL'
+        },
+        {
+          id: 'EQ-ADM-03',
+          type: 'Imprimante Réseau Multifonction',
+          marqueModele: 'HP LaserJet Pro MFP M428fdw',
+          numeroSerie: 'SN-HP-MFP428-771204',
+          dateDotation: '15/03/2024',
+          etat: 'FONCTIONNEL'
+        },
+        {
+          id: 'EQ-ADM-04',
+          type: 'Onduleur Parafoudre 800VA',
+          marqueModele: 'APC Back-UPS 800VA',
+          numeroSerie: 'SN-APC-800-449188',
+          dateDotation: '10/01/2024',
+          etat: 'FONCTIONNEL'
+        }
+      ]
+    }
+  },
+  {
+    id: 'USR-008',
+    matricule: 'PREST-8802',
+    nom: 'Jaziri',
+    prenom: 'Karim',
+    email: 'k.jaziri@microtech.tn',
+    role: 'TECHNICIEN_PRESTATAIRE',
+    roleLabel: 'Technicien Prestataire Externe',
+    perimetre: 'Société MICRO-TECH (Titulaire Marché National AO-2025-04)',
+    creId: 'CRE-01',
+    creNom: 'CRE Manouba',
+    avatar: '🧰',
+    prestataireProfile: {
+      societeNom: 'Société MICRO-TECH Informatique SARL',
+      numeroMarche: 'Marché National N° AO-2025-04 / Min. Éducation',
+      specialite: 'Maintenance curative & préventive des parcs informatiques scolaires',
+      telephone: '+216 71 889 450'
+    }
+  },
+  {
+    id: 'USR-009',
+    matricule: 'SDB-3101',
+    nom: 'Baccouche',
+    prenom: 'Hédi',
+    email: 'sd.batiments.manouba@edunet.tn',
+    role: 'SD_BATIMENTS',
+    roleLabel: 'Sous-Directeur Bâtiments & Parc Auto',
+    perimetre: 'CRE Manouba · Bâtiments, Équipements & Flotte Automobile',
+    creId: 'CRE-01',
+    creNom: 'CRE Manouba',
+    avatar: '🚐',
+    batimentsProfile: {
+      service: 'Sous-Direction des Bâtiments, Équipements & Matériel Roulant',
+      bureau: 'Bureau 03 (Bâtiment Parc Auto & Logistique)',
+      parcAutomobileResponsable: true,
+      vehiculesSupervises: 6,
+      chauffeursActifs: 5
+    }
   }
 ];
 
@@ -198,6 +346,15 @@ export class AuthService {
       case 'TECHNICIEN':
         this.router.navigate(['/technicien']);
         break;
+      case 'AGENT_ADMIN':
+        this.router.navigate(['/agent-admin']);
+        break;
+      case 'TECHNICIEN_PRESTATAIRE':
+        this.router.navigate(['/technicien-prestataire']);
+        break;
+      case 'SD_BATIMENTS':
+        this.router.navigate(['/sd-batiments']);
+        break;
       default:
         this.router.navigate(['/login']);
     }
@@ -223,6 +380,9 @@ export class AuthService {
       case 'DIRECTEUR': return '/directeur';
       case 'PROF_LABO': return '/prof';
       case 'TECHNICIEN': return '/technicien';
+      case 'AGENT_ADMIN': return '/agent-admin';
+      case 'TECHNICIEN_PRESTATAIRE': return '/technicien-prestataire';
+      case 'SD_BATIMENTS': return '/sd-batiments';
       default: return '/login';
     }
   }

@@ -42,10 +42,31 @@
           </a>
         </ng-container>
 
-        <!-- Rôle Technicien Mobile -->
+        <!-- Rôle Technicien Mobile Interne -->
         <ng-container *ngIf="user.role === 'TECHNICIEN'">
           <a routerLink="/technicien" routerLinkActive="nav-active" class="nav-link">
             🔧 Mes Missions & Ordres de Mission
+          </a>
+        </ng-container>
+
+        <!-- Rôle Agent Administratif (Siège CRE / CREFOC / Établissement) -->
+        <ng-container *ngIf="user.role === 'AGENT_ADMIN'">
+          <a routerLink="/agent-admin" routerLinkActive="nav-active" class="nav-link">
+            👩‍💼 Mon Espace Administratif & Dotations
+          </a>
+        </ng-container>
+
+        <!-- Rôle Technicien Prestataire Externe -->
+        <ng-container *ngIf="user.role === 'TECHNICIEN_PRESTATAIRE'">
+          <a routerLink="/technicien-prestataire" routerLinkActive="nav-active" class="nav-link">
+            🧰 Espace Prestataire (Réservations Directes sans OM)
+          </a>
+        </ng-container>
+
+        <!-- Rôle SD Bâtiments & Parc Auto -->
+        <ng-container *ngIf="user.role === 'SD_BATIMENTS'">
+          <a routerLink="/sd-batiments" routerLinkActive="nav-active" class="nav-link">
+            🚐 Parc Auto, Chauffeurs & Bâtiments
           </a>
         </ng-container>
       </nav>

@@ -1,0 +1,398 @@
+<div class="agent-admin-container">
+  <!-- Toast Notification -->
+  <div *ngIf="toastMessage" class="toast-alert">
+    {{ toastMessage }}
+  </div>
+
+  <!-- Header Banner Profil Agent Administratif -->
+  <header class="agent-header-card">
+    <div class="header-main">
+      <div class="agent-avatar-box">
+        <span class="avatar-icon">{{ currentUser?.avatar || '👩‍💼' }}</span>
+        <span class="status-indicator online"></span>
+      </div>
+
+      <div class="agent-info-meta">
+        <div class="badge-role">
+          <span class="flag">🇹🇳</span>
+          <span class="role-text">AGENT ADMINISTRATIF RÉGIONAL · CRE MANOUBA</span>
+        </div>
+        <h1 class="agent-fullname">{{ currentUser?.prenom }} {{ currentUser?.nom }}</h1>
+        <p class="agent-immat">
+          <strong>Matricule :</strong> {{ currentUser?.matricule }} · 
+          <strong>Email :</strong> {{ currentUser?.email }}
+        </p>
+      </div>
+
+      <!-- Informations administratives saisies d'avance par le SD-TIC -->
+      <div class="admin-profile-badges">
+        <div class="meta-item">
+          <span class="meta-label">Affectation & Localisation :</span>
+          <span class="meta-value highlight">{{ currentUser?.agentProfile?.localisationNom }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Direction :</span>
+          <span class="meta-value">{{ currentUser?.agentProfile?.direction }}</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Service & Bureau :</span>
+          <span class="meta-value">{{ currentUser?.agentProfile?.service }} · <strong>{{ currentUser?.agentProfile?.bureau }}</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bannière Connectivité Réseau Local du CRE (LAN Intranet) -->
+    <div class="lan-network-banner">
+      <div class="lan-status-indicator">
+        <span class="pulsing-dot"></span>
+        <strong>Réseau Local CRE : CONNECTÉ & ACTIF</strong>
+      </div>
+      <div class="lan-details-grid">
+        <div class="lan-pill">
+          <span class="lan-k">IP Poste :</span>
+          <span class="lan-v font-mono">{{ currentUser?.agentProfile?.ipFixe }}</span>
+        </div>
+        <div class="lan-pill">
+          <span class="lan-k">VLAN :</span>
+          <span class="lan-v">{{ currentUser?.agentProfile?.vlan }}</span>
+        </div>
+        <div class="lan-pill">
+          <span class="lan-k">Prise Murale :</span>
+          <span class="lan-v font-mono">{{ currentUser?.agentProfile?.priseMurale }}</span>
+        </div>
+        <div class="lan-pill">
+          <span class="lan-k">Port Switch :</span>
+          <span class="lan-v font-mono">{{ currentUser?.agentProfile?.switchPort }}</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Quick Action & Stats Overview -->
+  <div class="stats-and-actions">
+    <div class="stat-card">
+      <div class="stat-icon">💻</div>
+      <div class="stat-details">
+        <div class="stat-val">{{ equipementsDotation.length }}</div>
+        <div class="stat-name">Équipements en Dotation</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">📑</div>
+      <div class="stat-details">
+        <div class="stat-val">{{ reclamationsList.length }}</div>
+        <div class="stat-name">Tickets Déclarés</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">📋</div>
+      <div class="stat-details">
+        <div class="stat-val">{{ tachesDelegueesList.length }}</div>
+        <div class="stat-name">Tâches Déléguées SD-TIC</div>
+      </div>
+    </div>
+
+    <div class="claim-trigger-box">
+      <div class="claim-title">Besoin d'assistance informatique ?</div>
+      <div class="claim-buttons">
+        <button class="btn-claim-hw" (click)="ouvrirModalReclamation('MATERIEL')">
+          🔧 Panne Matérielle (PC/Écran/Imprimante)
+        </button>
+        <button class="btn-claim-sw" (click)="ouvrirModalReclamation('LOGICIEL_APPLICATION')">
+          ⚙️ Problème Logiciel / Application
+        </button>
+        <button class="btn-claim-net" (click)="ouvrirModalReclamation('RESEAU_LOCAL_CRE')">
+          🌐 Coupure Réseau Local CRE
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs Navigation -->
+  <nav class="agent-tabs-nav">
+    <button class="tab-btn" 
+            [class.active]="activeTab === 'dotations'" 
+            (click)="activeTab = 'dotations'">
+      🖥️ Mes Équipements de Bureau & Dotations ({{ equipementsDotation.length }})
+    </button>
+    <button class="tab-btn" 
+            [class.active]="activeTab === 'reclamations'" 
+            (click)="activeTab = 'reclamations'">
+      🚨 Mes Réclamations & Pannes Déclarées ({{ reclamationsList.length }})
+    </button>
+    <button class="tab-btn" 
+            [class.active]="activeTab === 'delegations'" 
+            (click)="activeTab = 'delegations'">
+      📝 Tâches Déléguées par le SD-TIC ({{ tachesDelegueesList.length }})
+    </button>
+  </nav>
+
+  <!-- TAB 1: Dotations Équipements avec Numéro de Série Obligatoire -->
+  <section *ngIf="activeTab === 'dotations'" class="tab-content">
+    <div class="section-card">
+      <div class="section-header">
+        <div>
+          <h2>Inventaire des Équipements Assignés à mon Bureau</h2>
+          <p class="section-subtitle">
+            Dotation enregistrée par la Sous-direction TIC (CRE Manouba). Chaque équipement est tracé avec son numéro de série officiel.
+          </p>
+        </div>
+      </div>
+
+      <div class="equipments-grid">
+        <div *ngFor="let eq of equipementsDotation" class="eq-card">
+          <div class="eq-top">
+            <span class="eq-type-tag">{{ eq.type }}</span>
+            <span class="eq-status-badge" [class.ok]="eq.etat === 'FONCTIONNEL'" [class.ko]="eq.etat === 'EN_PANNE'">
+              {{ eq.etat === 'FONCTIONNEL' ? '✅ En Service' : '⚠️ En Panne' }}
+            </span>
+          </div>
+          <h3 class="eq-model">{{ eq.marqueModele }}</h3>
+          <div class="eq-sn-box">
+            <span class="sn-label">N° DE SÉRIE OFFICIEL :</span>
+            <span class="sn-value font-mono">{{ eq.numeroSerie }}</span>
+          </div>
+          <div class="eq-meta">
+            <span>📅 Doté le : {{ eq.dateDotation }}</span>
+            <span>📍 Affectation : {{ currentUser?.agentProfile?.bureau }}</span>
+          </div>
+          <div class="eq-actions">
+            <button class="btn-report-single" (click)="nouvelleReclamation.equipementId = eq.id; ouvrirModalReclamation('MATERIEL')">
+              Signaler une panne sur cet équipement
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 2: Réclamations & Suivi des Tickets -->
+  <section *ngIf="activeTab === 'reclamations'" class="tab-content">
+    <div class="section-card">
+      <div class="section-header space-between">
+        <div>
+          <h2>Mes Déclarations de Pannes & Demandes d'Assistance</h2>
+          <p class="section-subtitle">
+            Suivi des pannes matérielles, logicielles métier (Edunet, GRH, etc.) et réseau local transmises au SD-TIC.
+          </p>
+        </div>
+        <button class="btn-primary" (click)="ouvrirModalReclamation('MATERIEL')">
+          ➕ Nouvelle Réclamation
+        </button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="tickets-table">
+          <thead>
+            <tr>
+              <th>Réf. Ticket</th>
+              <th>Catégorie</th>
+              <th>Objet / Détails</th>
+              <th>N° Série / Cible</th>
+              <th>Date</th>
+              <th>Statut & Prise en Charge</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let rec of reclamationsList">
+              <td class="font-mono font-bold">{{ rec.ticketNumero }}</td>
+              <td>
+                <span class="cat-badge" 
+                      [class.mat]="rec.categorie === 'MATERIEL'"
+                      [class.soft]="rec.categorie === 'LOGICIEL_APPLICATION'"
+                      [class.net]="rec.categorie === 'RESEAU_LOCAL_CRE'">
+                  {{ rec.categorie === 'MATERIEL' ? '💻 Matériel' : (rec.categorie === 'LOGICIEL_APPLICATION' ? '⚙️ Logiciel' : '🌐 Réseau LAN') }}
+                </span>
+              </td>
+              <td>
+                <div class="ticket-titre">{{ rec.titre }}</div>
+                <div class="ticket-desc">{{ rec.detailsPanne }}</div>
+                <div *ngIf="rec.reponseTechnique" class="ticket-tech-note">
+                  <strong>Réponse SD-TIC :</strong> {{ rec.reponseTechnique }}
+                </div>
+              </td>
+              <td>
+                <div *ngIf="rec.numeroSerie" class="font-mono sn-highlight">{{ rec.numeroSerie }}</div>
+                <div class="target-sub">{{ rec.equipementConcerne || rec.logicielConcerne }}</div>
+              </td>
+              <td class="text-sm text-gray">{{ rec.dateCreation }}</td>
+              <td>
+                <span class="status-pill"
+                      [class.pending]="rec.statut === 'TRANSMIS_SD_TIC'"
+                      [class.progress]="rec.statut === 'AFFECTE_TECHNICIEN' || rec.statut === 'EN_COURS'"
+                      [class.success]="rec.statut === 'RESOLU'">
+                  {{ rec.statutLabel }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 3: Tâches Déléguées par le SD-TIC -->
+  <section *ngIf="activeTab === 'delegations'" class="tab-content">
+    <div class="section-card">
+      <div class="section-header">
+        <div>
+          <h2>Missions & Tâches Déléguées par la Sous-direction TIC</h2>
+          <p class="section-subtitle">
+            Tâches opérationnelles attribuées par le SD-TIC (Pointage prestataires, inventaires intermédiaires, etc.).
+          </p>
+        </div>
+      </div>
+
+      <div class="tasks-list">
+        <div *ngFor="let task of tachesDelegueesList" class="task-card" [class.done]="task.statut === 'TERMINEE'">
+          <div class="task-main">
+            <div class="task-header-row">
+              <span class="task-status-tag" [class.en-cours]="task.statut === 'EN_COURS'" [class.termine]="task.statut === 'TERMINEE'">
+                {{ task.statut === 'TERMINEE' ? '✅ Mission Terminée' : '⏳ En cours d\'exécution' }}
+              </span>
+              <span class="task-author">Attribuée par : <strong>{{ task.deleguePar }}</strong> (le {{ task.dateAttribution }})</span>
+            </div>
+            <h3 class="task-title">{{ task.titre }}</h3>
+            <p class="task-desc">{{ task.description }}</p>
+            <div *ngIf="task.commentairesAgent" class="task-notes">
+              <strong>Observation de l'agent :</strong> {{ task.commentairesAgent }}
+            </div>
+          </div>
+          <div class="task-actions">
+            <button *ngIf="task.statut !== 'TERMINEE'" 
+                    class="btn-complete-task" 
+                    (click)="marquerTache(task, 'TERMINEE')">
+              ✓ Marquer comme Terminée
+            </button>
+            <button *ngIf="task.statut === 'TERMINEE'" 
+                    class="btn-reopen-task" 
+                    (click)="marquerTache(task, 'EN_COURS')">
+              ↩ Rouvrir la tâche
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODAL DE CRÉATION DE RÉCLAMATION -->
+  <div *ngIf="showModalReclamation" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span class="modal-icon">🚨</span>
+          <div>
+            <h3>Nouvelle Déclaration de Panne / Réclamation</h3>
+            <span class="modal-sub">Agent : {{ currentUser?.prenom }} {{ currentUser?.nom }} · {{ currentUser?.agentProfile?.localisationNom }}</span>
+          </div>
+        </div>
+        <button class="btn-close" (click)="showModalReclamation = false">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Type de Panne -->
+        <div class="form-group">
+          <label>Catégorie du problème constaté * :</label>
+          <div class="cat-selector">
+            <label class="cat-radio-label" [class.selected]="nouvelleReclamation.categorie === 'MATERIEL'">
+              <input type="radio" name="cat" value="MATERIEL" [(ngModel)]="nouvelleReclamation.categorie" (change)="ouvrirModalReclamation('MATERIEL')">
+              <span>💻 Panne Matérielle (Équipement)</span>
+            </label>
+            <label class="cat-radio-label" [class.selected]="nouvelleReclamation.categorie === 'LOGICIEL_APPLICATION'">
+              <input type="radio" name="cat" value="LOGICIEL_APPLICATION" [(ngModel)]="nouvelleReclamation.categorie" (change)="ouvrirModalReclamation('LOGICIEL_APPLICATION')">
+              <span>⚙️ Panne Logicielle / Application Métier</span>
+            </label>
+            <label class="cat-radio-label" [class.selected]="nouvelleReclamation.categorie === 'RESEAU_LOCAL_CRE'">
+              <input type="radio" name="cat" value="RESEAU_LOCAL_CRE" [(ngModel)]="nouvelleReclamation.categorie" (change)="ouvrirModalReclamation('RESEAU_LOCAL_CRE')">
+              <span>🌐 Coupure Réseau Local / LAN CRE</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 1. CAS MATÉRIEL : Choix de l'équipement doté + N° de série obligatoire -->
+        <div *ngIf="nouvelleReclamation.categorie === 'MATERIEL'" class="cat-specific-box">
+          <div class="form-group">
+            <label for="eqSelect">Équipement concerné dans mon bureau * :</label>
+            <select id="eqSelect" 
+                    class="form-control" 
+                    [(ngModel)]="nouvelleReclamation.equipementId" 
+                    (change)="onSelectEquipementChange($event)">
+              <option *ngFor="let eq of equipementsDotation" [value]="eq.id">
+                {{ eq.type }} - {{ eq.marqueModele }} (N° Série: {{ eq.numeroSerie }})
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="snInput">Numéro de Série de l'équipement (OBLIGATOIRE) * :</label>
+            <input type="text" 
+                   id="snInput" 
+                   class="form-control font-mono font-bold" 
+                   [(ngModel)]="nouvelleReclamation.numeroSerie" 
+                   placeholder="Ex: SN-HP-PD400-994102" 
+                   required />
+            <small class="helper-text">Règle de traçabilité SuiviTic : Tout équipement déclaré doit avoir son N° de série certifié.</small>
+          </div>
+        </div>
+
+        <!-- 2. CAS LOGICIEL : Choix de l'application -->
+        <div *ngIf="nouvelleReclamation.categorie === 'LOGICIEL_APPLICATION'" class="cat-specific-box">
+          <div class="form-group">
+            <label for="appSelect">Application ou Logiciel concerné * :</label>
+            <select id="appSelect" class="form-control" [(ngModel)]="nouvelleReclamation.logicielConcerne">
+              <option *ngFor="let app of applicationsDisponibles" [value]="app">
+                {{ app }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 3. CAS RÉSEAU LOCAL CRE -->
+        <div *ngIf="nouvelleReclamation.categorie === 'RESEAU_LOCAL_CRE'" class="cat-specific-box">
+          <div class="lan-info-summary">
+            <strong>Informations de la liaison bureau :</strong> Prise murale : {{ currentUser?.agentProfile?.priseMurale }} | IP : {{ currentUser?.agentProfile?.ipFixe }} | Switch port : {{ currentUser?.agentProfile?.switchPort }}
+          </div>
+        </div>
+
+        <!-- Titre & Priorité -->
+        <div class="form-row">
+          <div class="form-group flex-2">
+            <label for="titreRec">Objet / Titre de la panne * :</label>
+            <input type="text" 
+                   id="titreRec" 
+                   class="form-control" 
+                   [(ngModel)]="nouvelleReclamation.titre" 
+                   placeholder="Ex: Blocage au démarrage, écran noir, message d'erreur..." />
+          </div>
+          <div class="form-group flex-1">
+            <label for="criticite">Degré d'urgence :</label>
+            <select id="criticite" class="form-control" [(ngModel)]="nouvelleReclamation.criticite">
+              <option value="FAIBLE">Normale</option>
+              <option value="MOYENNE">Moyenne</option>
+              <option value="URGENTE">Urgente (Bloque le travail)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Description détaillée -->
+        <div class="form-group">
+          <label for="detailsPanne">Description détaillée des symptômes ou messages d'erreur * :</label>
+          <textarea id="detailsPanne" 
+                    rows="3" 
+                    class="form-control" 
+                    [(ngModel)]="nouvelleReclamation.detailsPanne" 
+                    placeholder="Préciser les circonstances de la panne, les voyants allumés ou les codes d'erreur affichés..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="showModalReclamation = false">Annuler</button>
+        <button class="btn-submit-claim" (click)="soumettreReclamation()">
+          🚀 Transmettre la Réclamation au SD-TIC
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -108,9 +108,15 @@
         👥 Affectation Profs & Validation Labos Bac ({{ affectationsList.length }})
       </button>
       <button class="nav-tab" [class.active]="activeSection === 'interventions'" (click)="activeSection = 'interventions'">
-        ✍️ Interventions Technicien à Valider
+        ✍️ Interventions Technicien Interne à Valider
         <span *ngIf="data.interventionsAValider.length > 0" class="badge-count">
           {{ data.interventionsAValider.length }}
+        </span>
+      </button>
+      <button class="nav-tab" [class.active]="activeSection === 'prestataires'" (click)="activeSection = 'prestataires'">
+        🧰 Prestataires Extérieurs (Réservation & Validation)
+        <span class="badge-count" style="background:#0d9488;">
+          {{ prestataireInterventionsList.length }}
         </span>
       </button>
       <button class="nav-tab" [class.active]="activeSection === 'prets'" (click)="activeSection = 'prets'">
@@ -321,6 +327,105 @@
           <div class="int-footer">
             <button class="btn btn-success" (click)="ouvrirValidationIntervention(item)">
               ✍️ Valider et Noter cette intervention
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION NOUVELLE : Interventions Techniciens Prestataires Extérieurs -->
+    <section *ngIf="activeSection === 'prestataires'" class="content-panel">
+      <div class="panel-header">
+        <div>
+          <h3>Validation des Interventions Prestataires Extérieurs (Société titulaire de marché)</h3>
+          <p class="panel-desc">
+            Règle de gestion : Les techniciens prestataires réservent d'avance directement avec l'établissement <strong>sans besoin d'Ordre de Mission ni de voiture du CRE</strong>. Le Directeur d'Établissement valide leur fiche technique avec la liste détaillée des équipements (avec N° de série), actions effectuées (formatage, réparation) et pièces de rechange (avec N° de série).
+          </p>
+        </div>
+      </div>
+
+      <div class="prestataires-list">
+        <div *ngFor="let p of prestataireInterventionsList" class="prestataire-card">
+          <div class="prestataire-card-header">
+            <div>
+              <span class="prest-badge font-mono">{{ p.code }}</span>
+              <span class="prest-company">🏢 {{ p.prestataireSociete }}</span>
+            </div>
+            <div class="prest-status-badge" 
+                 [class.status-pending]="p.statut === 'ATTENTE_VALIDATION'"
+                 [class.status-booked]="p.statut === 'RESERVEE'"
+                 [class.status-ok]="p.statut === 'VALIDEE'">
+              {{ p.statut === 'ATTENTE_VALIDATION' ? '⏳ Travaux Réalisés · En Attente de Votre Validation' : (p.statut === 'VALIDEE' ? '✅ Intervention Validée par le Directeur' : '📅 Réservation Confirmée') }}
+            </div>
+          </div>
+
+          <div class="prest-meta-grid">
+            <div><strong>Technicien Mandaté :</strong> 🧰 {{ p.technicienNom }} ({{ p.contact }})</div>
+            <div><strong>Date de l'Intervention :</strong> 🗓️ {{ p.datePrevue }}</div>
+            <div><strong>Dispense Navette CRE :</strong> <span class="tag-exempt">✓ Moyens propres prestataire (Sans OM / Sans Voiture CRE)</span></div>
+          </div>
+
+          <div class="prest-motif-box">
+            <strong>Objet convenu des travaux :</strong> {{ p.motif }}
+          </div>
+
+          <!-- LISTE DÉTAILLÉE DES ÉQUIPEMENTS & PIÈCES DE RECHANGE (AVEC N° DE SÉRIE OBLIGATOIRE) -->
+          <div *ngIf="p.equipements && p.equipements.length > 0" class="prest-equipments-details">
+            <h4 class="eq-sub-title">💻 Équipements Servis & Pièces Posées (Contrôlés par la Direction) :</h4>
+            
+            <div class="eq-table-wrapper">
+              <table class="eq-prest-table">
+                <thead>
+                  <tr>
+                    <th>Équipement & Type</th>
+                    <th>NUMÉRO DE SÉRIE ÉQUIPEMENT</th>
+                    <th>Action Effectuée</th>
+                    <th>Pièces de Rechange Remplacées (Désignation + N° Série)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let eq of p.equipements">
+                    <td>
+                      <strong>{{ eq.marqueModele }}</strong>
+                      <div class="text-xs text-gray">{{ eq.type }}</div>
+                    </td>
+                    <td>
+                      <span class="sn-box-highlight font-mono">{{ eq.numeroSerie }}</span>
+                    </td>
+                    <td>
+                      <span class="action-tag">{{ eq.action }}</span>
+                    </td>
+                    <td>
+                      <div *ngIf="eq.piecesRechange.length === 0" class="text-xs text-gray">
+                        <em>Aucune pièce remplacée (Formatage / Nettoyage)</em>
+                      </div>
+                      <div *ngFor="let piece of eq.piecesRechange" class="piece-item-box">
+                        <div class="piece-name">🔩 {{ piece.designation }}</div>
+                        <div class="piece-sn font-mono">N° Série Pièce : <strong>{{ piece.numeroSerie }}</strong></div>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Signature ou Visa du Directeur -->
+          <div *ngIf="p.statut === 'VALIDEE'" class="validation-visa-box">
+            <div class="visa-row">
+              <span>✅ <strong>Validé par la Direction le :</strong> {{ p.dateValidation }}</span>
+              <span>⭐ Note : {{ p.noteValidation }}/5</span>
+            </div>
+            <div class="visa-comment">« {{ p.commentaireDirecteur }} »</div>
+          </div>
+
+          <!-- Boutons d'Action pour le Directeur -->
+          <div *ngIf="p.statut === 'ATTENTE_VALIDATION'" class="prest-card-actions">
+            <button class="btn btn-success" (click)="ouvrirValidationPrestataire(p)">
+              ✍️ Valider & Signer l'Intervention Prestataire (Rapport Conforme)
+            </button>
+            <button class="btn btn-outline-danger" (click)="refuserPrestataire(p)">
+              ❌ Demander Reprise des Travaux
             </button>
           </div>
         </div>
@@ -627,9 +732,58 @@
       </div>
 
       <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="showPretModal = false">Annuler</button>
-        <button class="btn btn-primary" (click)="soumettreDemandePret()">
-          📤 Transmettre au Superviseur SD TIC
+  <!-- MODAL 5 : Validation d'Intervention Prestataire Extérieur (Rapport, N° Série & Pièces) -->
+  <div *ngIf="selectedPrestataireForValidation" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 650px;">
+      <div class="modal-header">
+        <div>
+          <h3>Validation Intervention Prestataire {{ selectedPrestataireForValidation.code }}</h3>
+          <span style="font-size:0.8rem; color:#64748b;">Société : {{ selectedPrestataireForValidation.prestataireSociete }} · Technicien : {{ selectedPrestataireForValidation.technicienNom }}</span>
+        </div>
+        <button class="modal-close" (click)="selectedPrestataireForValidation = null">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:0.75rem; margin-bottom:1rem; font-size:0.85rem;">
+          ℹ️ Vous attestez en tant que Directeur d'Établissement de la bonne exécution des prestations techniques sur site (formatage, réparation, nettoyage) et de la concordance des numéros de série des équipements et pièces détachées posées.
+        </div>
+
+        <div style="margin-bottom:1rem; font-size:0.88rem;">
+          <strong>Équipements déclarés :</strong>
+          <ul style="margin:0.25rem 0 0 1.25rem;">
+            <li *ngFor="let eq of selectedPrestataireForValidation.equipements">
+              {{ eq.marqueModele }} (S/N: <code>{{ eq.numeroSerie }}</code>) — {{ eq.action }}
+              <span *ngIf="eq.piecesRechange.length">
+                (Pièce : {{ eq.piecesRechange[0]?.designation }} - S/N: <code>{{ eq.piecesRechange[0]?.numeroSerie }}</code>)
+              </span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="form-group">
+          <label><strong>Note attribuée au prestataire (1 à 5 étoiles) :</strong></label>
+          <div class="star-rating">
+            <button *ngFor="let s of [1,2,3,4,5]" 
+                    type="button" 
+                    class="star-btn" 
+                    [class.filled]="prestataireValidationNote >= s" 
+                    (click)="prestataireValidationNote = s">
+              ★
+            </button>
+            <span class="rating-label">{{ prestataireValidationNote }} / 5 étoiles</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Visa et commentaire officiel du Directeur :</label>
+          <textarea [(ngModel)]="prestataireValidationCommentaire" rows="3" class="form-input"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="selectedPrestataireForValidation = null">Annuler</button>
+        <button class="btn btn-success" (click)="confirmerValidationPrestataire()">
+          ✍️ Apposer le Visa du Directeur & Valider l'Intervention
         </button>
       </div>
     </div>
