@@ -49,92 +49,34 @@ export class AdminCentralDashboardComponent implements OnInit {
   selectedStatut = 'TOUS';
   searchTerm = '';
 
-  // Liste de tous les CRE de la République
+  // Liste officielle et complète des 26 Commissariats Régionaux de l'Éducation (CRE) de la République Tunisienne
   creList: CreSupervision[] = [
-    {
-      id: 'CRE-01',
-      nom: 'CRE Manouba',
-      gouvernorat: 'Manouba',
-      sdticNom: 'Mohamed Gharbi (SD TIC)',
-      sdticEmail: 'sdtic.manouba@edunet.tn',
-      sdticActif: true,
-      totalEtablissements: 48,
-      totalEquipements: 1840,
-      enService: 1612,
-      enPanne: 148,
-      arrivagesEnAttente: 3,
-      reclamationsOuvertes: 19
-    },
-    {
-      id: 'CRE-02',
-      nom: 'CRE Tunis',
-      gouvernorat: 'Tunis',
-      sdticNom: 'Kamel Trabelsi (Directeur TIC)',
-      sdticEmail: 'directeurtic.tunis@edunet.tn',
-      sdticActif: true,
-      totalEtablissements: 92,
-      totalEquipements: 3950,
-      enService: 3480,
-      enPanne: 310,
-      arrivagesEnAttente: 5,
-      reclamationsOuvertes: 34
-    },
-    {
-      id: 'CRE-03',
-      nom: 'CRE Ariana',
-      gouvernorat: 'Ariana',
-      sdticNom: 'Leila Riahi (SD TIC)',
-      sdticEmail: 'sdtic.ariana@edunet.tn',
-      sdticActif: true,
-      totalEtablissements: 56,
-      totalEquipements: 2410,
-      enService: 2150,
-      enPanne: 180,
-      arrivagesEnAttente: 2,
-      reclamationsOuvertes: 14
-    },
-    {
-      id: 'CRE-04',
-      nom: 'CRE Ben Arous',
-      gouvernorat: 'Ben Arous',
-      sdticNom: 'Anis Chahed (Directeur TIC)',
-      sdticEmail: 'directeurtic.benarous@edunet.tn',
-      sdticActif: true,
-      totalEtablissements: 64,
-      totalEquipements: 2890,
-      enService: 2540,
-      enPanne: 220,
-      arrivagesEnAttente: 4,
-      reclamationsOuvertes: 22
-    },
-    {
-      id: 'CRE-05',
-      nom: 'CRE Bizerte',
-      gouvernorat: 'Bizerte',
-      sdticNom: 'Zouhair Dridi (SD TIC)',
-      sdticEmail: 'sdtic.bizerte@edunet.tn',
-      sdticActif: true,
-      totalEtablissements: 58,
-      totalEquipements: 2180,
-      enService: 1890,
-      enPanne: 190,
-      arrivagesEnAttente: 1,
-      reclamationsOuvertes: 16
-    },
-    {
-      id: 'CRE-06',
-      nom: 'CRE Sfax 1',
-      gouvernorat: 'Sfax',
-      sdticNom: 'Hichem Fakhfakh (SD TIC)',
-      sdticEmail: 'sdtic.sfax1@edunet.tn',
-      sdticActif: true,
-      totalEtablissements: 72,
-      totalEquipements: 3100,
-      enService: 2780,
-      enPanne: 230,
-      arrivagesEnAttente: 3,
-      reclamationsOuvertes: 25
-    }
+    { id: 'CRE-01', nom: 'CRE Tunis 1', gouvernorat: 'Tunis', sdticNom: 'Kamel Trabelsi (Directeur TIC)', sdticEmail: 'directeurtic.tunis1@edunet.tn', sdticActif: true, totalEtablissements: 88, totalEquipements: 3950, enService: 3580, enPanne: 270, arrivagesEnAttente: 4, reclamationsOuvertes: 28 },
+    { id: 'CRE-02', nom: 'CRE Tunis 2', gouvernorat: 'Tunis', sdticNom: 'Mourad Cherif (SD TIC)', sdticEmail: 'sdtic.tunis2@edunet.tn', sdticActif: true, totalEtablissements: 76, totalEquipements: 3340, enService: 3010, enPanne: 210, arrivagesEnAttente: 3, reclamationsOuvertes: 21 },
+    { id: 'CRE-03', nom: 'CRE Ariana', gouvernorat: 'Ariana', sdticNom: 'Leila Riahi (SD TIC)', sdticEmail: 'sdtic.ariana@edunet.tn', sdticActif: true, totalEtablissements: 62, totalEquipements: 2680, enService: 2410, enPanne: 180, arrivagesEnAttente: 2, reclamationsOuvertes: 16 },
+    { id: 'CRE-04', nom: 'CRE Ben Arous', gouvernorat: 'Ben Arous', sdticNom: 'Anis Chahed (Directeur TIC)', sdticEmail: 'directeurtic.benarous@edunet.tn', sdticActif: true, totalEtablissements: 68, totalEquipements: 2940, enService: 2620, enPanne: 220, arrivagesEnAttente: 3, reclamationsOuvertes: 24 },
+    { id: 'CRE-05', nom: 'CRE Manouba', gouvernorat: 'Manouba', sdticNom: 'Mohamed Gharbi (SD TIC)', sdticEmail: 'sdtic.manouba@edunet.tn', sdticActif: true, totalEtablissements: 48, totalEquipements: 1840, enService: 1612, enPanne: 148, arrivagesEnAttente: 3, reclamationsOuvertes: 19 },
+    { id: 'CRE-06', nom: 'CRE Nabeul', gouvernorat: 'Nabeul', sdticNom: 'Foued Ben Romdhane (SD TIC)', sdticEmail: 'sdtic.nabeul@edunet.tn', sdticActif: true, totalEtablissements: 84, totalEquipements: 3420, enService: 3080, enPanne: 240, arrivagesEnAttente: 4, reclamationsOuvertes: 27 },
+    { id: 'CRE-07', nom: 'CRE Zaghouan', gouvernorat: 'Zaghouan', sdticNom: 'Tarek Hamdi (SD TIC)', sdticEmail: 'sdtic.zaghouan@edunet.tn', sdticActif: true, totalEtablissements: 36, totalEquipements: 1220, enService: 1090, enPanne: 90, arrivagesEnAttente: 1, reclamationsOuvertes: 9 },
+    { id: 'CRE-08', nom: 'CRE Bizerte', gouvernorat: 'Bizerte', sdticNom: 'Zouhair Dridi (SD TIC)', sdticEmail: 'sdtic.bizerte@edunet.tn', sdticActif: true, totalEtablissements: 66, totalEquipements: 2540, enService: 2260, enPanne: 190, arrivagesEnAttente: 2, reclamationsOuvertes: 18 },
+    { id: 'CRE-09', nom: 'CRE Béja', gouvernorat: 'Béja', sdticNom: 'Mongi Mejri (SD TIC)', sdticEmail: 'sdtic.beja@edunet.tn', sdticActif: true, totalEtablissements: 44, totalEquipements: 1560, enService: 1380, enPanne: 130, arrivagesEnAttente: 2, reclamationsOuvertes: 14 },
+    { id: 'CRE-10', nom: 'CRE Jendouba', gouvernorat: 'Jendouba', sdticNom: 'Chokri Gharbi (SD TIC)', sdticEmail: 'sdtic.jendouba@edunet.tn', sdticActif: true, totalEtablissements: 52, totalEquipements: 1780, enService: 1540, enPanne: 160, arrivagesEnAttente: 1, reclamationsOuvertes: 17 },
+    { id: 'CRE-11', nom: 'CRE Le Kef', gouvernorat: 'Le Kef', sdticNom: 'Habib Bouzidi (SD TIC)', sdticEmail: 'sdtic.lekef@edunet.tn', sdticActif: true, totalEtablissements: 46, totalEquipements: 1490, enService: 1310, enPanne: 120, arrivagesEnAttente: 2, reclamationsOuvertes: 11 },
+    { id: 'CRE-12', nom: 'CRE Siliana', gouvernorat: 'Siliana', sdticNom: 'Moncef Ayari (SD TIC)', sdticEmail: 'sdtic.siliana@edunet.tn', sdticActif: true, totalEtablissements: 42, totalEquipements: 1380, enService: 1220, enPanne: 110, arrivagesEnAttente: 1, reclamationsOuvertes: 10 },
+    { id: 'CRE-13', nom: 'CRE Sousse', gouvernorat: 'Sousse', sdticNom: 'Walid Ben Ammar (Directeur TIC)', sdticEmail: 'directeurtic.sousse@edunet.tn', sdticActif: true, totalEtablissements: 78, totalEquipements: 3620, enService: 3290, enPanne: 240, arrivagesEnAttente: 5, reclamationsOuvertes: 29 },
+    { id: 'CRE-14', nom: 'CRE Monastir', gouvernorat: 'Monastir', sdticNom: 'Ridha Khelil (SD TIC)', sdticEmail: 'sdtic.monastir@edunet.tn', sdticActif: true, totalEtablissements: 64, totalEquipements: 2820, enService: 2570, enPanne: 180, arrivagesEnAttente: 3, reclamationsOuvertes: 17 },
+    { id: 'CRE-15', nom: 'CRE Mahdia', gouvernorat: 'Mahdia', sdticNom: 'Amor Sassi (SD TIC)', sdticEmail: 'sdtic.mahdia@edunet.tn', sdticActif: true, totalEtablissements: 54, totalEquipements: 2190, enService: 1950, enPanne: 160, arrivagesEnAttente: 2, reclamationsOuvertes: 15 },
+    { id: 'CRE-16', nom: 'CRE Sfax 1', gouvernorat: 'Sfax', sdticNom: 'Hichem Fakhfakh (SD TIC)', sdticEmail: 'sdtic.sfax1@edunet.tn', sdticActif: true, totalEtablissements: 74, totalEquipements: 3280, enService: 2960, enPanne: 220, arrivagesEnAttente: 4, reclamationsOuvertes: 26 },
+    { id: 'CRE-17', nom: 'CRE Sfax 2', gouvernorat: 'Sfax', sdticNom: 'Nabil Louati (Directeur TIC)', sdticEmail: 'directeurtic.sfax2@edunet.tn', sdticActif: true, totalEtablissements: 69, totalEquipements: 3120, enService: 2810, enPanne: 210, arrivagesEnAttente: 3, reclamationsOuvertes: 22 },
+    { id: 'CRE-18', nom: 'CRE Kairouan', gouvernorat: 'Kairouan', sdticNom: 'Brahim Hammami (SD TIC)', sdticEmail: 'sdtic.kairouan@edunet.tn', sdticActif: true, totalEtablissements: 72, totalEquipements: 2640, enService: 2290, enPanne: 250, arrivagesEnAttente: 2, reclamationsOuvertes: 25 },
+    { id: 'CRE-19', nom: 'CRE Kasserine', gouvernorat: 'Kasserine', sdticNom: 'Lotfi Rahmouni (SD TIC)', sdticEmail: 'sdtic.kasserine@edunet.tn', sdticActif: true, totalEtablissements: 65, totalEquipements: 2280, enService: 1970, enPanne: 210, arrivagesEnAttente: 2, reclamationsOuvertes: 23 },
+    { id: 'CRE-20', nom: 'CRE Sidi Bouzid', gouvernorat: 'Sidi Bouzid', sdticNom: 'Abdelkader Dabbabi (SD TIC)', sdticEmail: 'sdtic.sidibouzid@edunet.tn', sdticActif: true, totalEtablissements: 61, totalEquipements: 2150, enService: 1870, enPanne: 200, arrivagesEnAttente: 2, reclamationsOuvertes: 20 },
+    { id: 'CRE-21', nom: 'CRE Gafsa', gouvernorat: 'Gafsa', sdticNom: 'Hedi Gouader (SD TIC)', sdticEmail: 'sdtic.gafsa@edunet.tn', sdticActif: true, totalEtablissements: 56, totalEquipements: 2040, enService: 1790, enPanne: 180, arrivagesEnAttente: 2, reclamationsOuvertes: 18 },
+    { id: 'CRE-22', nom: 'CRE Tozeur', gouvernorat: 'Tozeur', sdticNom: 'Salem Marzouki (SD TIC)', sdticEmail: 'sdtic.tozeur@edunet.tn', sdticActif: true, totalEtablissements: 32, totalEquipements: 1110, enService: 1010, enPanne: 70, arrivagesEnAttente: 1, reclamationsOuvertes: 8 },
+    { id: 'CRE-23', nom: 'CRE Kébili', gouvernorat: 'Kébili', sdticNom: 'Mabrouk Saad (SD TIC)', sdticEmail: 'sdtic.kebili@edunet.tn', sdticActif: true, totalEtablissements: 34, totalEquipements: 1180, enService: 1060, enPanne: 80, arrivagesEnAttente: 1, reclamationsOuvertes: 9 },
+    { id: 'CRE-24', nom: 'CRE Gabès', gouvernorat: 'Gabès', sdticNom: 'Farhat Chaabani (SD TIC)', sdticEmail: 'sdtic.gabes@edunet.tn', sdticActif: true, totalEtablissements: 58, totalEquipements: 2340, enService: 2080, enPanne: 190, arrivagesEnAttente: 3, reclamationsOuvertes: 19 },
+    { id: 'CRE-25', nom: 'CRE Médenine', gouvernorat: 'Médenine', sdticNom: 'Ali Ghomrasni (Directeur TIC)', sdticEmail: 'directeurtic.medenine@edunet.tn', sdticActif: true, totalEtablissements: 70, totalEquipements: 2790, enService: 2470, enPanne: 220, arrivagesEnAttente: 3, reclamationsOuvertes: 21 },
+    { id: 'CRE-26', nom: 'CRE Tataouine', gouvernorat: 'Tataouine', sdticNom: 'Béchir Abdelmoula (SD TIC)', sdticEmail: 'sdtic.tataouine@edunet.tn', sdticActif: true, totalEtablissements: 33, totalEquipements: 1090, enService: 990, enPanne: 70, arrivagesEnAttente: 1, reclamationsOuvertes: 7 }
   ];
 
   // Gestion des 3 Admin Central-Adjoints

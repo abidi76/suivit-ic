@@ -1,6 +1,6 @@
 {
-  "name": "SuiviTic",
-  "description": "Application de gestion du parc informatique du Ministère de l'Éducation — Tunisie",
+  "name": "SuiviTic — Système National des 26 CRE",
+  "description": "Système National de gestion et suivi du parc informatique et de la connectivité pour les 26 Commissariats Régionaux de l'Éducation (CRE) — Ministère de l'Éducation, République Tunisienne",
   "capabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
   ]

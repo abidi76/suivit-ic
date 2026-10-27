@@ -120,12 +120,22 @@ export class DashboardComponent implements OnInit {
   currentUser: UserAccount | null = null;
   activeTab: 'supervision' | 'comptes-locaux' | 'agents-admin' | 'prestataires' | 'flux-emprunts' | 'ordres-mission' | 'planning' = 'supervision';
 
+  // Liste des 26 Commissariats Régionaux de l'Éducation (CRE) de la République Tunisienne
+  listeCre26: string[] = [
+    'CRE Tunis 1', 'CRE Tunis 2', 'CRE Ariana', 'CRE Ben Arous', 'CRE Manouba',
+    'CRE Nabeul', 'CRE Zaghouan', 'CRE Bizerte', 'CRE Béja', 'CRE Jendouba',
+    'CRE Le Kef', 'CRE Siliana', 'CRE Sousse', 'CRE Monastir', 'CRE Mahdia',
+    'CRE Sfax 1', 'CRE Sfax 2', 'CRE Kairouan', 'CRE Kasserine', 'CRE Sidi Bouzid',
+    'CRE Gafsa', 'CRE Tozeur', 'CRE Kébili', 'CRE Gabès', 'CRE Médenine', 'CRE Tataouine'
+  ];
+  selectedCreNom: string = 'CRE Manouba';
+
   // Filtres Supervision CRE
   selectedCategorie: string = 'TOUTES';
   selectedDelegation: string = 'TOUTES';
   searchTerm: string = '';
 
-  // 1. Liste des Établissements de la CRE Manouba (Siège central, Écoles primaires, Collèges, Collèges techniques, Lycées)
+  // 1. Liste des Établissements de la CRE sélectionnée (Siège central, Écoles primaires, Collèges, Collèges techniques, Lycées)
   etablissementsCre: EtablissementCre[] = [
     {
       id: 'CRE-SIEGE',

@@ -5,7 +5,7 @@
         <span class="flag-icon">🇹🇳</span>
         <div class="brand-text">
           <span class="brand-app">SuiviTic</span>
-          <span class="brand-desc">Ministère de l'Éducation · République Tunisienne</span>
+          <span class="brand-desc">Système National · 26 Commissariats Régionaux de l'Éducation (CRE) · République Tunisienne</span>
         </div>
       </div>
 
@@ -14,14 +14,14 @@
         <!-- Rôle Admin Central & Adjoint -->
         <ng-container *ngIf="user.role === 'ADMIN_CENTRAL' || user.role === 'ADMIN_ADJOINT'">
           <a routerLink="/admin-central" routerLinkActive="nav-active" class="nav-link">
-            👑 Supervision Nationale (Tous CRE)
+            👑 Supervision Nationale (26 CRE de Tunisie)
           </a>
         </ng-container>
 
         <!-- Rôle SD TIC / Directeur TIC -->
         <ng-container *ngIf="user.role === 'SD_TIC'">
           <a routerLink="/sd-tic" routerLinkActive="nav-active" class="nav-link">
-            🏢 Supervision CRE Manouba (Tous Établissements)
+            🏢 Supervision Régionale ({{ user.creNom || 'CRE' }})
           </a>
           <a routerLink="/interventions" routerLinkActive="nav-active" class="nav-link">
             🔧 Interventions & Maintenance
@@ -31,7 +31,7 @@
         <!-- Rôle Directeur d'Établissement -->
         <ng-container *ngIf="user.role === 'DIRECTEUR'">
           <a routerLink="/directeur" routerLinkActive="nav-active" class="nav-link">
-            🏫 Mon Établissement (Lycée Ibn Abi Dhiaf)
+            🏫 Mon Établissement ({{ user.etablissementNom || 'Établissement' }})
           </a>
         </ng-container>
 
@@ -59,7 +59,7 @@
         <!-- Rôle Technicien Prestataire Externe -->
         <ng-container *ngIf="user.role === 'TECHNICIEN_PRESTATAIRE'">
           <a routerLink="/technicien-prestataire" routerLinkActive="nav-active" class="nav-link">
-            🧰 Espace Prestataire (Réservations Directes sans OM)
+            🧰 Espace Prestataire (Réservations Directes dans les 26 CRE)
           </a>
         </ng-container>
 
@@ -100,8 +100,8 @@
 
   <footer class="app-footer">
     <div class="footer-inner">
-      <span>Système de gestion et suivi du parc informatique éducatif — SuiviTic (CRE Manouba · Version 2026)</span>
-      <span>Sous-direction TIC · Support & Assistance</span>
+      <span>Système National de Suivi du Parc Informatique & Connectivité — SuiviTic (Déployé sur les 26 Commissariats Régionaux de l'Éducation · République Tunisienne)</span>
+      <span>Ministère de l'Éducation · Direction Générale de l'Informatique & de l'Administration Électronique</span>
     </div>
   </footer>
 </div>
