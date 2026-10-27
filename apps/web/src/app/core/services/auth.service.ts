@@ -44,6 +44,7 @@ export interface UserAccount {
     pannesPertes: boolean;
     comptesLocaux: boolean;
     rapports: boolean;
+    comptesElissaEdunet: boolean;
   };
   agentProfile?: {
     direction: string;
@@ -83,7 +84,7 @@ export const PRESET_ACCOUNTS: UserAccount[] = [
     email: 'admin.central1@edunet.tn',
     role: 'ADMIN_CENTRAL',
     roleLabel: 'Admin Central (Ministère)',
-    perimetre: 'Administration Centrale · Ministère de l\'Éducation',
+    perimetre: 'Supervision Nationale des 26 CRE · Ministère de l\'Éducation',
     avatar: '👑'
   },
   {
@@ -93,15 +94,16 @@ export const PRESET_ACCOUNTS: UserAccount[] = [
     prenom: 'Fatma',
     email: 'adjoint1@edunet.tn',
     role: 'ADMIN_ADJOINT',
-    roleLabel: 'Admin Central Adjoint',
-    perimetre: 'Administration Centrale · Ministère',
+    roleLabel: 'Admin Central Adjoint (Comptes Elissa & Edunet)',
+    perimetre: 'Administration Centrale · Ministère (Comptes Elissa/Edunet & Inventaires)',
     avatar: '🛡️',
     permissionsAdjoint: {
       arrivages: false,
       inventaires: true,
-      pannesPertes: true,
+      pannesPertes: false,
       comptesLocaux: false,
-      rapports: true
+      rapports: true,
+      comptesElissaEdunet: true
     }
   },
   {

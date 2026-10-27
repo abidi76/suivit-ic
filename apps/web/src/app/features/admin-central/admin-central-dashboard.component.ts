@@ -2,6 +2,12 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService, UserAccount } from '../../core/services/auth.service';
+import { 
+  ComptesDemandesService, 
+  DemandeCompteElissaEdunet, 
+  AdminAdjointCompte 
+} from '../../core/services/comptes-demandes.service';
+import { Observable } from 'rxjs';
 
 export interface CreSupervision {
   id: string;
@@ -22,12 +28,15 @@ export interface AdjointManagement {
   id: string;
   nom: string;
   email: string;
+  matricule?: string;
+  telephone?: string;
   tachesAutorisees: {
     arrivages: boolean;
     inventaires: boolean;
     pannesPertes: boolean;
     comptesLocaux: boolean;
     rapports: boolean;
+    comptesElissaEdunet: boolean;
   };
 }
 
@@ -40,7 +49,7 @@ export interface AdjointManagement {
 })
 export class AdminCentralDashboardComponent implements OnInit {
   currentUser: UserAccount | null = null;
-  activeTab: 'global' | 'cre-list' | 'adjoints' | 'arrivages' = 'global';
+  activeTab: 'global' | 'cre-list' | 'adjoints' | 'arrivages' | 'comptes-elissa-edunet' = 'global';
 
   // Filtres multidimensionnels nationaux
   selectedCre = 'TOUS';
@@ -48,6 +57,43 @@ export class AdminCentralDashboardComponent implements OnInit {
   selectedAppelOffre = 'TOUS';
   selectedStatut = 'TOUS';
   searchTerm = '';
+
+  // Filtres Demandes Comptes Elissa & Edunet
+  filtrePlateformeCentral: 'TOUS' | 'ELISSA' | 'EDUNET' = 'TOUS';
+  filtreStatutCentral: string = 'TOUS';
+  filtreCreDemande: string = 'TOUS';
+
+  // Observables des demandes de comptes et des adjoints
+  demandesComptes$!: Observable<DemandeCompteElissaEdunet[]>;
+
+  // Modal d'approbation et génération des identifiants
+  showModalApprobation = false;
+  demandeAApprouver: DemandeCompteElissaEdunet | null = null;
+  idGenere = '';
+  mdpGenere = '';
+
+  // Modal de rejet de demande
+  showModalRejet = false;
+  demandeARejeter: DemandeCompteElissaEdunet | null = null;
+  motifRejet = '';
+
+  // Modal d'ajout d'un nouveau compte Admin Adjoint (Réservé à l'Admin Central)
+  showModalNouvelAdjoint = false;
+  formNouvelAdjoint = {
+    nom: '',
+    prenom: '',
+    matricule: 'ADJ-1005',
+    email: '',
+    telephone: '+216 71 568 205',
+    taches: {
+      arrivages: false,
+      inventaires: true,
+      pannesPertes: false,
+      comptesLocaux: false,
+      rapports: true,
+      comptesElissaEdunet: true
+    }
+  };
 
   // Liste officielle et complète des 26 Commissariats Régionaux de l'Éducation (CRE) de la République Tunisienne
   creList: CreSupervision[] = [
@@ -79,43 +125,52 @@ export class AdminCentralDashboardComponent implements OnInit {
     { id: 'CRE-26', nom: 'CRE Tataouine', gouvernorat: 'Tataouine', sdticNom: 'Béchir Abdelmoula (SD TIC)', sdticEmail: 'sdtic.tataouine@edunet.tn', sdticActif: true, totalEtablissements: 33, totalEquipements: 1090, enService: 990, enPanne: 70, arrivagesEnAttente: 1, reclamationsOuvertes: 7 }
   ];
 
-  // Gestion des 3 Admin Central-Adjoints
+  // Gestion des Admin Central-Adjoints
   // RÈGLE : Seul l'Admin Central titulaire affecte ou interdit des tâches aux adjoints
   adjointsList: AdjointManagement[] = [
     {
       id: 'ADJ-01',
+      matricule: 'ADJ-1002',
       nom: 'Fatma Ben Romdhane',
       email: 'adjoint1@edunet.tn',
+      telephone: '+216 71 568 200',
       tachesAutorisees: {
         arrivages: false,
         inventaires: true,
         pannesPertes: true,
         comptesLocaux: false,
-        rapports: true
+        rapports: true,
+        comptesElissaEdunet: true // Habilitée Elissa & Edunet
       }
     },
     {
       id: 'ADJ-02',
+      matricule: 'ADJ-1003',
       nom: 'Tarek Mezghani',
       email: 'adjoint2@edunet.tn',
+      telephone: '+216 71 568 201',
       tachesAutorisees: {
         arrivages: true,
         inventaires: false,
         pannesPertes: true,
         comptesLocaux: true,
-        rapports: false
+        rapports: false,
+        comptesElissaEdunet: false
       }
     },
     {
       id: 'ADJ-03',
+      matricule: 'ADJ-1004',
       nom: 'Rim Bouzidi',
       email: 'adjoint3@edunet.tn',
+      telephone: '+216 71 568 202',
       tachesAutorisees: {
         arrivages: false,
         inventaires: true,
         pannesPertes: false,
-        comptesLocaux: true,
-        rapports: true
+        comptesLocaux: false,
+        rapports: true,
+        comptesElissaEdunet: true // Habilitée Elissa & Edunet
       }
     }
   ];
@@ -156,10 +211,28 @@ export class AdminCentralDashboardComponent implements OnInit {
 
   toastMessage = '';
 
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    public comptesService: ComptesDemandesService
+  ) {}
 
   ngOnInit(): void {
     this.currentUser = this.authService.currentUserValue;
+    this.demandesComptes$ = this.comptesService.demandes$;
+    
+    // Synchroniser la liste des adjoints avec le service
+    this.comptesService.adjoints$.subscribe(adjoints => {
+      if (adjoints && adjoints.length > 0) {
+        this.adjointsList = adjoints.map(a => ({
+          id: a.id,
+          nom: `${a.prenom} ${a.nom}`,
+          email: a.email,
+          matricule: a.matricule,
+          telephone: a.telephone,
+          tachesAutorisees: { ...a.tachesAutorisees }
+        }));
+      }
+    });
   }
 
   get isAdminCentralTitulaire(): boolean {
@@ -171,6 +244,128 @@ export class AdminCentralDashboardComponent implements OnInit {
       return this.adjointsList.find(a => a.email.toLowerCase() === this.currentUser?.email.toLowerCase()) || this.adjointsList[0];
     }
     return undefined;
+  }
+
+  get canManageComptesElissaEdunet(): boolean {
+    if (this.isAdminCentralTitulaire) return true;
+    return !!this.myAdjointPermissions?.tachesAutorisees.comptesElissaEdunet;
+  }
+
+  get myAssignedTasksList(): { label: string; icon: string; key: string }[] {
+    if (!this.myAdjointPermissions) return [];
+    const t = this.myAdjointPermissions.tachesAutorisees;
+    const tasks: { label: string; icon: string; key: string }[] = [];
+    if (t.comptesElissaEdunet) tasks.push({ label: 'Comptes Elissa & Edunet', icon: '🔑', key: 'comptesElissaEdunet' });
+    if (t.arrivages) tasks.push({ label: 'Arrivages Nationaux', icon: '📦', key: 'arrivages' });
+    if (t.inventaires) tasks.push({ label: 'Campagnes d\'Inventaire', icon: '📋', key: 'inventaires' });
+    if (t.pannesPertes) tasks.push({ label: 'Pannes & Pertes', icon: '⚠️', key: 'pannesPertes' });
+    if (t.comptesLocaux) tasks.push({ label: 'Comptes Locaux CRE', icon: '👥', key: 'comptesLocaux' });
+    if (t.rapports) tasks.push({ label: 'Rapports & Exports', icon: '📊', key: 'rapports' });
+    return tasks;
+  }
+
+  // Filtrage des demandes de comptes transmises au Ministère
+  filtrerDemandes(list: DemandeCompteElissaEdunet[] | null): DemandeCompteElissaEdunet[] {
+    if (!list) return [];
+    return list.filter(d => {
+      const matchPlateforme = this.filtrePlateformeCentral === 'TOUS' || d.typePlateforme === this.filtrePlateformeCentral;
+      const matchStatut = this.filtreStatutCentral === 'TOUS' || d.statut === this.filtreStatutCentral;
+      const matchCre = this.filtreCreDemande === 'TOUS' || d.creOrigine === this.filtreCreDemande;
+      return matchPlateforme && matchStatut && matchCre;
+    });
+  }
+
+  // Approbation et création du compte officiel
+  ouvrirModalApprobation(dem: DemandeCompteElissaEdunet): void {
+    this.demandeAApprouver = dem;
+    const prefix = dem.typePlateforme === 'ELISSA' ? 'elissa_' : 'edunet_';
+    const cleanNom = dem.nomDemandeur.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const cleanPrenomInitial = dem.prenomDemandeur.charAt(0).toLowerCase();
+    this.idGenere = `${prefix}${cleanPrenomInitial}${cleanNom}_${dem.matricule.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+    this.mdpGenere = `TunEdu@${Math.floor(1000 + Math.random() * 9000)}!`;
+    this.showModalApprobation = true;
+  }
+
+  confirmerCreationCompte(): void {
+    if (!this.demandeAApprouver) return;
+    if (!this.idGenere.trim() || !this.mdpGenere.trim()) {
+      alert('Veuillez renseigner un identifiant et un mot de passe.');
+      return;
+    }
+
+    this.comptesService.approuverEtGenererCompte(
+      this.demandeAApprouver.id,
+      this.idGenere,
+      this.mdpGenere
+    );
+
+    this.showModalApprobation = false;
+    this.afficherToast(`✅ Compte officiel ${this.demandeAApprouver.typePlateforme} créé pour ${this.demandeAApprouver.prenomDemandeur} ${this.demandeAApprouver.nomDemandeur} ! Identifiant : ${this.idGenere}`);
+    this.demandeAApprouver = null;
+  }
+
+  // Rejet d'une demande
+  ouvrirModalRejet(dem: DemandeCompteElissaEdunet): void {
+    this.demandeARejeter = dem;
+    this.motifRejet = 'Pièce justificative illisible ou informations non conformes à l\'arrêté officiel.';
+    this.showModalRejet = true;
+  }
+
+  confirmerRejet(): void {
+    if (!this.demandeARejeter) return;
+    if (!this.motifRejet.trim()) {
+      alert('Veuillez préciser le motif du rejet.');
+      return;
+    }
+
+    this.comptesService.rejeterDemande(this.demandeARejeter.id, this.motifRejet);
+    this.showModalRejet = false;
+    this.afficherToast(`❌ Demande ${this.demandeARejeter.codeDemande} rejetée avec notification au SD-TIC.`);
+    this.demandeARejeter = null;
+  }
+
+  // Ajout d'un nouveau compte Admin Adjoint (Admin Central)
+  ouvrirModalNouvelAdjoint(): void {
+    if (!this.isAdminCentralTitulaire) {
+      alert('Action réservée à l\'Admin Central titulaire.');
+      return;
+    }
+    const nextIdx = this.adjointsList.length + 1;
+    this.formNouvelAdjoint = {
+      nom: '',
+      prenom: '',
+      matricule: `ADJ-${1000 + nextIdx}`,
+      email: `adjoint${nextIdx}@edunet.tn`,
+      telephone: '+216 71 568 20' + nextIdx,
+      taches: {
+        arrivages: false,
+        inventaires: true,
+        pannesPertes: false,
+        comptesLocaux: false,
+        rapports: true,
+        comptesElissaEdunet: true
+      }
+    };
+    this.showModalNouvelAdjoint = true;
+  }
+
+  enregistrerNouvelAdjoint(): void {
+    if (!this.formNouvelAdjoint.nom.trim() || !this.formNouvelAdjoint.prenom.trim() || !this.formNouvelAdjoint.email.trim()) {
+      alert('Veuillez remplir les informations obligatoires de l\'adjoint.');
+      return;
+    }
+
+    const created = this.comptesService.ajouterAdminAdjoint({
+      matricule: this.formNouvelAdjoint.matricule,
+      nom: this.formNouvelAdjoint.nom,
+      prenom: this.formNouvelAdjoint.prenom,
+      email: this.formNouvelAdjoint.email,
+      telephone: this.formNouvelAdjoint.telephone,
+      tachesAutorisees: { ...this.formNouvelAdjoint.taches }
+    });
+
+    this.showModalNouvelAdjoint = false;
+    this.afficherToast(`✅ Nouveau compte Admin Adjoint créé : ${created.prenom} ${created.nom} (${created.email}) avec attributions configurées.`);
   }
 
   // Chiffres consolidés nationaux
@@ -208,6 +403,7 @@ export class AdminCentralDashboardComponent implements OnInit {
       return;
     }
     adj.tachesAutorisees[task] = !adj.tachesAutorisees[task];
+    this.comptesService.modifierTachesAdjoint(adj.id, adj.tachesAutorisees);
     const etat = adj.tachesAutorisees[task] ? 'autorisée' : 'interdite';
     this.afficherToast(`Habilitation « ${task} » ${etat} pour l'adjoint ${adj.nom}.`);
   }
@@ -224,6 +420,7 @@ export class AdminCentralDashboardComponent implements OnInit {
 
   afficherToast(msg: string): void {
     this.toastMessage = msg;
-    setTimeout(() => this.toastMessage = '', 4000);
+    setTimeout(() => this.toastMessage = '', 4500);
   }
 }
+

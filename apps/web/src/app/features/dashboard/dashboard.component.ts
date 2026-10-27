@@ -3,6 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService, UserAccount } from '../../core/services/auth.service';
+import { 
+  ComptesDemandesService, 
+  DemandeCompteElissaEdunet, 
+  PersonnelCreRecord, 
+  AdminAdjointCompte 
+} from '../../core/services/comptes-demandes.service';
+import { Observable } from 'rxjs';
 
 export interface DeviceTypeStat {
   type: string;
@@ -118,7 +125,44 @@ export class DashboardComponent implements OnInit {
   stats: any = null;
   isLoading = true;
   currentUser: UserAccount | null = null;
-  activeTab: 'supervision' | 'comptes-locaux' | 'agents-admin' | 'prestataires' | 'flux-emprunts' | 'ordres-mission' | 'planning' = 'supervision';
+  activeTab: 'supervision' | 'demandes-comptes' | 'comptes-locaux' | 'agents-admin' | 'prestataires' | 'flux-emprunts' | 'ordres-mission' | 'planning' = 'supervision';
+
+  // Observables des demandes de comptes Elissa & Edunet et des Adjoints
+  demandesComptes$!: Observable<DemandeCompteElissaEdunet[]>;
+  adjointsHabilites$!: Observable<AdminAdjointCompte[]>;
+
+  // Formulaire Nouvelle Demande de Compte Elissa / Edunet
+  showModalDemandeCompte = false;
+  formDemandeCompte = {
+    selectedPersonnelMatricule: '',
+    typePlateforme: 'ELISSA' as 'ELISSA' | 'EDUNET',
+    matricule: '',
+    cin: '',
+    nomDemandeur: '',
+    prenomDemandeur: '',
+    emailDemandeur: '',
+    telephoneDemandeur: '',
+    etablissementOuSiege: '',
+    // Champs spécifiques Elissa
+    tacheActuelle: '',
+    tachePrecedente: '',
+    lieuPrecedent: '',
+    chefDirectActuel: '',
+    // Champs spécifiques Edunet
+    roleEdunetDemande: 'Enseignant / Responsable Pédagogique',
+    // 2 Pièces jointes obligatoires pour Elissa
+    pieceJointeCinNom: 'Copie_CIN_Scan_Signee.pdf',
+    pieceJointeArreteNom: 'Arrete_Nomination_PV_Installation.pdf'
+  };
+
+  // Modal d'acheminement de la demande vers un Admin Adjoint ministériel
+  showModalAcheminement = false;
+  selectedDemandeForAcheminement: DemandeCompteElissaEdunet | null = null;
+  selectedAdjointId = 'ADJ-01';
+
+  // Filtre demandes de comptes
+  filtreTypeCompte: 'TOUS' | 'ELISSA' | 'EDUNET' = 'TOUS';
+  filtreStatutCompte: string = 'TOUS';
 
   // Liste des 26 Commissariats Régionaux de l'Éducation (CRE) de la République Tunisienne
   listeCre26: string[] = [
@@ -533,11 +577,149 @@ export class DashboardComponent implements OnInit {
 
   toastMessage = '';
 
-  constructor(private http: HttpClient, private authService: AuthService) {}
+  constructor(
+    private http: HttpClient, 
+    private authService: AuthService,
+    public comptesService: ComptesDemandesService
+  ) {}
 
   ngOnInit(): void {
     this.currentUser = this.authService.currentUserValue;
+    this.demandesComptes$ = this.comptesService.demandes$;
+    this.adjointsHabilites$ = this.comptesService.adjoints$;
+    this.initFormNouvelleDemande();
     this.loadStats();
+  }
+
+  get personnelsBase(): PersonnelCreRecord[] {
+    return this.comptesService.personnelsBase;
+  }
+
+  filtrerDemandes(list: DemandeCompteElissaEdunet[] | null): DemandeCompteElissaEdunet[] {
+    if (!list) return [];
+    return list.filter(d => {
+      const matchType = this.filtreTypeCompte === 'TOUS' || d.typePlateforme === this.filtreTypeCompte;
+      const matchStatut = this.filtreStatutCompte === 'TOUS' || d.statut === this.filtreStatutCompte;
+      return matchType && matchStatut;
+    });
+  }
+
+  initFormNouvelleDemande(personnel?: PersonnelCreRecord): void {
+    const p = personnel || this.personnelsBase[0];
+    this.formDemandeCompte = {
+      selectedPersonnelMatricule: p?.matricule || '',
+      typePlateforme: 'ELISSA',
+      matricule: p?.matricule || '',
+      cin: p?.cin || '',
+      nomDemandeur: p?.nom || '',
+      prenomDemandeur: p?.prenom || '',
+      emailDemandeur: p?.email || '',
+      telephoneDemandeur: p?.telephone || '',
+      etablissementOuSiege: p?.etablissementOuSiege || '',
+      tacheActuelle: '',
+      tachePrecedente: '',
+      lieuPrecedent: '',
+      chefDirectActuel: '',
+      roleEdunetDemande: 'Enseignant / Responsable Pédagogique',
+      pieceJointeCinNom: 'Copie_CIN_' + (p?.matricule || 'Scan') + '.pdf',
+      pieceJointeArreteNom: 'Decision_Affectation_' + (p?.matricule || 'Arrete') + '.pdf'
+    };
+  }
+
+  onChangementPersonnelBase(event: any): void {
+    const matricule = event.target.value;
+    const found = this.personnelsBase.find(p => p.matricule === matricule);
+    if (found) {
+      this.formDemandeCompte.matricule = found.matricule;
+      this.formDemandeCompte.cin = found.cin;
+      this.formDemandeCompte.nomDemandeur = found.nom;
+      this.formDemandeCompte.prenomDemandeur = found.prenom;
+      this.formDemandeCompte.emailDemandeur = found.email;
+      this.formDemandeCompte.telephoneDemandeur = found.telephone;
+      this.formDemandeCompte.etablissementOuSiege = found.etablissementOuSiege;
+      this.formDemandeCompte.pieceJointeCinNom = `Copie_CIN_${found.matricule}.pdf`;
+      this.formDemandeCompte.pieceJointeArreteNom = `Arrete_Nomination_${found.matricule}.pdf`;
+    }
+  }
+
+  ouvrirModalNouvelleDemande(): void {
+    this.initFormNouvelleDemande();
+    this.showModalDemandeCompte = true;
+  }
+
+  soumettreDemandeCompte(): void {
+    if (!this.formDemandeCompte.matricule.trim() || !this.formDemandeCompte.cin.trim()) {
+      alert('Veuillez renseigner le matricule et le numéro de CIN.');
+      return;
+    }
+
+    if (this.formDemandeCompte.typePlateforme === 'ELISSA') {
+      if (!this.formDemandeCompte.tacheActuelle.trim()) {
+        alert('Règle de gestion Elissa : La tâche/fonction actuelle est obligatoire.');
+        return;
+      }
+      if (!this.formDemandeCompte.tachePrecedente.trim() || !this.formDemandeCompte.lieuPrecedent.trim()) {
+        alert('Règle de gestion Elissa : La tâche précédente et le lieu précédent sont obligatoires.');
+        return;
+      }
+      if (!this.formDemandeCompte.chefDirectActuel.trim()) {
+        alert('Règle de gestion Elissa : Le chef direct actuel est obligatoire.');
+        return;
+      }
+    }
+
+    const created = this.comptesService.soumettreDemande({
+      typePlateforme: this.formDemandeCompte.typePlateforme,
+      matricule: this.formDemandeCompte.matricule,
+      cin: this.formDemandeCompte.cin,
+      nomDemandeur: this.formDemandeCompte.nomDemandeur,
+      prenomDemandeur: this.formDemandeCompte.prenomDemandeur,
+      emailDemandeur: this.formDemandeCompte.emailDemandeur,
+      telephoneDemandeur: this.formDemandeCompte.telephoneDemandeur,
+      creOrigine: this.selectedCreNom,
+      etablissementOuSiege: this.formDemandeCompte.etablissementOuSiege,
+      tacheActuelle: this.formDemandeCompte.tacheActuelle,
+      tachePrecedente: this.formDemandeCompte.tachePrecedente,
+      lieuPrecedent: this.formDemandeCompte.lieuPrecedent,
+      chefDirectActuel: this.formDemandeCompte.chefDirectActuel,
+      roleEdunetDemande: this.formDemandeCompte.roleEdunetDemande,
+      pieceJointeCinNom: this.formDemandeCompte.pieceJointeCinNom,
+      pieceJointeArreteNom: this.formDemandeCompte.pieceJointeArreteNom
+    });
+
+    this.showModalDemandeCompte = false;
+    this.afficherToast(`✅ Demande ${created.codeDemande} (${created.typePlateforme}) créée avec succès pour ${created.prenomDemandeur} ${created.nomDemandeur} !`);
+  }
+
+  ouvrirModalAcheminement(dem: DemandeCompteElissaEdunet): void {
+    this.selectedDemandeForAcheminement = dem;
+    const habilites = this.comptesService.getAdjointsHabilitesComptes();
+    if (habilites.length > 0) {
+      this.selectedAdjointId = habilites[0].id;
+    }
+    this.showModalAcheminement = true;
+  }
+
+  confirmerAcheminementVersAdjoint(): void {
+    if (!this.selectedDemandeForAcheminement) return;
+    const adjoint = this.comptesService.getAdjointsHabilitesComptes().find(a => a.id === this.selectedAdjointId) 
+      || this.comptesService.getAdjointsHabilitesComptes()[0];
+    
+    if (!adjoint) {
+      alert('Aucun Admin Adjoint habilité trouvé.');
+      return;
+    }
+
+    const sdticNom = `${this.currentUser?.prenom || 'SD-TIC'} ${this.currentUser?.nom || 'Régional'}`;
+    this.comptesService.validerEtAcheminerParSdTic(
+      this.selectedDemandeForAcheminement.id,
+      sdticNom,
+      adjoint
+    );
+
+    this.showModalAcheminement = false;
+    this.afficherToast(`✅ Demande ${this.selectedDemandeForAcheminement.codeDemande} validée par le SD-TIC et acheminée avec succès vers l'Admin Adjoint ${adjoint.prenom} ${adjoint.nom} (Ministère) !`);
+    this.selectedDemandeForAcheminement = null;
   }
 
   loadStats(): void {

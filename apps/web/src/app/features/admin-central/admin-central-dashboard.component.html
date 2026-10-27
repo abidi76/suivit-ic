@@ -17,6 +17,17 @@
             {{ isAdminCentralTitulaire ? '👑 Admin Central Titulaire (Tous Pouvoirs)' : '🛡️ Admin Central Adjoint (Tâches Déléguées)' }}
           </span>
         </div>
+
+        <!-- Tâches assignées spécifiées dans l'entête du tableau de bord pour l'Admin Adjoint -->
+        <div *ngIf="!isAdminCentralTitulaire && myAssignedTasksList.length > 0" class="header-assigned-tasks">
+          <span class="tasks-header-label">🎯 Vos attributions officielles :</span>
+          <span *ngFor="let t of myAssignedTasksList" class="task-header-pill" [class.pill-special]="t.key === 'comptesElissaEdunet'">
+            {{ t.icon }} {{ t.label }}
+          </span>
+        </div>
+        <div *ngIf="!isAdminCentralTitulaire && myAssignedTasksList.length === 0" class="header-assigned-tasks">
+          <span class="tasks-header-label" style="color:#f87171;">⚠️ Aucune tâche active n'a été déléguée par l'Admin Central.</span>
+        </div>
       </div>
     </div>
 
@@ -57,11 +68,14 @@
     <button class="admin-tab-btn" [class.active]="activeTab === 'global'" (click)="activeTab = 'global'">
       🌐 Vue Consolidée par CRE
     </button>
+    <button class="admin-tab-btn" [class.active]="activeTab === 'comptes-elissa-edunet'" (click)="activeTab = 'comptes-elissa-edunet'">
+      🔑 Validation Comptes Elissa & Edunet ({{ (demandesComptes$ | async)?.length || 0 }})
+    </button>
     <button class="admin-tab-btn" [class.active]="activeTab === 'cre-list'" (click)="activeTab = 'cre-list'">
       🏢 Gestion des Comptes SD TIC & Directeurs TIC
     </button>
     <button class="admin-tab-btn" [class.active]="activeTab === 'adjoints'" (click)="activeTab = 'adjoints'">
-      🛡️ {{ isAdminCentralTitulaire ? 'Affectation des Tâches aux 3 Adjoints' : 'Mes Habilitations Déléguées' }}
+      🛡️ {{ isAdminCentralTitulaire ? 'Affectation des Tâches aux Adjoints' : 'Mes Habilitations Déléguées' }}
     </button>
     <button class="admin-tab-btn" [class.active]="activeTab === 'arrivages'" (click)="activeTab = 'arrivages'">
       📦 Pilotage des Arrivages Nationaux & Marchés
@@ -158,15 +172,20 @@
   <div *ngIf="activeTab === 'adjoints'" class="central-panel">
     <div class="panel-head-bar">
       <div>
-        <h3 *ngIf="isAdminCentralTitulaire">Affectation & Contrôle des Tâches des 3 Adjoints (Exclusivité Admin Central)</h3>
+        <h3 *ngIf="isAdminCentralTitulaire">Affectation & Contrôle des Tâches des Adjoints (Exclusivité Admin Central)</h3>
         <h3 *ngIf="!isAdminCentralTitulaire">Consultation de vos Tâches Déléguées (Compte Adjoint)</h3>
         
         <p class="panel-sub" *ngIf="isAdminCentralTitulaire">
-          Règle : <em>« L'Admin Central titulaire affecte à chacun de ses adjoints une ou plusieurs tâches spécifiques ou peut les interdire. »</em>
+          Règle : <em>« L'Admin Central titulaire affecte à chacun de ses adjoints une ou plusieurs tâches spécifiques ou peut les interdire. Il peut également créer de nouveaux comptes adjoints à tout moment. »</em>
         </p>
         <p class="panel-sub" *ngIf="!isAdminCentralTitulaire">
           Règle : <em>« C'est la tâche de l'Admin Central d'affecter les tâches aux adjoints. L'adjoint ne peut en aucun cas modifier ou interdire ses propres tâches. »</em>
         </p>
+      </div>
+      <div *ngIf="isAdminCentralTitulaire">
+        <button class="btn btn-primary" (click)="ouvrirModalNouvelAdjoint()">
+          ➕ Ajouter un Nouveau Compte Admin Adjoint
+        </button>
       </div>
     </div>
 
@@ -189,6 +208,7 @@
           <tr>
             <th>Nom de l'Adjoint</th>
             <th>E-mail officiel</th>
+            <th class="text-center" style="background:#f5f3ff; color:#6d28d9;">🔑 Comptes Elissa & Edunet</th>
             <th class="text-center">Arrivages & Marchés</th>
             <th class="text-center">Campagnes d'Inventaire</th>
             <th class="text-center">Pannes & Pertes</th>
@@ -200,6 +220,14 @@
           <tr *ngFor="let adj of adjointsList">
             <td class="font-bold">🛡️ {{ adj.nom }}</td>
             <td class="text-muted">{{ adj.email }}</td>
+
+            <!-- Permission Comptes Elissa & Edunet -->
+            <td class="text-center" style="background:#faf5ff;">
+              <button class="perm-btn" [class.perm-yes]="adj.tachesAutorisees.comptesElissaEdunet" [class.perm-no]="!adj.tachesAutorisees.comptesElissaEdunet"
+                      (click)="togglePermission(adj, 'comptesElissaEdunet')" title="Cliquez pour autoriser/interdire">
+                {{ adj.tachesAutorisees.comptesElissaEdunet ? '✓ Autorisée' : '✗ Interdite' }}
+              </button>
+            </td>
 
             <!-- Permissions commutables UNIQUEMENT par l'Admin Central Titulaire -->
             <td class="text-center">
@@ -242,6 +270,14 @@
       <div class="adjoint-my-card" *ngIf="myAdjointPermissions">
         <h4>Vos Tâches Actuelles (Affectées par l'Admin Central) :</h4>
         <div class="tasks-status-grid">
+          <div class="task-badge-box" [class.box-allowed]="myAdjointPermissions.tachesAutorisees.comptesElissaEdunet" [class.box-forbidden]="!myAdjointPermissions.tachesAutorisees.comptesElissaEdunet">
+            <span class="box-icon">{{ myAdjointPermissions.tachesAutorisees.comptesElissaEdunet ? '✓' : '✗' }}</span>
+            <div class="box-text">
+              <span class="box-title">Gestion Comptes Elissa & Edunet</span>
+              <span class="box-desc">{{ myAdjointPermissions.tachesAutorisees.comptesElissaEdunet ? 'Tâche autorisée par l\'Admin Central (Accès onglet dédié)' : 'Tâche interdite par l\'Admin Central' }}</span>
+            </div>
+          </div>
+
           <div class="task-badge-box" [class.box-allowed]="myAdjointPermissions.tachesAutorisees.arrivages" [class.box-forbidden]="!myAdjointPermissions.tachesAutorisees.arrivages">
             <span class="box-icon">{{ myAdjointPermissions.tachesAutorisees.arrivages ? '✓' : '✗' }}</span>
             <div class="box-text">
@@ -334,6 +370,328 @@
             <strong>{{ arr.confirmations.profLabo ? '✓ Confirmé' : '⏳ En attente' }}</strong>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 5 : VALIDATION MINISTÉRIELLE DES DEMANDES DE COMPTES ELISSA & EDUNET -->
+  <div *ngIf="activeTab === 'comptes-elissa-edunet'" class="central-panel">
+    <div class="panel-head-bar">
+      <div>
+        <h3>Validation Ministérielle des Comptes — Site ELISSA & Portail EDUNET</h3>
+        <p class="panel-sub">
+          Instruction des dossiers acheminés par les Sous-Directeurs TIC des 26 régions. Contrôle des pièces justificatives, validation et émission des identifiants officiels.
+        </p>
+      </div>
+    </div>
+
+    <!-- Alerte si l'Adjoint n'a pas la permission Comptes Elissa & Edunet -->
+    <div *ngIf="!canManageComptesElissaEdunet" class="restriction-alert" style="background:#fef2f2; border:1px solid #fecaca; color:#991b1b; padding:1rem; border-radius:8px; margin-bottom:1.5rem;">
+      ⚠️ <strong>Accès Restreint :</strong> La tâche « Gestion Comptes Elissa & Edunet » ne vous a pas été déléguée par l'Admin Central titulaire. 
+      Seuls les adjoints expressément habilités (indiqués dans l'entête) peuvent instruire ces demandes.
+    </div>
+
+    <div *ngIf="canManageComptesElissaEdunet">
+      <!-- Filtres des demandes au niveau Ministère -->
+      <div class="filters-row" style="display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:1.25rem;">
+        <div>
+          <label style="font-size:0.75rem; font-weight:700; color:#475569; display:block; margin-bottom:0.25rem;">Région / CRE :</label>
+          <select [(ngModel)]="filtreCreDemande" class="form-input font-bold" style="padding:0.4rem 0.6rem; font-size:0.85rem;">
+            <option value="TOUS">Toutes les régions (26 CRE)</option>
+            <option *ngFor="let c of creList" [value]="c.nom">{{ c.nom }}</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size:0.75rem; font-weight:700; color:#475569; display:block; margin-bottom:0.25rem;">Plateforme :</label>
+          <select [(ngModel)]="filtrePlateformeCentral" class="form-input font-bold" style="padding:0.4rem 0.6rem; font-size:0.85rem;">
+            <option value="TOUS">Toutes les plateformes</option>
+            <option value="ELISSA">Site ELISSA uniquement</option>
+            <option value="EDUNET">Portail EDUNET uniquement</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size:0.75rem; font-weight:700; color:#475569; display:block; margin-bottom:0.25rem;">Statut ministériel :</label>
+          <select [(ngModel)]="filtreStatutCentral" class="form-input font-bold" style="padding:0.4rem 0.6rem; font-size:0.85rem;">
+            <option value="TOUS">Tous les statuts</option>
+            <option value="ACHEMINEE_ADMIN_ADJOINT">📨 Acheminées vers Adjoint (À traiter)</option>
+            <option value="APPROUVEE_CREEE">✅ Comptes Approuvés & Créés</option>
+            <option value="REJETEE">❌ Demandes Rejetées</option>
+            <option value="EN_ATTENTE_SD_TIC">⏳ En attente validation SD-TIC</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Table des demandes ministérielles -->
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Réf & Plateforme</th>
+            <th>Origine Régionale</th>
+            <th>Demandeur (Personnel)</th>
+            <th>Tâches & Pièces Jointes</th>
+            <th>Certification SD-TIC</th>
+            <th>Statut Ministériel</th>
+            <th class="text-center">Action / Identifiants</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let dem of filtrerDemandes(demandesComptes$ | async)">
+            <td>
+              <div class="font-bold font-mono">{{ dem.codeDemande }}</div>
+              <span *ngIf="dem.typePlateforme === 'ELISSA'" class="badge-elissa">
+                🏛️ Site ELISSA
+              </span>
+              <span *ngIf="dem.typePlateforme === 'EDUNET'" class="badge-edunet">
+                🌐 Portail EDUNET
+              </span>
+              <div class="text-xs text-muted" style="margin-top:0.2rem;">{{ dem.dateDemande }}</div>
+            </td>
+
+            <td>
+              <div class="font-bold">🏛️ {{ dem.creOrigine }}</div>
+              <div class="text-xs text-muted">{{ dem.etablissementOuSiege }}</div>
+            </td>
+
+            <td>
+              <div class="font-bold">{{ dem.prenomDemandeur }} {{ dem.nomDemandeur }}</div>
+              <div class="text-xs text-muted">
+                Matricule : <strong>{{ dem.matricule }}</strong> · CIN : <strong>{{ dem.cin }}</strong>
+              </div>
+              <div class="text-xs text-muted">
+                📞 {{ dem.telephoneDemandeur }} · ✉️ {{ dem.emailDemandeur }}
+              </div>
+            </td>
+
+            <td>
+              <div *ngIf="dem.typePlateforme === 'ELISSA'">
+                <div style="font-size:0.8rem; margin-bottom:0.2rem;">
+                  <strong>Tâche actuelle :</strong> {{ dem.tacheActuelle }}
+                </div>
+                <div style="font-size:0.75rem; color:#475569; margin-bottom:0.2rem;">
+                  <strong>Précédente :</strong> {{ dem.tachePrecedente }} ({{ dem.lieuPrecedent }})
+                </div>
+                <div style="font-size:0.75rem; color:#475569; margin-bottom:0.35rem;">
+                  <strong>Chef direct :</strong> {{ dem.chefDirectActuel }}
+                </div>
+                <div style="display:flex; flex-wrap:wrap;">
+                  <span class="attachment-pill" *ngIf="dem.pieceJointeCinNom" title="Copie scannée CIN">
+                    📎 {{ dem.pieceJointeCinNom }}
+                  </span>
+                  <span class="attachment-pill" *ngIf="dem.pieceJointeArreteNom" title="Arrêté de nomination / PV">
+                    📑 {{ dem.pieceJointeArreteNom }}
+                  </span>
+                </div>
+              </div>
+
+              <div *ngIf="dem.typePlateforme === 'EDUNET'">
+                <div style="font-size:0.85rem; font-weight:600; color:#0369a1;">
+                  Rôle sollicité : {{ dem.roleEdunetDemande }}
+                </div>
+              </div>
+            </td>
+
+            <td>
+              <div *ngIf="dem.dateValidationSdTic">
+                <span class="badge-status badge-ok" style="font-size:0.75rem;">✓ Certifié SD-TIC</span>
+                <div class="text-xs font-bold" style="margin-top:0.2rem;">{{ dem.sdticNomValidateur }}</div>
+                <div class="text-xs text-muted">{{ dem.dateValidationSdTic }}</div>
+              </div>
+              <div *ngIf="!dem.dateValidationSdTic" class="text-xs text-muted">
+                ⏳ En attente de visa régional SD-TIC
+              </div>
+            </td>
+
+            <td>
+              <span class="badge-status"
+                    [class.badge-ok]="dem.statut === 'APPROUVEE_CREEE'"
+                    [class.badge-alert]="dem.statut === 'ACHEMINEE_ADMIN_ADJOINT'"
+                    [style.background]="dem.statut === 'EN_ATTENTE_SD_TIC' ? '#f1f5f9' : ''"
+                    [style.color]="dem.statut === 'EN_ATTENTE_SD_TIC' ? '#475569' : ''"
+                    [class.text-danger]="dem.statut === 'REJETEE'">
+                {{ dem.statutLabel }}
+              </span>
+              <div *ngIf="dem.adjointAssigneNom" class="text-xs text-muted" style="margin-top:0.25rem;">
+                Adjoint assigné : <strong>{{ dem.adjointAssigneNom }}</strong>
+              </div>
+            </td>
+
+            <td class="text-center">
+              <!-- Acheminée vers Adjoint : Actions de validation -->
+              <div *ngIf="dem.statut === 'ACHEMINEE_ADMIN_ADJOINT'" style="display:flex; flex-direction:column; gap:0.4rem; align-items:center;">
+                <button class="btn btn-success btn-sm" (click)="ouvrirModalApprobation(dem)">
+                  ✓ Approuver & Émettre
+                </button>
+                <button class="btn btn-danger btn-sm" (click)="ouvrirModalRejet(dem)">
+                  ✗ Rejeter
+                </button>
+              </div>
+
+              <!-- Compte déjà créé -->
+              <div *ngIf="dem.statut === 'APPROUVEE_CREEE'" class="identifiants-box">
+                <div style="font-weight:700;">ID : {{ dem.identifiantGenere }}</div>
+                <div style="font-family:monospace; font-size:0.75rem;">MDP : {{ dem.motDePasseProvisoire }}</div>
+                <div class="text-xs text-muted">{{ dem.dateCloture }}</div>
+              </div>
+
+              <!-- Rejetée -->
+              <div *ngIf="dem.statut === 'REJETEE'" class="text-xs text-danger font-bold">
+                {{ dem.motifRejet }}
+              </div>
+
+              <!-- En attente SD-TIC -->
+              <div *ngIf="dem.statut === 'EN_ATTENTE_SD_TIC'" class="text-xs text-muted">
+                Non transmise
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MODAL APPROBATION COMPTE -->
+  <div *ngIf="showModalApprobation" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 540px;">
+      <div class="modal-header">
+        <h3>Attribution Officielle du Compte (Ministère)</h3>
+        <button class="modal-close" (click)="showModalApprobation = false">✕</button>
+      </div>
+
+      <div class="modal-body" *ngIf="demandeAApprouver">
+        <div style="background:#eff6ff; border:1px solid #bfdbfe; padding:0.85rem; border-radius:6px; margin-bottom:1rem; font-size:0.85rem; line-height:1.4;">
+          📄 Demande : <strong>{{ demandeAApprouver.codeDemande }}</strong> ({{ demandeAApprouver.typePlateforme }})<br/>
+          👤 Titulaire : <strong>{{ demandeAApprouver.prenomDemandeur }} {{ demandeAApprouver.nomDemandeur }}</strong> (Matricule : {{ demandeAApprouver.matricule }})<br/>
+          🏢 Affectation : {{ demandeAApprouver.etablissementOuSiege }} ({{ demandeAApprouver.creOrigine }})
+        </div>
+
+        <div class="form-group">
+          <label>Identifiant Officiel généré :</label>
+          <input type="text" [(ngModel)]="idGenere" class="form-input font-bold font-mono" style="color:#0284c7;" />
+        </div>
+
+        <div class="form-group">
+          <label>Mot de passe provisoire obligatoire :</label>
+          <input type="text" [(ngModel)]="mdpGenere" class="form-input font-mono" />
+          <span style="font-size:0.75rem; color:#64748b;">Le demandeur devra changer ce mot de passe dès sa première connexion.</span>
+        </div>
+
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:0.75rem; border-radius:6px; font-size:0.8rem; color:#166534;">
+          ✓ Dès validation, le compte sera officiellement enregistré et transmis au SD-TIC ainsi qu'à l'intéressé.
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showModalApprobation = false">Annuler</button>
+        <button class="btn btn-success" (click)="confirmerCreationCompte()">
+          🚀 Valider & Émettre le Compte
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL REJET DEMANDE -->
+  <div *ngIf="showModalRejet" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3>Rejet de la Demande de Compte</h3>
+        <button class="modal-close" (click)="showModalRejet = false">✕</button>
+      </div>
+
+      <div class="modal-body" *ngIf="demandeARejeter">
+        <div class="form-group">
+          <label>Précisez le motif officiel du rejet :</label>
+          <textarea rows="4" [(ngModel)]="motifRejet" class="form-input"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showModalRejet = false">Annuler</button>
+        <button class="btn btn-danger" (click)="confirmerRejet()">Confirmer le Rejet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CRÉER UN NOUVEAU COMPTE ADMIN ADJOINT (ADMIN CENTRAL) -->
+  <div *ngIf="showModalNouvelAdjoint" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3>Créer un Nouveau Compte Admin Central Adjoint</h3>
+        <button class="modal-close" (click)="showModalNouvelAdjoint = false">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div style="background:#f5f3ff; border:1px solid #ddd6fe; color:#5b21b6; padding:0.75rem 1rem; border-radius:6px; font-size:0.85rem; margin-bottom:1rem;">
+          👑 <strong>Pouvoir régalien de l'Admin Central :</strong> Créez un nouveau collaborateur adjoint et cochez les tâches officielles qui lui seront affectées.
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Matricule Ministériel :</label>
+            <input type="text" [(ngModel)]="formNouvelAdjoint.matricule" class="form-input" />
+          </div>
+          <div class="form-group flex-1">
+            <label>Téléphone professionnel :</label>
+            <input type="text" [(ngModel)]="formNouvelAdjoint.telephone" class="form-input" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Prénom :</label>
+            <input type="text" [(ngModel)]="formNouvelAdjoint.prenom" placeholder="Ex: Monia" class="form-input" />
+          </div>
+          <div class="form-group flex-1">
+            <label>Nom :</label>
+            <input type="text" [(ngModel)]="formNouvelAdjoint.nom" placeholder="Ex: Ben Salah" class="form-input" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Adresse E-mail institutionnelle (&#64;edunet.tn) :</label>
+          <input type="email" [(ngModel)]="formNouvelAdjoint.email" class="form-input" />
+        </div>
+
+        <div style="border-top:1px solid #e2e8f0; padding-top:1rem; margin-top:1rem;">
+          <label style="font-weight:700; color:#0f172a; display:block; margin-bottom:0.6rem;">
+            🎯 Affectation des Tâches Initiales :
+          </label>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.6rem;">
+            <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem; font-weight:600; cursor:pointer;">
+              <input type="checkbox" [(ngModel)]="formNouvelAdjoint.taches.comptesElissaEdunet" />
+              <span>🔑 Comptes Elissa & Edunet</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem; font-weight:600; cursor:pointer;">
+              <input type="checkbox" [(ngModel)]="formNouvelAdjoint.taches.arrivages" />
+              <span>📦 Arrivages & Marchés</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem; font-weight:600; cursor:pointer;">
+              <input type="checkbox" [(ngModel)]="formNouvelAdjoint.taches.inventaires" />
+              <span>📋 Campagnes Inventaire</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem; font-weight:600; cursor:pointer;">
+              <input type="checkbox" [(ngModel)]="formNouvelAdjoint.taches.pannesPertes" />
+              <span>⚠️ Pannes & Pertes</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem; font-weight:600; cursor:pointer;">
+              <input type="checkbox" [(ngModel)]="formNouvelAdjoint.taches.comptesLocaux" />
+              <span>👥 Comptes Locaux CRE</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem; font-weight:600; cursor:pointer;">
+              <input type="checkbox" [(ngModel)]="formNouvelAdjoint.taches.rapports" />
+              <span>📊 Rapports & Exports</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showModalNouvelAdjoint = false">Annuler</button>
+        <button class="btn btn-primary" (click)="enregistrerNouvelAdjoint()">
+          ➕ Créer le Compte Adjoint
+        </button>
       </div>
     </div>
   </div>

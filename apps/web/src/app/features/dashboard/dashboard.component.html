@@ -39,6 +39,9 @@
     <button class="sdtic-tab" [class.active]="activeTab === 'supervision'" (click)="activeTab = 'supervision'">
       🏫 Supervision CRE & Établissements ({{ etablissementsCre.length }})
     </button>
+    <button class="sdtic-tab" [class.active]="activeTab === 'demandes-comptes'" (click)="activeTab = 'demandes-comptes'">
+      🔑 Demandes Comptes Elissa & Edunet ({{ (demandesComptes$ | async)?.length || 0 }})
+    </button>
     <button class="sdtic-tab" [class.active]="activeTab === 'agents-admin'" (click)="activeTab = 'agents-admin'">
       👩‍💼 Agents Administratifs & Délégations ({{ agentsAdminList.length }})
     </button>
@@ -129,6 +132,171 @@
             <span class="cnx-pill" [class.cnx-ok]="etab.circuitStatut === 'FIBRE_OK'" [class.cnx-flybox]="etab.circuitStatut === 'FLYBOX_SECOURS'" [class.cnx-down]="etab.circuitStatut === 'COUPURE'">
               {{ etab.circuitStatut === 'FIBRE_OK' ? 'Fibre TT Active' : (etab.circuitStatut === 'FLYBOX_SECOURS' ? 'Flybox 4G Secours' : 'Coupure Signalée') }}
             </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ONGLET : GESTION DES DEMANDES DE COMPTES ELISSA ET EDUNET -->
+  <div *ngIf="activeTab === 'demandes-comptes'" class="sdtic-panel">
+    <div class="panel-header-row">
+      <div>
+        <h3>Gestion Régionale des Demandes de Comptes — Site ELISSA & Portail EDUNET</h3>
+        <p class="panel-desc">
+          Traitement des demandes pour tout le personnel de la CRE (Siège central, CREFOC, Lycées, Collèges, Écoles). 
+          Le SD-TIC certifie et achemine chaque dossier vers l'Admin Adjoint habilité au Ministère.
+        </p>
+      </div>
+      <button class="btn btn-primary" (click)="ouvrirModalNouvelleDemande()">
+        ➕ Nouvelle Demande de Compte (Auto-Remplissage)
+      </button>
+    </div>
+
+    <!-- Filtres des demandes -->
+    <div class="filters-wrap" style="margin-bottom: 1.25rem;">
+      <div class="filter-group">
+        <label>Plateforme :</label>
+        <select [(ngModel)]="filtreTypeCompte" class="form-select">
+          <option value="TOUS">Toutes les plateformes</option>
+          <option value="ELISSA">Site ELISSA uniquement</option>
+          <option value="EDUNET">Portail EDUNET uniquement</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Statut du circuit :</label>
+        <select [(ngModel)]="filtreStatutCompte" class="form-select">
+          <option value="TOUS">Tous les statuts</option>
+          <option value="EN_ATTENTE_SD_TIC">⏳ En attente validation SD-TIC</option>
+          <option value="ACHEMINEE_ADMIN_ADJOINT">📨 Acheminée vers Admin Adjoint</option>
+          <option value="APPROUVEE_CREEE">✅ Compte Créé & Validé</option>
+          <option value="REJETEE">❌ Demande Rejetée</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Table des demandes -->
+    <table class="sdtic-table">
+      <thead>
+        <tr>
+          <th>Réf & Type</th>
+          <th>Demandeur (Personnel CRE)</th>
+          <th>Affectation / Structure</th>
+          <th>Détails Spécifiques & Pièces</th>
+          <th>Circuit & Traçabilité</th>
+          <th>Identifiants / Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let dem of filtrerDemandes(demandesComptes$ | async)">
+          <td>
+            <div class="font-bold font-mono" style="font-size:0.85rem;">{{ dem.codeDemande }}</div>
+            <span *ngIf="dem.typePlateforme === 'ELISSA'" class="badge-elissa">
+              🏛️ Site ELISSA
+            </span>
+            <span *ngIf="dem.typePlateforme === 'EDUNET'" class="badge-edunet">
+              🌐 Portail EDUNET
+            </span>
+            <div class="text-xs text-muted" style="margin-top:0.25rem;">{{ dem.dateDemande }}</div>
+          </td>
+
+          <td>
+            <div class="font-bold">{{ dem.prenomDemandeur }} {{ dem.nomDemandeur }}</div>
+            <div class="text-xs text-muted">
+              Matricule : <strong>{{ dem.matricule }}</strong> · CIN : <strong>{{ dem.cin }}</strong>
+            </div>
+            <div class="text-xs text-muted">
+              📞 {{ dem.telephoneDemandeur }} · ✉️ {{ dem.emailDemandeur }}
+            </div>
+          </td>
+
+          <td>
+            <div class="font-bold" style="font-size:0.85rem;">{{ dem.etablissementOuSiege }}</div>
+            <div class="text-xs text-muted">Gouvernorat / CRE : {{ dem.creOrigine }}</div>
+          </td>
+
+          <td>
+            <!-- ELISSA Spécifique -->
+            <div *ngIf="dem.typePlateforme === 'ELISSA'">
+              <div style="font-size:0.8rem; margin-bottom:0.2rem;">
+                <strong>Tâche actuelle :</strong> {{ dem.tacheActuelle || 'N/A' }}
+              </div>
+              <div style="font-size:0.75rem; color:#475569; margin-bottom:0.2rem;">
+                <strong>Précédente :</strong> {{ dem.tachePrecedente }} ({{ dem.lieuPrecedent }})
+              </div>
+              <div style="font-size:0.75rem; color:#475569; margin-bottom:0.35rem;">
+                <strong>Chef direct :</strong> {{ dem.chefDirectActuel }}
+              </div>
+              <div style="display:flex; flex-wrap:wrap;">
+                <span class="attachment-pill" *ngIf="dem.pieceJointeCinNom" title="Copie scannée CIN">
+                  📎 {{ dem.pieceJointeCinNom }} ({{ dem.pieceJointeCinTaille }})
+                </span>
+                <span class="attachment-pill" *ngIf="dem.pieceJointeArreteNom" title="Arrêté de nomination / PV">
+                  📑 {{ dem.pieceJointeArreteNom }} ({{ dem.pieceJointeArreteTaille }})
+                </span>
+              </div>
+            </div>
+
+            <!-- EDUNET Spécifique -->
+            <div *ngIf="dem.typePlateforme === 'EDUNET'">
+              <div style="font-size:0.85rem; font-weight:600; color:#0369a1;">
+                Rôle sollicité : {{ dem.roleEdunetDemande }}
+              </div>
+              <div class="text-xs text-muted">
+                Validation automatisée profil institutionnel Edunet.tn
+              </div>
+            </div>
+          </td>
+
+          <td>
+            <span class="badge-status" 
+                  [class.badge-alert]="dem.statut === 'EN_ATTENTE_SD_TIC'"
+                  [class.badge-ok]="dem.statut === 'APPROUVEE_CREEE'"
+                  [style.background]="dem.statut === 'ACHEMINEE_ADMIN_ADJOINT' ? '#eff6ff' : ''"
+                  [style.color]="dem.statut === 'ACHEMINEE_ADMIN_ADJOINT' ? '#1d4ed8' : ''"
+                  [style.border]="dem.statut === 'ACHEMINEE_ADMIN_ADJOINT' ? '1px solid #bfdbfe' : ''"
+                  [class.text-danger]="dem.statut === 'REJETEE'">
+              {{ dem.statutLabel }}
+            </span>
+
+            <div *ngIf="dem.dateValidationSdTic" class="text-xs text-muted" style="margin-top:0.3rem;">
+              Certifié SD-TIC : {{ dem.dateValidationSdTic }}
+            </div>
+            <div *ngIf="dem.adjointAssigneNom" class="text-xs font-bold" style="color:#4338ca; margin-top:0.2rem;">
+              🛡️ Destinataire : {{ dem.adjointAssigneNom }}
+            </div>
+          </td>
+
+          <td>
+            <!-- En attente SD-TIC -->
+            <div *ngIf="dem.statut === 'EN_ATTENTE_SD_TIC'">
+              <button class="btn btn-primary btn-sm" (click)="ouvrirModalAcheminement(dem)">
+                🚀 Valider & Acheminer
+              </button>
+            </div>
+
+            <!-- Acheminée vers Admin Adjoint -->
+            <div *ngIf="dem.statut === 'ACHEMINEE_ADMIN_ADJOINT'">
+              <span class="text-xs text-muted" style="display:block; margin-bottom:0.25rem;">
+                ⏳ Examen en cours au Ministère
+              </span>
+              <button class="btn btn-secondary btn-sm" (click)="ouvrirModalAcheminement(dem)" title="Réacheminer ou changer d'adjoint">
+                🔄 Réacheminer
+              </button>
+            </div>
+
+            <!-- Compte généré / Approuvée -->
+            <div *ngIf="dem.statut === 'APPROUVEE_CREEE'" class="identifiants-box">
+              <div style="font-weight:700;">ID : {{ dem.identifiantGenere }}</div>
+              <div style="font-family:monospace; font-size:0.75rem;">MDP : {{ dem.motDePasseProvisoire }}</div>
+              <div class="text-xs text-muted">Clôturé : {{ dem.dateCloture }}</div>
+            </div>
+
+            <!-- Rejetée -->
+            <div *ngIf="dem.statut === 'REJETEE'" class="text-xs text-danger font-bold">
+              Motif : {{ dem.motifRejet }}
+            </div>
           </td>
         </tr>
       </tbody>
@@ -621,6 +789,223 @@
         <button class="btn btn-secondary" (click)="showDelegationModal = false">Annuler</button>
         <button class="btn btn-primary" (click)="confirmerDelegationTache()">
           🚀 Confirmer la Délégation
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 5 : NOUVELLE DEMANDE DE COMPTE ELISSA / EDUNET (AVEC AUTO-REMPLISSAGE) -->
+  <div *ngIf="showModalDemandeCompte" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 680px;">
+      <div class="modal-header">
+        <h3>Nouvelle Demande de Compte Institutionnel (ELISSA / EDUNET)</h3>
+        <button class="modal-close" (click)="showModalDemandeCompte = false">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="autofill-banner">
+          ⚡ <strong>Auto-Remplissage Intelligent :</strong> Le demandeur n'a pas besoin de ressaisir les données déjà enregistrées dans la base de données. 
+          Sélectionnez ci-dessous le personnel concerné pour pré-charger son identité, matricule, CIN, affectation et coordonnées.
+        </div>
+
+        <!-- Sélection rapide personnel pour auto-remplissage -->
+        <div class="form-group" style="background:#f8fafc; border:1px solid #cbd5e1; padding:0.75rem; border-radius:6px; margin-bottom:1rem;">
+          <label style="font-weight:700; color:#0f172a; display:block; margin-bottom:0.35rem;">
+            👤 Sélectionner un agent / enseignant enregistré dans la base :
+          </label>
+          <select [ngModel]="formDemandeCompte.selectedPersonnelMatricule" 
+                  (change)="onChangementPersonnelBase($event)" 
+                  class="form-input font-bold" 
+                  style="border-color:#0284c7;">
+            <option *ngFor="let p of personnelsBase" [value]="p.matricule">
+              {{ p.prenom }} {{ p.nom }} (Matricule : {{ p.matricule }} · CIN : {{ p.cin }}) — {{ p.etablissementOuSiege }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Type de Plateforme -->
+        <div class="form-group">
+          <label style="font-weight:700;">Plateforme ou Portail concerné :</label>
+          <div style="display:flex; gap:1.5rem; margin-top:0.4rem;">
+            <label style="display:flex; align-items:center; gap:0.4rem; cursor:pointer; font-weight:600;">
+              <input type="radio" [(ngModel)]="formDemandeCompte.typePlateforme" value="ELISSA" name="plateformeRadio" />
+              <span>🏛️ Portail ELISSA (Finances, Bourses, Examens)</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:0.4rem; cursor:pointer; font-weight:600;">
+              <input type="radio" [(ngModel)]="formDemandeCompte.typePlateforme" value="EDUNET" name="plateformeRadio" />
+              <span>🌐 Portail EDUNET (Pédagogie & Vie Scolaire)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Données d'identité (Auto-remplies) -->
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Matricule officiel :</label>
+            <input type="text" [(ngModel)]="formDemandeCompte.matricule" class="form-input" style="background:#f1f5f9;" readonly />
+          </div>
+          <div class="form-group flex-1">
+            <label>Numéro de CIN :</label>
+            <input type="text" [(ngModel)]="formDemandeCompte.cin" class="form-input" style="background:#f1f5f9;" readonly />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Nom :</label>
+            <input type="text" [(ngModel)]="formDemandeCompte.nomDemandeur" class="form-input" style="background:#f1f5f9;" readonly />
+          </div>
+          <div class="form-group flex-1">
+            <label>Prénom :</label>
+            <input type="text" [(ngModel)]="formDemandeCompte.prenomDemandeur" class="form-input" style="background:#f1f5f9;" readonly />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Établissement ou Siège d'affectation :</label>
+          <input type="text" [(ngModel)]="formDemandeCompte.etablissementOuSiege" class="form-input" style="background:#f1f5f9;" readonly />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Téléphone professionnel :</label>
+            <input type="text" [(ngModel)]="formDemandeCompte.telephoneDemandeur" class="form-input" />
+          </div>
+          <div class="form-group flex-1">
+            <label>Adresse E-mail institutionnelle :</label>
+            <input type="email" [(ngModel)]="formDemandeCompte.emailDemandeur" class="form-input" />
+          </div>
+        </div>
+
+        <!-- CHAMPS SPÉCIFIQUES ELISSA -->
+        <div *ngIf="formDemandeCompte.typePlateforme === 'ELISSA'" style="border-top:1px solid #e2e8f0; padding-top:1rem; margin-top:0.75rem;">
+          <h4 style="font-size:0.95rem; color:#7e22ce; margin-bottom:0.75rem;">
+            📋 Informations Spécifiques Requises pour le Site ELISSA
+          </h4>
+
+          <div class="form-group">
+            <label>Tâche actuelle / Fonction exercée <span class="text-danger">*</span> :</label>
+            <input type="text" 
+                   [(ngModel)]="formDemandeCompte.tacheActuelle" 
+                   placeholder="Ex: Gestionnaire des bourses et états financiers, Chef de centre..." 
+                   class="form-input" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label>Tâche précédente <span class="text-danger">*</span> :</label>
+              <input type="text" 
+                     [(ngModel)]="formDemandeCompte.tachePrecedente" 
+                     placeholder="Ex: Adjoint d'intendance, Enseignant..." 
+                     class="form-input" />
+            </div>
+            <div class="form-group flex-1">
+              <label>Lieu précédent d'exercice <span class="text-danger">*</span> :</label>
+              <input type="text" 
+                     [(ngModel)]="formDemandeCompte.lieuPrecedent" 
+                     placeholder="Ex: Lycée Ibn Abi Dhiaf, CRE Béja..." 
+                     class="form-input" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Chef direct actuel <span class="text-danger">*</span> :</label>
+            <input type="text" 
+                   [(ngModel)]="formDemandeCompte.chefDirectActuel" 
+                   placeholder="Ex: M. Zouhair Mansour (Secrétaire Général de la CRE)" 
+                   class="form-input" />
+          </div>
+
+          <!-- Deux Pièces Jointes scannées ou PDF obligatoires -->
+          <div style="background:#fdf4ff; border:1px solid #f0abfc; padding:0.75rem; border-radius:6px; margin-top:0.75rem;">
+            <div style="font-size:0.85rem; font-weight:700; color:#86198f; margin-bottom:0.5rem;">
+              📎 Deux pièces jointes scannées ou PDF (Obligatoires pour Elissa) :
+            </div>
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label style="font-size:0.78rem;">1. Copie CIN scannée / PDF :</label>
+                <div style="display:flex; align-items:center; gap:0.4rem;">
+                  <input type="text" [(ngModel)]="formDemandeCompte.pieceJointeCinNom" class="form-input text-xs" />
+                  <span style="font-size:0.75rem; color:#10b981; font-weight:700;">✓ Attaché</span>
+                </div>
+              </div>
+              <div class="form-group flex-1">
+                <label style="font-size:0.78rem;">2. Arrêté nomination / PV installation :</label>
+                <div style="display:flex; align-items:center; gap:0.4rem;">
+                  <input type="text" [(ngModel)]="formDemandeCompte.pieceJointeArreteNom" class="form-input text-xs" />
+                  <span style="font-size:0.75rem; color:#10b981; font-weight:700;">✓ Attaché</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CHAMPS SPÉCIFIQUES EDUNET -->
+        <div *ngIf="formDemandeCompte.typePlateforme === 'EDUNET'" style="border-top:1px solid #e2e8f0; padding-top:1rem; margin-top:0.75rem;">
+          <h4 style="font-size:0.95rem; color:#0369a1; margin-bottom:0.75rem;">
+            🌐 Profil Sollicité sur le Portail EDUNET
+          </h4>
+          <div class="form-group">
+            <label>Rôle ou statut institutionnel sur Edunet :</label>
+            <select [(ngModel)]="formDemandeCompte.roleEdunetDemande" class="form-input">
+              <option value="Directeur d'Établissement Scolaire">Directeur d'Établissement Scolaire</option>
+              <option value="Enseignant / Responsable Pédagogique">Enseignant / Responsable Pédagogique</option>
+              <option value="Inspecteur Pédagogique TIC">Inspecteur Pédagogique TIC</option>
+              <option value="Secrétaire Général CRE">Secrétaire Général CRE</option>
+              <option value="Responsable Régional Examens (Bac)">Responsable Régional Examens (Bac)</option>
+              <option value="Agent Administratif">Agent Administratif</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showModalDemandeCompte = false">Annuler</button>
+        <button class="btn btn-primary" (click)="soumettreDemandeCompte()">
+          🚀 Enregistrer & Soumettre au SD-TIC
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 6 : VALIDATION SD-TIC & ACHEMINEMENT VERS L'ADMIN ADJOINT HABILITÉ -->
+  <div *ngIf="showModalAcheminement" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3>Certification SD-TIC & Acheminement Ministériel</h3>
+        <button class="modal-close" (click)="showModalAcheminement = false">✕</button>
+      </div>
+
+      <div class="modal-body" *ngIf="selectedDemandeForAcheminement">
+        <div class="info-note" style="margin-bottom:1rem;">
+          📄 Demande : <strong>{{ selectedDemandeForAcheminement.codeDemande }}</strong> ({{ selectedDemandeForAcheminement.typePlateforme }})<br/>
+          👤 Demandeur : <strong>{{ selectedDemandeForAcheminement.prenomDemandeur }} {{ selectedDemandeForAcheminement.nomDemandeur }}</strong> ({{ selectedDemandeForAcheminement.matricule }})<br/>
+          🏢 Structure : {{ selectedDemandeForAcheminement.etablissementOuSiege }}
+        </div>
+
+        <div class="form-group">
+          <label style="font-weight:700; color:#0f172a; display:block; margin-bottom:0.4rem;">
+            🛡️ Sélectionner l'Admin Adjoint Habilité (Administration Centrale) :
+          </label>
+          <select [(ngModel)]="selectedAdjointId" class="form-input font-bold" style="border-color:#0284c7;">
+            <ng-container *ngFor="let adj of comptesService.getAdjointsHabilitesComptes()">
+              <option [value]="adj.id">
+                {{ adj.prenom }} {{ adj.nom }} ({{ adj.email }}) — Habilité(e) Gestion Comptes Elissa & Edunet
+              </option>
+            </ng-container>
+          </select>
+        </div>
+
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:0.85rem; border-radius:6px; font-size:0.825rem; color:#166534; line-height:1.4;">
+          ✓ En certifiant cette demande, le <strong>SD-TIC</strong> confirme la conformité administrative de l'agent et des pièces jointes. 
+          Le dossier est immédiatement injecté dans la file d'attente de l'Admin Adjoint désigné au Ministère.
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showModalAcheminement = false">Annuler</button>
+        <button class="btn btn-success" (click)="confirmerAcheminementVersAdjoint()">
+          ✓ Certifier & Acheminer au Ministère
         </button>
       </div>
     </div>
