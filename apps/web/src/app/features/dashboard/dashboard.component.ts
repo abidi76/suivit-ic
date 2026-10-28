@@ -10,6 +10,7 @@ import {
   AdminAdjointCompte 
 } from '../../core/services/comptes-demandes.service';
 import { Observable } from 'rxjs';
+import { FirebaseService, firebaseConfig } from '../../core/services/firebase.service';
 
 export interface DeviceTypeStat {
   type: string;
@@ -708,11 +709,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
   intervalSondeReseau: any = null;
 
   toastMessage = '';
+  isSyncingFirebase = false;
 
   constructor(
     private http: HttpClient, 
     private authService: AuthService,
-    public comptesService: ComptesDemandesService
+    public comptesService: ComptesDemandesService,
+    public firebaseService: FirebaseService
   ) {}
 
   ngOnInit(): void {
@@ -722,6 +725,52 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.initFormNouvelleDemande();
     this.loadStats();
     this.demarrerSondeReseau();
+    this.initialiserSynchronisationFirestore();
+  }
+
+  private initialiserSynchronisationFirestore(): void {
+    try {
+      this.firebaseService.ecouterCollection<EtablissementCre>('etablissements', (items) => {
+        if (items && items.length > 0) {
+          this.etablissementsCre = items;
+        }
+      });
+
+      this.firebaseService.ecouterCollection<CompteLocal>('comptes_locaux', (items) => {
+        if (items && items.length > 0) {
+          this.comptesLocaux = items;
+        }
+      });
+
+      this.firebaseService.ecouterCollection<AgentAdminRecord>('agents_administratifs', (items) => {
+        if (items && items.length > 0) {
+          this.agentsAdminList = items;
+        }
+      });
+    } catch (e) {
+      console.warn('Mode hors ligne Firestore :', e);
+    }
+  }
+
+  synchroniserBaseCompleteVersFirebase(): void {
+    this.isSyncingFirebase = true;
+    this.http.get<any>('/firebase-seed-data.json').subscribe({
+      next: async (seedData) => {
+        try {
+          const res = await this.firebaseService.injecterDonneesInitiales(seedData);
+          this.isSyncingFirebase = false;
+          this.afficherToast(`🔥 ${res.details}`);
+        } catch (err: any) {
+          this.isSyncingFirebase = false;
+          console.error('Erreur injection Firebase :', err);
+          this.afficherToast(`⚠️ Erreur synchronisation Firebase : ${err?.message || err}`);
+        }
+      },
+      error: (e) => {
+        this.isSyncingFirebase = false;
+        this.afficherToast('⚠️ Impossible de charger firebase-seed-data.json');
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -955,6 +1004,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     compte.actif = !compte.actif;
     const statut = compte.actif ? 'activé' : 'suspendu';
     this.afficherToast(`Compte de ${compte.nom} (${compte.roleLabel}) ${statut}.`);
+    this.firebaseService.enregistrerDocument('comptes_locaux', compte.id, compte)
+      .catch(e => console.warn('Erreur Firestore statut compte :', e));
   }
 
   ajouterCompteLocal(): void {
@@ -974,6 +1025,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.comptesLocaux = [compte, ...this.comptesLocaux];
     this.showAddCompteModal = false;
     this.afficherToast(`✅ Compte local créé pour ${compte.nom} (${compte.roleLabel}).`);
+
+    this.firebaseService.enregistrerDocument('comptes_locaux', compte.id, compte)
+      .catch(e => console.warn('Erreur Firestore nouveau compte :', e));
   }
 
   getRoleLabel(role: CompteLocal['roleLocal']): string {
@@ -1004,6 +1058,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.comptesLocaux[idx] = { ...this.formModifierCompteLocal };
       this.showModalModifierCompteLocal = false;
       this.afficherToast(`✅ Compte local de ${this.formModifierCompteLocal.nom} mis à jour avec succès.`);
+
+      this.firebaseService.enregistrerDocument('comptes_locaux', this.formModifierCompteLocal.id, this.formModifierCompteLocal)
+        .catch(e => console.warn('Erreur Firestore MAJ compte :', e));
     }
   }
 
@@ -1011,6 +1068,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (confirm(`Confirmez-vous la suppression définitive du compte de ${compte.nom} (${compte.roleLabel}) ?`)) {
       this.comptesLocaux = this.comptesLocaux.filter(c => c.id !== compte.id);
       this.afficherToast(`🗑️ Compte local de ${compte.nom} supprimé.`);
+
+      this.firebaseService.supprimerDocument('comptes_locaux', compte.id)
+        .catch(e => console.warn('Erreur Firestore suppression compte :', e));
     }
   }
 

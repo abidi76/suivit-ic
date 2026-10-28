@@ -8,6 +8,10 @@
   "scripts": {
     "dev": "npm run dev --workspace=apps/web",
     "build": "npm run build --workspace=apps/web",
-    "start": "npm run start --workspace=apps/web"
+    "start": "npm run start --workspace=apps/web",
+    "seed:firebase": "node scripts/seed-firestore.mjs"
+  },
+  "dependencies": {
+    "firebase": "^13.1.0"
   }
 }

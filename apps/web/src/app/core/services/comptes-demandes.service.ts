@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { FirebaseService } from './firebase.service';
 
 export interface PersonnelCreRecord {
   matricule: string;
@@ -275,7 +276,27 @@ export class ComptesDemandesService {
   ]);
   public demandes$ = this.demandesSubject.asObservable();
 
-  constructor() {}
+  constructor(private firebaseService: FirebaseService) {
+    this.initialiserSynchronisationFirestore();
+  }
+
+  private initialiserSynchronisationFirestore(): void {
+    try {
+      this.firebaseService.ecouterCollection<DemandeCompteElissaEdunet>('demandes_elissa_edunet', (items) => {
+        if (items && items.length > 0) {
+          this.demandesSubject.next(items);
+        }
+      });
+
+      this.firebaseService.ecouterCollection<AdminAdjointCompte>('admin_adjoints', (items) => {
+        if (items && items.length > 0) {
+          this.adjointsSubject.next(items);
+        }
+      });
+    } catch (e) {
+      console.warn('Mode hors ligne Firestore :', e);
+    }
+  }
 
   // Recherche un personnel par matricule ou CIN pour auto-remplir la demande
   trouverPersonnelParMatriculeOuCin(terme: string): PersonnelCreRecord | undefined {
@@ -321,6 +342,11 @@ export class ComptesDemandesService {
 
     const updated = [newDemande, ...this.demandesSubject.value];
     this.demandesSubject.next(updated);
+
+    // Synchronisation Firestore
+    this.firebaseService.enregistrerDocument('demandes_elissa_edunet', newDemande.id, newDemande)
+      .catch(err => console.warn('Erreur synchro Firestore demande :', err));
+
     return newDemande;
   }
 
@@ -342,6 +368,10 @@ export class ComptesDemandesService {
     target.adjointAssigneNom = `${adjointAssigne.prenom} ${adjointAssigne.nom}`;
 
     this.demandesSubject.next([...list]);
+
+    // Synchronisation Firestore
+    this.firebaseService.enregistrerDocument('demandes_elissa_edunet', target.id, target)
+      .catch(err => console.warn('Erreur synchro Firestore validation :', err));
   }
 
   // 3. Approbation et création du compte par l'Admin Adjoint (ou Admin Central)
@@ -361,6 +391,10 @@ export class ComptesDemandesService {
     target.dateCloture = new Date().toLocaleDateString('fr-FR') + ' ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
     this.demandesSubject.next([...list]);
+
+    // Synchronisation Firestore
+    this.firebaseService.enregistrerDocument('demandes_elissa_edunet', target.id, target)
+      .catch(err => console.warn('Erreur synchro Firestore approbation :', err));
   }
 
   // 4. Rejet d'une demande avec motif
@@ -375,6 +409,10 @@ export class ComptesDemandesService {
     target.dateCloture = new Date().toLocaleDateString('fr-FR');
 
     this.demandesSubject.next([...list]);
+
+    // Synchronisation Firestore
+    this.firebaseService.enregistrerDocument('demandes_elissa_edunet', target.id, target)
+      .catch(err => console.warn('Erreur synchro Firestore rejet :', err));
   }
 
   // 5. Gestion des Admin Adjoints par l'Admin Central : Création d'un nouveau compte adjoint
@@ -400,6 +438,11 @@ export class ComptesDemandesService {
     };
 
     this.adjointsSubject.next([...adjoints, compte]);
+
+    // Synchronisation Firestore
+    this.firebaseService.enregistrerDocument('admin_adjoints', compte.id, compte)
+      .catch(err => console.warn('Erreur synchro Firestore adjoint :', err));
+
     return compte;
   }
 
@@ -424,6 +467,10 @@ export class ComptesDemandesService {
       if (donnees.actif !== undefined) target.actif = donnees.actif;
       if (donnees.tachesAutorisees !== undefined) target.tachesAutorisees = { ...donnees.tachesAutorisees };
       this.adjointsSubject.next([...adjoints]);
+
+      // Synchronisation Firestore
+      this.firebaseService.enregistrerDocument('admin_adjoints', target.id, target)
+        .catch(err => console.warn('Erreur synchro Firestore modification adjoint :', err));
     }
   }
 
@@ -431,6 +478,10 @@ export class ComptesDemandesService {
   supprimerAdminAdjoint(adjointId: string): void {
     const filtered = this.adjointsSubject.value.filter(a => a.id !== adjointId);
     this.adjointsSubject.next(filtered);
+
+    // Synchronisation Firestore
+    this.firebaseService.supprimerDocument('admin_adjoints', adjointId)
+      .catch(err => console.warn('Erreur suppression Firestore adjoint :', err));
   }
 
   // 8. Activation / Désactivation d'un adjoint
@@ -440,6 +491,11 @@ export class ComptesDemandesService {
     if (target) {
       target.actif = !target.actif;
       this.adjointsSubject.next([...adjoints]);
+
+      // Synchronisation Firestore
+      this.firebaseService.enregistrerDocument('admin_adjoints', target.id, target)
+        .catch(err => console.warn('Erreur synchro statut adjoint :', err));
+
       return target.actif;
     }
     return false;

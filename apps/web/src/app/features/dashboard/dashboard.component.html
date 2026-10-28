@@ -34,7 +34,22 @@
     </div>
   </header>
 
-  <!-- Navigation par Onglets SD TIC -->
+  <!-- Bandeau Statut & Synchronisation Firebase Firestore Temps Réel -->
+  <div style="background:linear-gradient(90deg, #fffbeb, #fef3c7); border:1px solid #fde68a; padding:0.5rem 1rem; border-radius:8px; display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+    <div style="display:flex; align-items:center; gap:0.6rem; font-size:0.85rem; color:#92400e;">
+      <span style="font-size:1.2rem;">🔥</span>
+      <div>
+        <strong>Firebase Connecté :</strong> Projet <code style="background:#fde68a; padding:0.15rem 0.35rem; border-radius:4px; font-weight:700;">suivit-ic-tunisie</code>
+        <span style="display:inline-block; margin-left:0.5rem; font-size:0.75rem; background:#dcfce7; color:#15803d; padding:0.15rem 0.4rem; border-radius:4px; font-weight:700;">✓ Écoute Temps Réel Active</span>
+      </div>
+    </div>
+    <div>
+      <button class="btn btn-sm" style="background:#d97706; color:#ffffff; border:none; padding:0.4rem 0.8rem; border-radius:6px; font-weight:700; cursor:pointer;" (click)="synchroniserBaseCompleteVersFirebase()" [disabled]="isSyncingFirebase">
+        {{ isSyncingFirebase ? '⏳ Synchronisation Firestore en cours...' : '⚡ Injecter la Base Complète dans Firestore (1-Clic)' }}
+      </button>
+    </div>
+  </div>
+
   <!-- Navigation par Onglets SD TIC -->
   <div class="sdtic-tabs-bar">
     <button class="sdtic-tab" [class.active]="activeTab === 'supervision'" (click)="activeTab = 'supervision'">
