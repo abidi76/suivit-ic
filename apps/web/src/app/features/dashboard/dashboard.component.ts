@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -32,6 +32,23 @@ export interface EtablissementCre {
   enAttente: number;
   directeurNom: string;
   circuitStatut: 'FIBRE_OK' | 'FLYBOX_SECOURS' | 'COUPURE';
+  // Surveillance Sonde Réseau & Débit Internet (IP Publique)
+  ipPublique: string;
+  fai: string;
+  debitDescendant: number; // Mbps
+  debitMontant: number; // Mbps
+  latenceMs: number; // ms
+  pertePaquetsPct: number; // %
+  dernierPaquetRecu: string;
+  historiquePaquets: ('RECU' | 'PERDU')[];
+  alerteAutomatiqueSonde?: string;
+  // Détail pannes par type d'équipement
+  pannesDetail: {
+    pcBureau: number;
+    pcPortable: number;
+    imprimanteScanner: number;
+    reseauSwitch: number;
+  };
 }
 
 export interface CompteLocal {
@@ -121,11 +138,11 @@ export interface PrestataireInterventionSupervision {
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   stats: any = null;
   isLoading = true;
   currentUser: UserAccount | null = null;
-  activeTab: 'supervision' | 'demandes-comptes' | 'comptes-locaux' | 'agents-admin' | 'prestataires' | 'flux-emprunts' | 'ordres-mission' | 'planning' = 'supervision';
+  activeTab: 'supervision' | 'demandes-comptes' | 'comptes-locaux' | 'agents-admin' | 'prestataires' | 'flux-emprunts' | 'ordres-mission' | 'planning' | 'sonde-reseau' = 'supervision';
 
   // Observables des demandes de comptes Elissa & Edunet et des Adjoints
   demandesComptes$!: Observable<DemandeCompteElissaEdunet[]>;
@@ -179,7 +196,7 @@ export class DashboardComponent implements OnInit {
   selectedDelegation: string = 'TOUTES';
   searchTerm: string = '';
 
-  // 1. Liste des Établissements de la CRE sélectionnée (Siège central, Écoles primaires, Collèges, Collèges techniques, Lycées)
+  // 1. Liste des Établissements de la CRE sélectionnée avec Surveillance Réseau par IP Publique & Détail Pannes
   etablissementsCre: EtablissementCre[] = [
     {
       id: 'CRE-SIEGE',
@@ -192,7 +209,16 @@ export class DashboardComponent implements OnInit {
       enPanne: 2,
       enAttente: 0,
       directeurNom: 'Direction CRE Manouba',
-      circuitStatut: 'FIBRE_OK'
+      circuitStatut: 'FIBRE_OK',
+      ipPublique: '197.14.88.10',
+      fai: 'Tunisie Télécom (Fibre Dédiée)',
+      debitDescendant: 100.0,
+      debitMontant: 50.0,
+      latenceMs: 14,
+      pertePaquetsPct: 0,
+      dernierPaquetRecu: '10:42:15',
+      historiquePaquets: ['RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU'],
+      pannesDetail: { pcBureau: 1, pcPortable: 0, imprimanteScanner: 1, reseauSwitch: 0 }
     },
     {
       id: 'LYC-01',
@@ -205,7 +231,16 @@ export class DashboardComponent implements OnInit {
       enPanne: 6,
       enAttente: 4,
       directeurNom: 'M. Moncef Ben Salem',
-      circuitStatut: 'FIBRE_OK'
+      circuitStatut: 'FIBRE_OK',
+      ipPublique: '197.14.88.22',
+      fai: 'Tunisie Télécom (Fibre Pro)',
+      debitDescendant: 50.2,
+      debitMontant: 20.1,
+      latenceMs: 18,
+      pertePaquetsPct: 0,
+      dernierPaquetRecu: '10:42:15',
+      historiquePaquets: ['RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU'],
+      pannesDetail: { pcBureau: 3, pcPortable: 1, imprimanteScanner: 1, reseauSwitch: 1 }
     },
     {
       id: 'COL-01',
@@ -218,7 +253,16 @@ export class DashboardComponent implements OnInit {
       enPanne: 2,
       enAttente: 2,
       directeurNom: 'Mme Sonia Mejri',
-      circuitStatut: 'FIBRE_OK'
+      circuitStatut: 'FIBRE_OK',
+      ipPublique: '197.14.88.35',
+      fai: 'Tunisie Télécom (Fibre Pro)',
+      debitDescendant: 49.8,
+      debitMontant: 19.5,
+      latenceMs: 16,
+      pertePaquetsPct: 0,
+      dernierPaquetRecu: '10:42:15',
+      historiquePaquets: ['RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU'],
+      pannesDetail: { pcBureau: 1, pcPortable: 1, imprimanteScanner: 0, reseauSwitch: 0 }
     },
     {
       id: 'COL-TECH-01',
@@ -231,7 +275,17 @@ export class DashboardComponent implements OnInit {
       enPanne: 5,
       enAttente: 2,
       directeurNom: 'M. Ridha Mabrouk',
-      circuitStatut: 'FLYBOX_SECOURS'
+      circuitStatut: 'FLYBOX_SECOURS',
+      ipPublique: '197.14.90.14',
+      fai: 'Orange Tunisie (Flybox 4G Pro)',
+      debitDescendant: 18.4,
+      debitMontant: 5.8,
+      latenceMs: 42,
+      pertePaquetsPct: 10,
+      dernierPaquetRecu: '10:42:15',
+      historiquePaquets: ['RECU', 'RECU', 'RECU', 'PERDU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU'],
+      alerteAutomatiqueSonde: '⚠️ Connexion basculée sur Flybox 4G de secours',
+      pannesDetail: { pcBureau: 2, pcPortable: 1, imprimanteScanner: 1, reseauSwitch: 1 }
     },
     {
       id: 'LYC-02',
@@ -244,7 +298,17 @@ export class DashboardComponent implements OnInit {
       enPanne: 8,
       enAttente: 4,
       directeurNom: 'M. Tarek Hamdi',
-      circuitStatut: 'FLYBOX_SECOURS'
+      circuitStatut: 'FLYBOX_SECOURS',
+      ipPublique: '197.14.90.48',
+      fai: 'Ooredoo Tunisie (Flybox Pro)',
+      debitDescendant: 16.2,
+      debitMontant: 5.1,
+      latenceMs: 45,
+      pertePaquetsPct: 0,
+      dernierPaquetRecu: '10:42:15',
+      historiquePaquets: ['RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU'],
+      alerteAutomatiqueSonde: '⚠️ Débit réduit sur lien 4G de secours',
+      pannesDetail: { pcBureau: 4, pcPortable: 2, imprimanteScanner: 1, reseauSwitch: 1 }
     },
     {
       id: 'PRI-01',
@@ -257,7 +321,16 @@ export class DashboardComponent implements OnInit {
       enPanne: 2,
       enAttente: 0,
       directeurNom: 'Mme Latifa Riahi',
-      circuitStatut: 'FIBRE_OK'
+      circuitStatut: 'FIBRE_OK',
+      ipPublique: '197.14.88.75',
+      fai: 'Tunisie Télécom (VDSL Pro)',
+      debitDescendant: 30.5,
+      debitMontant: 10.2,
+      latenceMs: 22,
+      pertePaquetsPct: 0,
+      dernierPaquetRecu: '10:42:15',
+      historiquePaquets: ['RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU'],
+      pannesDetail: { pcBureau: 1, pcPortable: 0, imprimanteScanner: 1, reseauSwitch: 0 }
     },
     {
       id: 'PRI-02',
@@ -270,7 +343,16 @@ export class DashboardComponent implements OnInit {
       enPanne: 1,
       enAttente: 0,
       directeurNom: 'M. Naceur Dridi',
-      circuitStatut: 'FLYBOX_SECOURS'
+      circuitStatut: 'FLYBOX_SECOURS',
+      ipPublique: '197.14.90.89',
+      fai: 'Tunisie Télécom (Flybox Pro)',
+      debitDescendant: 14.8,
+      debitMontant: 4.2,
+      latenceMs: 51,
+      pertePaquetsPct: 0,
+      dernierPaquetRecu: '10:42:15',
+      historiquePaquets: ['RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU', 'RECU'],
+      pannesDetail: { pcBureau: 1, pcPortable: 0, imprimanteScanner: 0, reseauSwitch: 0 }
     },
     {
       id: 'LYC-03',
@@ -283,7 +365,17 @@ export class DashboardComponent implements OnInit {
       enPanne: 4,
       enAttente: 2,
       directeurNom: 'M. Belhassen Riahi',
-      circuitStatut: 'COUPURE'
+      circuitStatut: 'COUPURE',
+      ipPublique: '197.14.99.102',
+      fai: 'Tunisie Télécom (Fibre rompue)',
+      debitDescendant: 0,
+      debitMontant: 0,
+      latenceMs: 0,
+      pertePaquetsPct: 100,
+      dernierPaquetRecu: '09:15:00',
+      historiquePaquets: ['PERDU', 'PERDU', 'PERDU', 'PERDU', 'PERDU', 'PERDU', 'PERDU', 'PERDU', 'PERDU', 'PERDU'],
+      alerteAutomatiqueSonde: '🚨 Coupure totale détectée par la sonde IP (0 paquet reçu)',
+      pannesDetail: { pcBureau: 2, pcPortable: 1, imprimanteScanner: 1, reseauSwitch: 0 }
     }
   ];
 
@@ -300,16 +392,17 @@ export class DashboardComponent implements OnInit {
     { id: 'U-09', matricule: 'PRF-8101', nom: 'Sami Mansour', roleLocal: 'PROF', roleLabel: 'Professeur Responsable Labo 1', etablissement: 'Lycée Ibn Abi Dhiaf', email: 'prof.sami@edunet.tn', actif: true }
   ];
 
-  // 2b. Annuaire et gestion des Agents Administratifs (Siège, CREFOC, Établissements) pré-saisis par le SD-TIC
+  // 2b. Annuaire et gestion des Agents Administratifs pré-saisis par le SD-TIC
+  // RÈGLE MINISTÉRIELLE : Seuls les agents affectés à la Direction TIC peuvent être délégués pour certaines tâches par le SD-TIC.
   agentsAdminList: AgentAdminRecord[] = [
     {
       id: 'ADM-01',
       matricule: 'ADM-7101',
       nom: 'Ben Abdallah',
       prenom: 'Najla',
-      direction: 'Direction des Affaires Pédagogiques & Formation',
-      service: 'Service de Coordination Pédagogique & CREFOC',
-      bureau: 'Bureau 14 (Aile B)',
+      direction: 'Direction Régionale TIC & Systèmes d\'Information',
+      service: 'Service Exploitation, Support & Parc Informatique',
+      bureau: 'Bureau TIC 14 (Aile Technique)',
       localisation: 'Siège Central CRE',
       ipFixe: '192.168.10.45',
       vlan: 'VLAN 10 - Admin CRE',
@@ -320,8 +413,29 @@ export class DashboardComponent implements OnInit {
         { type: 'Imprimante', marque: 'HP LaserJet MFP M428', sn: 'SN-HP-MFP428-771204' }
       ],
       tachesDeleguees: [
-        'Inventaire trimestriel des postes administratifs (Bureaux 10 à 18)',
-        'Pointage de présence des techniciens prestataires externes'
+        'Inventaire trimestriel des postes informatiques administratifs',
+        'Pointage et assistance des techniciens prestataires externes'
+      ]
+    },
+    {
+      id: 'ADM-04',
+      matricule: 'ADM-7104',
+      nom: 'Chaouachi',
+      prenom: 'Farouk',
+      direction: 'Direction Régionale TIC & Systèmes d\'Information',
+      service: 'Service Réseaux, Télécoms & Connectivité des Établissements',
+      bureau: 'Bureau TIC 03',
+      localisation: 'Siège Central CRE',
+      ipFixe: '192.168.10.48',
+      vlan: 'VLAN 10 - Admin CRE',
+      priseMurale: 'PRISE-RJ45-B03-01',
+      equipementsDotation: [
+        { type: 'PC Portable', marque: 'Dell Latitude 5420', sn: 'SN-DELL-LAT-551980' },
+        { type: 'Écran', marque: 'Dell UltraSharp 24"', sn: 'SN-DELL-SCR-9901' }
+      ],
+      tachesDeleguees: [
+        'Supervision des paquets des sondes IP des établissements scolaires',
+        'Réception des fiches de tests de débits internet FAI'
       ]
     },
     {
@@ -340,9 +454,7 @@ export class DashboardComponent implements OnInit {
         { type: 'PC Bureau', marque: 'Dell OptiPlex 3070', sn: 'SN-DELL-3070-551120' },
         { type: 'Imprimante', marque: 'Canon i-Sensys LBP223', sn: 'SN-CANON-88419' }
       ],
-      tachesDeleguees: [
-        'Vérification des accès WiFi des salles de formation continue'
-      ]
+      tachesDeleguees: []
     },
     {
       id: 'ADM-03',
@@ -360,9 +472,7 @@ export class DashboardComponent implements OnInit {
         { type: 'PC Bureau', marque: 'Lenovo ThinkCentre M720', sn: 'SN-LNV-M720-4491' },
         { type: 'Écran', marque: 'Lenovo 22"', sn: 'SN-LNV-SCR-1190' }
       ],
-      tachesDeleguees: [
-        'Transmission des demandes de consommables de l\'établissement'
-      ]
+      tachesDeleguees: []
     }
   ];
 
@@ -575,6 +685,28 @@ export class DashboardComponent implements OnInit {
     email: ''
   };
 
+  // Modal Modification Compte Local (SD-TIC)
+  showModalModifierCompteLocal = false;
+  formModifierCompteLocal: CompteLocal = {
+    id: '',
+    matricule: '',
+    nom: '',
+    roleLocal: 'DIRECTEUR',
+    roleLabel: 'Directeur Établissement',
+    etablissement: '',
+    email: '',
+    actif: true
+  };
+
+  // Modal Délégation de Tâches aux Agents Administratifs
+  // RÈGLE : Seuls les agents affectés à la Direction TIC peuvent être délégués
+  showModalDeleguerTache = false;
+  agentCibleDelegation: AgentAdminRecord | null = null;
+  nouvelleTacheDeleguee = '';
+
+  // Surveillance Réseau : Sonde périodique par paquets IP
+  intervalSondeReseau: any = null;
+
   toastMessage = '';
 
   constructor(
@@ -589,6 +721,13 @@ export class DashboardComponent implements OnInit {
     this.adjointsHabilites$ = this.comptesService.adjoints$;
     this.initFormNouvelleDemande();
     this.loadStats();
+    this.demarrerSondeReseau();
+  }
+
+  ngOnDestroy(): void {
+    if (this.intervalSondeReseau) {
+      clearInterval(this.intervalSondeReseau);
+    }
   }
 
   get personnelsBase(): PersonnelCreRecord[] {
@@ -849,6 +988,133 @@ export class DashboardComponent implements OnInit {
       case 'INSPECTEUR': return 'Inspecteur Pédagogique TIC';
       case 'SD_BATIMENTS': return 'Sous-Directeur Bâtiments & Parc Auto';
       default: return 'Utilisateur Local';
+    }
+  }
+
+  // --- CRUD COMPLET COMPTES LOCAUX (SD-TIC) ---
+  ouvrirModalModifierCompteLocal(compte: CompteLocal): void {
+    this.formModifierCompteLocal = { ...compte };
+    this.showModalModifierCompteLocal = true;
+  }
+
+  enregistrerModificationCompteLocal(): void {
+    const idx = this.comptesLocaux.findIndex(c => c.id === this.formModifierCompteLocal.id);
+    if (idx !== -1) {
+      this.formModifierCompteLocal.roleLabel = this.getRoleLabel(this.formModifierCompteLocal.roleLocal);
+      this.comptesLocaux[idx] = { ...this.formModifierCompteLocal };
+      this.showModalModifierCompteLocal = false;
+      this.afficherToast(`✅ Compte local de ${this.formModifierCompteLocal.nom} mis à jour avec succès.`);
+    }
+  }
+
+  supprimerCompteLocal(compte: CompteLocal): void {
+    if (confirm(`Confirmez-vous la suppression définitive du compte de ${compte.nom} (${compte.roleLabel}) ?`)) {
+      this.comptesLocaux = this.comptesLocaux.filter(c => c.id !== compte.id);
+      this.afficherToast(`🗑️ Compte local de ${compte.nom} supprimé.`);
+    }
+  }
+
+  // --- DÉLÉGATION DE TÂCHES AUX AGENTS (RÈGLE STRICTE DIRECTION TIC) ---
+  estEligibleDelegationTic(agent: AgentAdminRecord): boolean {
+    if (!agent) return false;
+    const dir = (agent.direction || '').toLowerCase();
+    const srv = (agent.service || '').toLowerCase();
+    return dir.includes('tic') || dir.includes('informatique') || srv.includes('tic') || srv.includes('informatique');
+  }
+
+  ouvrirModalDeleguerTache(agent: AgentAdminRecord): void {
+    if (!this.estEligibleDelegationTic(agent)) {
+      alert(`⛔ Action Interdite : Seuls les agents expressément affectés à la Direction TIC peuvent recevoir des délégations de tâches par le SD-TIC.\n\n${agent.prenom} ${agent.nom} relève de "${agent.direction}".`);
+      return;
+    }
+    this.agentCibleDelegation = agent;
+    this.nouvelleTacheDeleguee = '';
+    this.showModalDeleguerTache = true;
+  }
+
+  validerDelegationTache(): void {
+    if (!this.agentCibleDelegation || !this.nouvelleTacheDeleguee.trim()) return;
+    if (!this.estEligibleDelegationTic(this.agentCibleDelegation)) {
+      alert('Erreur : Agent non habilité.');
+      return;
+    }
+    this.agentCibleDelegation.tachesDeleguees.push(this.nouvelleTacheDeleguee.trim());
+    this.afficherToast(`✅ Tâche déléguée avec succès à ${this.agentCibleDelegation.prenom} ${this.agentCibleDelegation.nom} (Direction TIC).`);
+    this.showModalDeleguerTache = false;
+    this.nouvelleTacheDeleguee = '';
+    this.agentCibleDelegation = null;
+  }
+
+  supprimerTacheDeleguee(agent: AgentAdminRecord, idx: number): void {
+    agent.tachesDeleguees.splice(idx, 1);
+    this.afficherToast('Tâche déléguée retirée de l\'agent.');
+  }
+
+  // --- DÉTAIL DES PANNES ÉQUIPEMENTS (RÉGION) ---
+  get totalPcBureauEnPanneRegional(): number {
+    return this.etablissementsCre.reduce((sum, e) => sum + (e.pannesDetail?.pcBureau || 0), 0);
+  }
+
+  get totalPcPortableEnPanneRegional(): number {
+    return this.etablissementsCre.reduce((sum, e) => sum + (e.pannesDetail?.pcPortable || 0), 0);
+  }
+
+  get totalImprimantesEnPanneRegional(): number {
+    return this.etablissementsCre.reduce((sum, e) => sum + (e.pannesDetail?.imprimanteScanner || 0), 0);
+  }
+
+  get totalReseauEnPanneRegional(): number {
+    return this.etablissementsCre.reduce((sum, e) => sum + (e.pannesDetail?.reseauSwitch || 0), 0);
+  }
+
+  // --- SONDE RÉSEAU PÉRIODIQUE PAR IP PUBLIQUE ---
+  demarrerSondeReseau(): void {
+    this.intervalSondeReseau = setInterval(() => {
+      const maintenant = new Date().toLocaleTimeString('fr-FR');
+      this.etablissementsCre.forEach(etab => {
+        etab.dernierPaquetRecu = maintenant;
+        if (etab.circuitStatut === 'COUPURE') {
+          etab.historiquePaquets.push('PERDU');
+          if (etab.historiquePaquets.length > 10) etab.historiquePaquets.shift();
+          etab.latenceMs = 0;
+          etab.debitDescendant = 0;
+          etab.debitMontant = 0;
+          const perdus = etab.historiquePaquets.filter(p => p === 'PERDU').length;
+          etab.pertePaquetsPct = Math.round((perdus / etab.historiquePaquets.length) * 100);
+          etab.alerteAutomatiqueSonde = '🚨 Coupure totale détectée par sonde IP (0 paquet reçu)';
+        } else {
+          const perteOccasionnelle = Math.random() < 0.05;
+          const paquetStatut: 'RECU' | 'PERDU' = perteOccasionnelle ? 'PERDU' : 'RECU';
+          etab.historiquePaquets.push(paquetStatut);
+          if (etab.historiquePaquets.length > 10) etab.historiquePaquets.shift();
+
+          const perdus = etab.historiquePaquets.filter(p => p === 'PERDU').length;
+          etab.pertePaquetsPct = Math.round((perdus / etab.historiquePaquets.length) * 100);
+
+          if (etab.circuitStatut === 'FIBRE_OK') {
+            etab.latenceMs = Math.floor(12 + Math.random() * 8);
+            etab.debitDescendant = Math.round((48 + Math.random() * 4) * 10) / 10;
+            etab.debitMontant = Math.round((19 + Math.random() * 2) * 10) / 10;
+            etab.alerteAutomatiqueSonde = undefined;
+          } else {
+            // FLYBOX_SECOURS
+            etab.latenceMs = Math.floor(35 + Math.random() * 20);
+            etab.debitDescendant = Math.round((18 + Math.random() * 5) * 10) / 10;
+            etab.debitMontant = Math.round((6 + Math.random() * 2) * 10) / 10;
+            etab.alerteAutomatiqueSonde = '⚠️ Connexion sur Flybox 4G de secours (Débit réduit)';
+          }
+        }
+      });
+    }, 5000);
+  }
+
+  testerConnexionEtablissement(etab: EtablissementCre): void {
+    const maintenant = new Date().toLocaleTimeString('fr-FR');
+    etab.dernierPaquetRecu = maintenant;
+    if (etab.circuitStatut === 'COUPURE') {
+      this.afficherToast(`🚨 Test Sonde IP sur ${etab.ipPublique} (${etab.nom}) : 100% de paquets perdus. Ligne coupée !`);
+    } else {
+      this.afficherToast(`📡 Test Sonde IP sur ${etab.ipPublique} (${etab.nom}) : Réponse en ${etab.latenceMs}ms · Débit : ${etab.debitDescendant} Mbps · 0% perte.`);
     }
   }
 

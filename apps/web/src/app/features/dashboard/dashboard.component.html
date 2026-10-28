@@ -35,9 +35,13 @@
   </header>
 
   <!-- Navigation par Onglets SD TIC -->
+  <!-- Navigation par Onglets SD TIC -->
   <div class="sdtic-tabs-bar">
     <button class="sdtic-tab" [class.active]="activeTab === 'supervision'" (click)="activeTab = 'supervision'">
       🏫 Supervision CRE & Établissements ({{ etablissementsCre.length }})
+    </button>
+    <button class="sdtic-tab" [class.active]="activeTab === 'sonde-reseau'" (click)="activeTab = 'sonde-reseau'">
+      📡 Sonde Réseau & Débit IP ({{ etablissementsCre.length }})
     </button>
     <button class="sdtic-tab" [class.active]="activeTab === 'demandes-comptes'" (click)="activeTab = 'demandes-comptes'">
       🔑 Demandes Comptes Elissa & Edunet ({{ (demandesComptes$ | async)?.length || 0 }})
@@ -64,6 +68,35 @@
 
   <!-- ONGLET 1 : SUPERVISION DU PARC DE LA CRE ET DE TOUS LES ÉTABLISSEMENTS -->
   <div *ngIf="activeTab === 'supervision'" class="sdtic-panel">
+    <!-- Métriques Régionales avec Détail Précis des Pannes -->
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap:1rem; margin-bottom:1.5rem;">
+      <div style="background:#fff; border:1px solid #e2e8f0; padding:1rem; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+        <span style="font-size:0.75rem; color:#64748b; font-weight:700; text-transform:uppercase;">TOTAL PARC SOUS TUTELLE</span>
+        <div style="font-size:1.6rem; font-weight:800; color:#0284c7;">396</div>
+        <span style="font-size:0.75rem; color:#64748b;">Siège central + 7 établissements</span>
+      </div>
+      <div style="background:#fff; border:1px solid #e2e8f0; padding:1rem; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+        <span style="font-size:0.75rem; color:#64748b; font-weight:700; text-transform:uppercase;">ÉQUIPEMENTS EN SERVICE</span>
+        <div style="font-size:1.6rem; font-weight:800; color:#16a34a;">366</div>
+        <span style="font-size:0.75rem; color:#16a34a; font-weight:600;">92.4% de taux de disponibilité</span>
+      </div>
+      <div style="background:#fff; border:1px solid #fee2e2; padding:1rem; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+        <span style="font-size:0.75rem; color:#b91c1c; font-weight:700; text-transform:uppercase;">TOTAL PANNES RÉGIONALES</span>
+        <div style="font-size:1.6rem; font-weight:800; color:#dc2626;">{{ totalPcBureauEnPanneRegional + totalPcPortableEnPanneRegional + totalImprimantesEnPanneRegional + totalReseauEnPanneRegional }}</div>
+        <div style="display:flex; flex-wrap:wrap; gap:0.25rem; margin-top:0.4rem;">
+          <span style="background:#fee2e2; color:#b91c1c; font-size:0.72rem; padding:0.15rem 0.4rem; border-radius:4px; font-weight:700;" title="PC Fixes Bureau">🖥️ Fixes : {{ totalPcBureauEnPanneRegional }}</span>
+          <span style="background:#fee2e2; color:#b91c1c; font-size:0.72rem; padding:0.15rem 0.4rem; border-radius:4px; font-weight:700;" title="PC Portables Laptops">💻 Portables : {{ totalPcPortableEnPanneRegional }}</span>
+          <span style="background:#fef3c7; color:#92400e; font-size:0.72rem; padding:0.15rem 0.4rem; border-radius:4px; font-weight:700;" title="Imprimantes et Scanners">🖨️ Impr. : {{ totalImprimantesEnPanneRegional }}</span>
+          <span style="background:#e0e7ff; color:#3730a3; font-size:0.72rem; padding:0.15rem 0.4rem; border-radius:4px; font-weight:700;" title="Équipements Réseau">🔀 Réseau : {{ totalReseauEnPanneRegional }}</span>
+        </div>
+      </div>
+      <div style="background:#fff; border:1px solid #e2e8f0; padding:1rem; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+        <span style="font-size:0.75rem; color:#64748b; font-weight:700; text-transform:uppercase;">CONNECTIVITÉ FIBRE / 4G</span>
+        <div style="font-size:1.6rem; font-weight:800; color:#0f172a;">7 / 8</div>
+        <span style="font-size:0.75rem; color:#ef4444; font-weight:600;">1 coupure active (Borj El Amri)</span>
+      </div>
+    </div>
+
     <div class="panel-header-row">
       <div>
         <h3>Parc de la CRE Manouba (Siège central & Tous types d'établissements)</h3>
@@ -109,7 +142,7 @@
           <th>Responsable</th>
           <th class="text-center">Total Équipements</th>
           <th class="text-center">En Service</th>
-          <th class="text-center">En Panne</th>
+          <th class="text-center">Détail Pannes Signalées</th>
           <th class="text-center">Connectivité Réseau</th>
         </tr>
       </thead>
@@ -126,7 +159,15 @@
           <td class="text-center font-bold">{{ etab.total }}</td>
           <td class="text-center text-success font-bold">{{ etab.enService }}</td>
           <td class="text-center">
-            <span [class.text-danger]="etab.enPanne > 0" [class.font-bold]="etab.enPanne > 0">{{ etab.enPanne }}</span>
+            <div [class.text-danger]="etab.enPanne > 0" [class.font-bold]="etab.enPanne > 0" style="font-size:1rem;">
+              {{ etab.enPanne }}
+            </div>
+            <div *ngIf="etab.enPanne > 0" style="display:flex; flex-direction:column; gap:0.15rem; font-size:0.7rem; color:#475569; margin-top:0.25rem;">
+              <span *ngIf="etab.pannesDetail.pcBureau > 0">🖥️ PC Fixes : {{ etab.pannesDetail.pcBureau }}</span>
+              <span *ngIf="etab.pannesDetail.pcPortable > 0">💻 Portables : {{ etab.pannesDetail.pcPortable }}</span>
+              <span *ngIf="etab.pannesDetail.imprimanteScanner > 0">🖨️ Imprimantes : {{ etab.pannesDetail.imprimanteScanner }}</span>
+              <span *ngIf="etab.pannesDetail.reseauSwitch > 0">🔀 Réseau : {{ etab.pannesDetail.reseauSwitch }}</span>
+            </div>
           </td>
           <td class="text-center">
             <span class="cnx-pill" [class.cnx-ok]="etab.circuitStatut === 'FIBRE_OK'" [class.cnx-flybox]="etab.circuitStatut === 'FLYBOX_SECOURS'" [class.cnx-down]="etab.circuitStatut === 'COUPURE'">
@@ -136,6 +177,105 @@
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <!-- ONGLET NOUVEAU : SURVEILLANCE RÉSEAU & DÉBIT INTERNET (SONDE IP PUBLIQUE) -->
+  <div *ngIf="activeTab === 'sonde-reseau'" class="sdtic-panel">
+    <div class="panel-header-row">
+      <div>
+        <h3>📡 Surveillance Réseau & Débit Internet des Établissements (Sondes IP Publiques)</h3>
+        <p class="panel-desc">
+          Supervision proactive en temps réel : L'application envoie des paquets de test périodiques (toutes les 5s) vers l'adresse IP publique de chaque établissement afin de mesurer la latence, les pertes de paquets et les débits effectifs (Download/Upload). Alerte proactive immédiate <strong>avec ou sans réclamation du directeur d'établissement</strong>.
+        </p>
+      </div>
+      <div style="display:flex; align-items:center; gap:0.5rem; background:#f0fdf4; border:1px solid #bbf7d0; padding:0.5rem 0.85rem; border-radius:6px;">
+        <span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#16a34a; animation:pulse 1.5s infinite;"></span>
+        <span style="font-size:0.8rem; font-weight:700; color:#166534;">Sonde Périodique Active (Cycle 5s)</span>
+      </div>
+    </div>
+
+    <!-- Table des Sondes Réseau et Débits -->
+    <div class="table-responsive">
+      <table class="sdtic-table">
+        <thead>
+          <tr>
+            <th>Établissement Scolaire</th>
+            <th>Adresse IP Publique</th>
+            <th>Fournisseur & Circuit</th>
+            <th class="text-center">Latence ICMP</th>
+            <th class="text-center">Débit (Down / Up)</th>
+            <th class="text-center">Historique des Paquets</th>
+            <th class="text-center">Perte de Paquets</th>
+            <th>Diagnostic & Alerte Proactive</th>
+            <th class="text-center">Action Immédiate</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let etab of etablissementsCre">
+            <td>
+              <div class="font-bold">🏫 {{ etab.nom }}</div>
+              <div class="text-muted" style="font-size:0.75rem;">{{ etab.categorieLabel }} · {{ etab.delegation }}</div>
+            </td>
+            <td>
+              <div class="font-mono font-bold" style="color:#0284c7; background:#f0f9ff; padding:0.2rem 0.4rem; border-radius:4px; display:inline-block;">
+                🌐 {{ etab.ipPublique }}
+              </div>
+            </td>
+            <td>
+              <div class="font-bold" style="font-size:0.85rem;">{{ etab.fai }}</div>
+              <span class="cnx-pill" [class.cnx-ok]="etab.circuitStatut === 'FIBRE_OK'" [class.cnx-flybox]="etab.circuitStatut === 'FLYBOX_SECOURS'" [class.cnx-down]="etab.circuitStatut === 'COUPURE'">
+                {{ etab.circuitStatut === 'FIBRE_OK' ? '✓ Fibre Stable' : (etab.circuitStatut === 'FLYBOX_SECOURS' ? '⚠️ 4G Flybox' : '🚨 Coupure Ligne') }}
+              </span>
+            </td>
+            <td class="text-center">
+              <span class="font-mono font-bold" [style.color]="etab.circuitStatut === 'COUPURE' ? '#dc2626' : (etab.latenceMs > 40 ? '#d97706' : '#16a34a')">
+                {{ etab.circuitStatut === 'COUPURE' ? 'Timeout' : etab.latenceMs + ' ms' }}
+              </span>
+            </td>
+            <td class="text-center">
+              <div *ngIf="etab.circuitStatut !== 'COUPURE'" class="font-mono" style="font-size:0.85rem;">
+                <span style="color:#16a34a; font-weight:700;">⬇ {{ etab.debitDescendant }} Mb/s</span><br/>
+                <span style="color:#0284c7; font-size:0.75rem;">⬆ {{ etab.debitMontant }} Mb/s</span>
+              </div>
+              <div *ngIf="etab.circuitStatut === 'COUPURE'" class="text-danger font-bold" style="font-size:0.85rem;">
+                0.0 Mb/s
+              </div>
+            </td>
+            <td class="text-center">
+              <div style="display:inline-flex; gap:3px; align-items:center; background:#f8fafc; padding:0.25rem 0.4rem; border-radius:4px; border:1px solid #e2e8f0;">
+                <span *ngFor="let p of etab.historiquePaquets"
+                      [style.width.px]="8" [style.height.px]="8" [style.border-radius.%]="50"
+                      [style.background]="p === 'RECU' ? '#22c55e' : '#ef4444'"
+                      [title]="p === 'RECU' ? 'Paquet acquitté' : 'Paquet perdu'">
+                </span>
+              </div>
+            </td>
+            <td class="text-center">
+              <span class="badge-status" [class.badge-ok]="etab.pertePaquetsPct === 0" [class.badge-alert]="etab.pertePaquetsPct > 0 && etab.pertePaquetsPct < 50" [class.badge-danger]="etab.pertePaquetsPct >= 50" style="font-size:0.75rem;">
+                {{ etab.pertePaquetsPct }}%
+              </span>
+              <div class="text-muted" style="font-size:0.7rem; margin-top:0.2rem;">À {{ etab.dernierPaquetRecu }}</div>
+            </td>
+            <td>
+              <div *ngIf="etab.alerteAutomatiqueSonde" class="text-danger font-bold" style="font-size:0.8rem;">
+                {{ etab.alerteAutomatiqueSonde }}
+              </div>
+              <div *ngIf="!etab.alerteAutomatiqueSonde" class="text-success" style="font-size:0.8rem; font-weight:600;">
+                ✓ Connexion nominale conforme aux SLAs
+              </div>
+              <div class="text-muted" style="font-size:0.7rem; margin-top:0.2rem;">
+                Directeur notifié : {{ etab.directeurNom }}
+              </div>
+            </td>
+            <td class="text-center">
+              <button class="btn btn-sm btn-secondary" (click)="testerConnexionEtablissement(etab)" title="Envoyer une salve de paquets ICMP">
+                ⚡ Ping Test
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <!-- ONGLET : GESTION DES DEMANDES DE COMPTES ELISSA ET EDUNET -->
@@ -509,13 +649,21 @@
           <td class="text-muted">{{ u.email }}</td>
           <td class="text-center">
             <span class="status-pill" [class.pill-ok]="u.actif" [class.pill-ko]="!u.actif">
-              {{ u.actif ? 'Actif' : 'Suspendu' }}
+              {{ u.actif ? '● Actif' : '○ Suspendu' }}
             </span>
           </td>
           <td class="text-center">
-            <button class="btn btn-sm" [class.btn-danger]="u.actif" [class.btn-success]="!u.actif" (click)="toggleCompteStatus(u)">
-              {{ u.actif ? 'Désactiver' : 'Activer' }}
-            </button>
+            <div style="display:flex; gap:0.35rem; justify-content:center;">
+              <button class="btn btn-sm btn-secondary" (click)="ouvrirModalModifierCompteLocal(u)" title="Modifier les coordonnées et le rôle">
+                ✏️ Modifier
+              </button>
+              <button class="btn btn-sm" [class.btn-warning]="u.actif" [class.btn-success]="!u.actif" (click)="toggleCompteStatus(u)" [title]="u.actif ? 'Suspendre' : 'Activer'">
+                {{ u.actif ? '⛔ Suspendre' : '✓ Activer' }}
+              </button>
+              <button class="btn btn-sm btn-danger" (click)="supprimerCompteLocal(u)" title="Supprimer définitivement ce compte local">
+                🗑️
+              </button>
+            </div>
           </td>
         </tr>
       </tbody>
@@ -528,7 +676,7 @@
       <div>
         <h3>Annuaire des Agents Administratifs (Siège CRE, CREFOC & Établissements)</h3>
         <p class="panel-desc">
-          Profils pré-saisis par le SD-TIC : Matricule, Direction, Service, Bureau, Localisation, Dotation matériels (N° de série) et réseau local. Possibilité pour le SD-TIC de déléguer une ou plusieurs tâches.
+          RÈGLE STRICTE : <em>« <strong>Seuls les agents affectés à la Direction TIC</strong> peuvent être délégués pour certaines tâches par le SD-TIC. Les agents d'autres directions ne peuvent pas recevoir de délégations TIC. »</em>
         </p>
       </div>
     </div>
@@ -539,17 +687,19 @@
           <th>Agent Administratif</th>
           <th>Affectation & Bureau</th>
           <th>Réseau Local CRE (LAN)</th>
-          <th>Dotations Équipements (avec N° Série)</th>
+          <th>Dotations Équipements (N° Série)</th>
           <th>Missions / Tâches Déléguées</th>
-          <th>Action SD-TIC</th>
+          <th>Éligibilité & Action SD-TIC</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let ag of agentsAdminList">
           <td>
-            <div class="font-bold text-dark">{{ ag.prenom }} {{ ag.nom }}</div>
+            <div class="font-bold text-dark font-large">👤 {{ ag.prenom }} {{ ag.nom }}</div>
             <div class="font-mono text-xs text-blue">Matricule : {{ ag.matricule }}</div>
-            <div class="text-xs text-gray">{{ ag.direction }}</div>
+            <div class="text-xs text-gray font-bold" [style.color]="estEligibleDelegationTic(ag) ? '#0369a1' : '#64748b'">
+              🏢 {{ ag.direction }}
+            </div>
             <div class="text-xs text-gray">{{ ag.service }}</div>
           </td>
           <td>
@@ -568,14 +718,37 @@
             </div>
           </td>
           <td>
-            <ul class="tasks-mini-list">
-              <li *ngFor="let t of ag.tachesDeleguees">{{ t }}</li>
+            <ul class="tasks-mini-list" *ngIf="ag.tachesDeleguees.length > 0" style="padding-left:1rem; margin:0;">
+              <li *ngFor="let t of ag.tachesDeleguees; let i = index" style="font-size:0.8rem; margin-bottom:0.2rem;">
+                {{ t }} 
+                <button (click)="supprimerTacheDeleguee(ag, i)" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:0.75rem;" title="Retirer la délégation">✕</button>
+              </li>
             </ul>
+            <div *ngIf="ag.tachesDeleguees.length === 0" class="text-muted" style="font-size:0.75rem; font-style:italic;">
+              Aucune tâche déléguée active
+            </div>
           </td>
           <td>
-            <button class="btn btn-sm btn-primary" (click)="ouvrirDelegationTache(ag)">
-              ➕ Déléguer une Tâche
-            </button>
+            <!-- Éligible car Direction TIC -->
+            <div *ngIf="estEligibleDelegationTic(ag)">
+              <span style="background:#dcfce7; color:#15803d; font-size:0.75rem; padding:0.2rem 0.5rem; border-radius:4px; font-weight:700; display:inline-block; margin-bottom:0.4rem;">
+                ✓ Direction TIC · Éligible
+              </span>
+              <br/>
+              <button class="btn btn-sm btn-primary" (click)="ouvrirModalDeleguerTache(ag)">
+                ➕ Déléguer une Tâche
+              </button>
+            </div>
+
+            <!-- Inéligible car Hors Direction TIC -->
+            <div *ngIf="!estEligibleDelegationTic(ag)">
+              <span style="background:#fee2e2; color:#b91c1c; font-size:0.75rem; padding:0.2rem 0.5rem; border-radius:4px; font-weight:700; display:inline-block; margin-bottom:0.3rem;">
+                ⛔ Hors Direction TIC
+              </span>
+              <div style="font-size:0.72rem; color:#b91c1c; line-height:1.2;">
+                Délégation impossible selon règle ministérielle
+              </div>
+            </div>
           </td>
         </tr>
       </tbody>
@@ -1006,6 +1179,102 @@
         <button class="btn btn-secondary" (click)="showModalAcheminement = false">Annuler</button>
         <button class="btn btn-success" (click)="confirmerAcheminementVersAdjoint()">
           ✓ Certifier & Acheminer au Ministère
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 7 : MODIFICATION D'UN COMPTE LOCAL (SD-TIC) -->
+  <div *ngIf="showModalModifierCompteLocal" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3>✏️ Mettre à Jour le Compte Local (SD-TIC)</h3>
+        <button class="modal-close" (click)="showModalModifierCompteLocal = false">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Matricule :</label>
+            <input type="text" [(ngModel)]="formModifierCompteLocal.matricule" class="form-input" />
+          </div>
+          <div class="form-group flex-1">
+            <label>Statut :</label>
+            <select [(ngModel)]="formModifierCompteLocal.actif" class="form-input">
+              <option [ngValue]="true">Actif</option>
+              <option [ngValue]="false">Suspendu</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Nom & Prénom complet :</label>
+          <input type="text" [(ngModel)]="formModifierCompteLocal.nom" class="form-input" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Rôle Officiel Local :</label>
+            <select [(ngModel)]="formModifierCompteLocal.roleLocal" class="form-input">
+              <option value="DIRECTEUR">Directeur d'Établissement</option>
+              <option value="TECHNICIEN_INTERNE">Technicien Interne CRE</option>
+              <option value="TECHNICIEN_PRESTATAIRE">Technicien Prestataire Marché</option>
+              <option value="PROF">Professeur Responsable</option>
+              <option value="AGENT_ADMIN">Agent Administratif</option>
+              <option value="SECRETAIRE_GENERAL">Secrétaire Général CRE</option>
+              <option value="RESPONSABLE_EXAMEN">Responsable Examens (Bac)</option>
+              <option value="INSPECTEUR">Inspecteur Pédagogique TIC</option>
+              <option value="SD_BATIMENTS">Sous-Directeur Bâtiments & Parc Auto</option>
+            </select>
+          </div>
+          <div class="form-group flex-1">
+            <label>Établissement / Affectation :</label>
+            <input type="text" [(ngModel)]="formModifierCompteLocal.etablissement" class="form-input" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Adresse E-mail Institutionnelle :</label>
+          <input type="email" [(ngModel)]="formModifierCompteLocal.email" class="form-input" />
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showModalModifierCompteLocal = false">Annuler</button>
+        <button class="btn btn-primary" (click)="enregistrerModificationCompteLocal()">
+          💾 Enregistrer les Modifications
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 8 : DÉLÉGUER UNE TÂCHE À UN AGENT DE LA DIRECTION TIC -->
+  <div *ngIf="showModalDeleguerTache && agentCibleDelegation" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 560px;">
+      <div class="modal-header">
+        <h3>➕ Déléguer une Tâche Administrative TIC</h3>
+        <button class="modal-close" (click)="showModalDeleguerTache = false">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:0.75rem 1rem; border-radius:6px; font-size:0.85rem; color:#166534; margin-bottom:1rem;">
+          👤 <strong>Agent Habilité :</strong> {{ agentCibleDelegation.prenom }} {{ agentCibleDelegation.nom }}<br/>
+          🏢 <strong>Direction :</strong> {{ agentCibleDelegation.direction }} ({{ agentCibleDelegation.service }})<br/>
+          📍 <strong>Bureau & LAN :</strong> {{ agentCibleDelegation.bureau }} · IP {{ agentCibleDelegation.ipFixe }}
+        </div>
+
+        <div class="form-group">
+          <label style="font-weight:700; color:#0f172a; display:block; margin-bottom:0.4rem;">
+            Intitulé de la mission ou tâche déléguée :
+          </label>
+          <input type="text" [(ngModel)]="nouvelleTacheDeleguee" placeholder="Ex: Pointage hebdomadaire des switchs et fiches d'intervention" class="form-input" />
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showModalDeleguerTache = false">Annuler</button>
+        <button class="btn btn-primary" (click)="validerDelegationTache()">
+          ✓ Confirmer la Délégation
         </button>
       </div>
     </div>

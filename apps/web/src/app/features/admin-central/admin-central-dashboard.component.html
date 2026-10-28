@@ -54,6 +54,12 @@
     <div class="nat-card">
       <span class="nat-card-lbl">PANNES SIGNALÉES NATIONAL</span>
       <span class="nat-card-val text-danger">{{ totalEnPanneNational | number }}</span>
+      <div class="pannes-detail-pills" style="display:flex; flex-wrap:wrap; gap:0.35rem; margin-top:0.4rem; justify-content:center;">
+        <span class="pill-panne" style="background:#fee2e2; color:#b91c1c; font-size:0.75rem; padding:0.2rem 0.45rem; border-radius:4px; font-weight:600;" title="PC Fixes de bureau en panne">🖥️ Fixes : <strong>{{ totalPcBureauEnPanneNational }}</strong></span>
+        <span class="pill-panne" style="background:#fee2e2; color:#b91c1c; font-size:0.75rem; padding:0.2rem 0.45rem; border-radius:4px; font-weight:600;" title="PC Portables (laptops) en panne">💻 Portables : <strong>{{ totalPcPortableEnPanneNational }}</strong></span>
+        <span class="pill-panne" style="background:#fef3c7; color:#92400e; font-size:0.75rem; padding:0.2rem 0.45rem; border-radius:4px; font-weight:600;" title="Imprimantes & Scanners en panne">🖨️ Impr. : <strong>{{ totalImprimantesEnPanneNational }}</strong></span>
+        <span class="pill-panne" style="background:#e0e7ff; color:#3730a3; font-size:0.75rem; padding:0.2rem 0.45rem; border-radius:4px; font-weight:600;" title="Équipements Réseau & Switchs en panne">🔀 Réseau : <strong>{{ totalReseauEnPanneNational }}</strong></span>
+      </div>
       <span class="nat-card-sub">Prise en charge par CRE</span>
     </div>
     <div class="nat-card">
@@ -135,36 +141,74 @@
       <div>
         <h3>Gestion des Comptes SD TIC & Directeurs TIC Régionaux</h3>
         <p class="panel-sub">
-          L'Admin Central est seul habilité à nommer, réaffecter un CRE et activer/suspendre les comptes des Sous-Directeurs TIC et Directeurs TIC.
+          L'Admin Central dispose des droits complets sur les responsables régionaux : <strong>Ajout (Nomination)</strong>, <strong>Mise à jour (MAJ)</strong>, <strong>Activation / Suspension</strong> et <strong>Suppression</strong>.
         </p>
+      </div>
+      <div *ngIf="isAdminCentralTitulaire">
+        <button class="btn btn-primary" (click)="ouvrirModalNouveauResponsable()">
+          ➕ Nommer un Nouveau Responsable TIC
+        </button>
       </div>
     </div>
 
     <div *ngIf="!isAdminCentralTitulaire" class="restriction-alert">
-      ℹ️ <strong>Mode consultation Adjoint :</strong> Seul l'Admin Central titulaire dispose des prérogatives de suspension ou d'activation des responsables de CRE.
+      ℹ️ <strong>Mode consultation Adjoint :</strong> Seul l'Admin Central titulaire dispose des prérogatives de création, modification, suppression ou suspension des responsables TIC des CRE.
     </div>
 
-    <div class="cards-grid">
-      <div *ngFor="let c of creList" class="cre-mgmt-card">
-        <div class="card-head">
-          <span class="cre-badge">{{ c.nom }}</span>
-          <span class="status-indicator" [class.active]="c.sdticActif" [class.inactive]="!c.sdticActif">
-            {{ c.sdticActif ? 'Compte Actif' : 'Compte Suspendu' }}
-          </span>
-        </div>
-        <div class="card-body">
-          <div class="manager-name">{{ c.sdticNom }}</div>
-          <div class="manager-email">{{ c.sdticEmail }}</div>
-          <div class="scope-info">
-            Périmètre : Siège CRE + {{ c.totalEtablissements }} établissements scolaires (Écoles primaires, collèges, lycées).
-          </div>
-        </div>
-        <div class="card-footer" *ngIf="isAdminCentralTitulaire">
-          <button class="btn btn-sm" [class.btn-danger]="c.sdticActif" [class.btn-success]="!c.sdticActif" (click)="toggleSdTicStatus(c)">
-            {{ c.sdticActif ? 'Suspendre l\'accès' : 'Réactiver l\'accès' }}
-          </button>
-        </div>
-      </div>
+    <!-- Table complète de gestion des Responsables TIC -->
+    <div class="table-responsive">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Matricule</th>
+            <th>Responsable (Nom & Prénom)</th>
+            <th>Titre / Fonction</th>
+            <th>CRE Assignée</th>
+            <th>Contact Professionnel</th>
+            <th class="text-center">Statut</th>
+            <th class="text-center" *ngIf="isAdminCentralTitulaire">Actions de Gestion</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let resp of responsablesTicList">
+            <td class="font-mono font-bold">{{ resp.matricule }}</td>
+            <td>
+              <div class="font-bold font-large">👤 {{ resp.prenom }} {{ resp.nom }}</div>
+              <div class="text-muted" style="font-size:0.75rem;" *ngIf="resp.dateNomination">Nommé le : {{ resp.dateNomination }}</div>
+            </td>
+            <td>
+              <span class="badge-role" [style.background]="resp.roleTitre === 'DIRECTEUR_TIC' ? '#dbeafe' : '#e0e7ff'" [style.color]="resp.roleTitre === 'DIRECTEUR_TIC' ? '#1e40af' : '#3730a3'">
+                {{ resp.roleLabel }}
+              </span>
+            </td>
+            <td>
+              <strong style="color:#0f172a;">🏛️ {{ resp.creNom }}</strong>
+            </td>
+            <td>
+              <div>✉️ {{ resp.email }}</div>
+              <div class="text-muted" style="font-size:0.8rem;">📞 {{ resp.telephone }}</div>
+            </td>
+            <td class="text-center">
+              <span class="status-indicator" [class.active]="resp.actif" [class.inactive]="!resp.actif">
+                {{ resp.actif ? '● Actif' : '○ Suspendu' }}
+              </span>
+            </td>
+            <td class="text-center" *ngIf="isAdminCentralTitulaire">
+              <div style="display:flex; gap:0.35rem; justify-content:center;">
+                <button class="btn btn-sm btn-secondary" (click)="ouvrirModalModifierResponsable(resp)" title="Modifier les accès et coordonnées">
+                  ✏️ Modifier
+                </button>
+                <button class="btn btn-sm" [class.btn-warning]="resp.actif" [class.btn-success]="!resp.actif" (click)="toggleResponsableTicStatut(resp)" [title]="resp.actif ? 'Suspendre le compte' : 'Réactiver le compte'">
+                  {{ resp.actif ? '⛔ Suspendre' : '✓ Activer' }}
+                </button>
+                <button class="btn btn-sm btn-danger" (click)="supprimerResponsableTic(resp)" title="Supprimer le compte du responsable">
+                  🗑️
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
@@ -214,6 +258,8 @@
             <th class="text-center">Pannes & Pertes</th>
             <th class="text-center">Comptes Locaux</th>
             <th class="text-center">Rapports & Exports</th>
+            <th class="text-center">Statut</th>
+            <th class="text-center">Actions Compte</th>
           </tr>
         </thead>
         <tbody>
@@ -259,6 +305,24 @@
                       (click)="togglePermission(adj, 'rapports')" title="Cliquez pour autoriser/interdire">
                 {{ adj.tachesAutorisees.rapports ? '✓ Autorisée' : '✗ Interdite' }}
               </button>
+            </td>
+            <td class="text-center">
+              <span class="status-indicator" [class.active]="adj.actif" [class.inactive]="!adj.actif">
+                {{ adj.actif ? '● Actif' : '○ Suspendu' }}
+              </span>
+            </td>
+            <td class="text-center">
+              <div style="display:flex; gap:0.35rem; justify-content:center;">
+                <button class="btn btn-sm btn-secondary" (click)="ouvrirModalModifierAdjoint(adj)" title="Modifier les informations et coordonnées">
+                  ✏️ MAJ
+                </button>
+                <button class="btn btn-sm" [class.btn-warning]="adj.actif" [class.btn-success]="!adj.actif" (click)="toggleAdjointStatut(adj)" [title]="adj.actif ? 'Suspendre' : 'Activer'">
+                  {{ adj.actif ? '⛔ Suspendre' : '✓ Activer' }}
+                </button>
+                <button class="btn btn-sm btn-danger" (click)="supprimerAdjoint(adj)" title="Supprimer cet adjoint">
+                  🗑️
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -691,6 +755,220 @@
         <button class="btn btn-secondary" (click)="showModalNouvelAdjoint = false">Annuler</button>
         <button class="btn btn-primary" (click)="enregistrerNouvelAdjoint()">
           ➕ Créer le Compte Adjoint
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL MODIFIER UN COMPTE ADMIN ADJOINT (ADMIN CENTRAL) -->
+  <div *ngIf="showModalModifierAdjoint" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3>✏️ Mettre à Jour le Compte Admin Adjoint</h3>
+        <button class="modal-close" (click)="showModalModifierAdjoint = false">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Matricule Ministériel :</label>
+            <input type="text" [(ngModel)]="formModifierAdjoint.matricule" class="form-input" />
+          </div>
+          <div class="form-group flex-1">
+            <label>Statut du compte :</label>
+            <select [(ngModel)]="formModifierAdjoint.actif" class="form-input">
+              <option [ngValue]="true">Actif</option>
+              <option [ngValue]="false">Suspendu</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Nom complet :</label>
+          <input type="text" [(ngModel)]="formModifierAdjoint.nom" class="form-input" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Adresse E-mail :</label>
+            <input type="email" [(ngModel)]="formModifierAdjoint.email" class="form-input" />
+          </div>
+          <div class="form-group flex-1">
+            <label>Téléphone :</label>
+            <input type="text" [(ngModel)]="formModifierAdjoint.telephone" class="form-input" />
+          </div>
+        </div>
+
+        <div style="border-top:1px solid #e2e8f0; padding-top:1rem; margin-top:1rem;">
+          <label style="font-weight:700; color:#0f172a; display:block; margin-bottom:0.6rem;">
+            🎯 Tâches officielles autorisées :
+          </label>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.6rem;">
+            <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem; font-weight:600; cursor:pointer;">
+              <input type="checkbox" [(ngModel)]="formModifierAdjoint.tachesAutorisees.comptesElissaEdunet" />
+              <span>🔑 Comptes Elissa & Edunet</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem; font-weight:600; cursor:pointer;">
+              <input type="checkbox" [(ngModel)]="formModifierAdjoint.tachesAutorisees.arrivages" />
+              <span>📦 Arrivages & Marchés</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem; font-weight:600; cursor:pointer;">
+              <input type="checkbox" [(ngModel)]="formModifierAdjoint.tachesAutorisees.inventaires" />
+              <span>📋 Campagnes Inventaire</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem; font-weight:600; cursor:pointer;">
+              <input type="checkbox" [(ngModel)]="formModifierAdjoint.tachesAutorisees.pannesPertes" />
+              <span>⚠️ Pannes & Pertes</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem; font-weight:600; cursor:pointer;">
+              <input type="checkbox" [(ngModel)]="formModifierAdjoint.tachesAutorisees.comptesLocaux" />
+              <span>👥 Comptes Locaux CRE</span>
+            </label>
+            <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem; font-weight:600; cursor:pointer;">
+              <input type="checkbox" [(ngModel)]="formModifierAdjoint.tachesAutorisees.rapports" />
+              <span>📊 Rapports & Exports</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showModalModifierAdjoint = false">Annuler</button>
+        <button class="btn btn-primary" (click)="enregistrerModificationAdjoint()">
+          💾 Enregistrer les Modifications
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL NOUVEAU RESPONSABLE TIC RÉGIONAL (SD TIC / DIRECTEUR TIC) -->
+  <div *ngIf="showModalNouveauResponsable" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3>➕ Nommer un Nouveau Responsable TIC Régional</h3>
+        <button class="modal-close" (click)="showModalNouveauResponsable = false">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Commissariat Régional (CRE) :</label>
+            <select [(ngModel)]="formNouveauResponsable.creId" class="form-input">
+              <option *ngFor="let cre of creList" [value]="cre.id">{{ cre.nom }}</option>
+            </select>
+          </div>
+          <div class="form-group flex-1">
+            <label>Fonction / Rôle :</label>
+            <select [(ngModel)]="formNouveauResponsable.roleTitre" class="form-input">
+              <option value="SD_TIC">Sous-Directeur TIC</option>
+              <option value="DIRECTEUR_TIC">Directeur Régional TIC</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Matricule Ministériel :</label>
+            <input type="text" [(ngModel)]="formNouveauResponsable.matricule" class="form-input" />
+          </div>
+          <div class="form-group flex-1">
+            <label>Téléphone :</label>
+            <input type="text" [(ngModel)]="formNouveauResponsable.telephone" class="form-input" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Prénom :</label>
+            <input type="text" [(ngModel)]="formNouveauResponsable.prenom" placeholder="Ex: Mohamed" class="form-input" />
+          </div>
+          <div class="form-group flex-1">
+            <label>Nom :</label>
+            <input type="text" [(ngModel)]="formNouveauResponsable.nom" placeholder="Ex: Gharbi" class="form-input" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Adresse E-mail institutionnelle :</label>
+          <input type="email" [(ngModel)]="formNouveauResponsable.email" placeholder="sdtic.region@edunet.tn" class="form-input" />
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showModalNouveauResponsable = false">Annuler</button>
+        <button class="btn btn-primary" (click)="enregistrerNouveauResponsable()">
+          ➕ Valider la Nomination
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL MODIFIER UN RESPONSABLE TIC RÉGIONAL -->
+  <div *ngIf="showModalModifierResponsable" class="modal-backdrop">
+    <div class="modal-card" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3>✏️ Modifier le Compte du Responsable TIC</h3>
+        <button class="modal-close" (click)="showModalModifierResponsable = false">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Commissariat Régional (CRE) :</label>
+            <select [(ngModel)]="formModifierResponsable.creId" class="form-input">
+              <option *ngFor="let cre of creList" [value]="cre.id">{{ cre.nom }}</option>
+            </select>
+          </div>
+          <div class="form-group flex-1">
+            <label>Fonction / Rôle :</label>
+            <select [(ngModel)]="formModifierResponsable.roleTitre" class="form-input">
+              <option value="SD_TIC">Sous-Directeur TIC</option>
+              <option value="DIRECTEUR_TIC">Directeur Régional TIC</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Matricule Ministériel :</label>
+            <input type="text" [(ngModel)]="formModifierResponsable.matricule" class="form-input" />
+          </div>
+          <div class="form-group flex-1">
+            <label>Statut :</label>
+            <select [(ngModel)]="formModifierResponsable.actif" class="form-input">
+              <option [ngValue]="true">Actif</option>
+              <option [ngValue]="false">Suspendu</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>Prénom :</label>
+            <input type="text" [(ngModel)]="formModifierResponsable.prenom" class="form-input" />
+          </div>
+          <div class="form-group flex-1">
+            <label>Nom :</label>
+            <input type="text" [(ngModel)]="formModifierResponsable.nom" class="form-input" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label>E-mail :</label>
+            <input type="email" [(ngModel)]="formModifierResponsable.email" class="form-input" />
+          </div>
+          <div class="form-group flex-1">
+            <label>Téléphone :</label>
+            <input type="text" [(ngModel)]="formModifierResponsable.telephone" class="form-input" />
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showModalModifierResponsable = false">Annuler</button>
+        <button class="btn btn-primary" (click)="enregistrerModificationResponsable()">
+          💾 Enregistrer les Modifications
         </button>
       </div>
     </div>

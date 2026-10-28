@@ -59,6 +59,7 @@ export interface AdminAdjointCompte {
   prenom: string;
   email: string;
   telephone: string;
+  actif: boolean;
   tachesAutorisees: {
     arrivages: boolean;
     inventaires: boolean;
@@ -146,6 +147,7 @@ export class ComptesDemandesService {
       prenom: 'Fatma',
       email: 'adjoint1@edunet.tn',
       telephone: '+216 71 568 200',
+      actif: true,
       tachesAutorisees: {
         arrivages: false,
         inventaires: true,
@@ -162,6 +164,7 @@ export class ComptesDemandesService {
       prenom: 'Tarek',
       email: 'adjoint2@edunet.tn',
       telephone: '+216 71 568 201',
+      actif: true,
       tachesAutorisees: {
         arrivages: true,
         inventaires: false,
@@ -178,6 +181,7 @@ export class ComptesDemandesService {
       prenom: 'Rim',
       email: 'adjoint3@edunet.tn',
       telephone: '+216 71 568 202',
+      actif: true,
       tachesAutorisees: {
         arrivages: false,
         inventaires: true,
@@ -391,6 +395,7 @@ export class ComptesDemandesService {
       prenom: nouveau.prenom,
       email: nouveau.email,
       telephone: nouveau.telephone,
+      actif: true,
       tachesAutorisees: nouveau.tachesAutorisees
     };
 
@@ -398,7 +403,49 @@ export class ComptesDemandesService {
     return compte;
   }
 
-  // 6. Mise à jour des tâches d'un adjoint par l'Admin Central
+  // 6. Mise à jour complète des informations et tâches d'un adjoint par l'Admin Central
+  modifierAdminAdjoint(adjointId: string, donnees: {
+    matricule?: string;
+    nom?: string;
+    prenom?: string;
+    email?: string;
+    telephone?: string;
+    actif?: boolean;
+    tachesAutorisees?: AdminAdjointCompte['tachesAutorisees'];
+  }): void {
+    const adjoints = this.adjointsSubject.value;
+    const target = adjoints.find(a => a.id === adjointId);
+    if (target) {
+      if (donnees.matricule !== undefined) target.matricule = donnees.matricule;
+      if (donnees.nom !== undefined) target.nom = donnees.nom;
+      if (donnees.prenom !== undefined) target.prenom = donnees.prenom;
+      if (donnees.email !== undefined) target.email = donnees.email;
+      if (donnees.telephone !== undefined) target.telephone = donnees.telephone;
+      if (donnees.actif !== undefined) target.actif = donnees.actif;
+      if (donnees.tachesAutorisees !== undefined) target.tachesAutorisees = { ...donnees.tachesAutorisees };
+      this.adjointsSubject.next([...adjoints]);
+    }
+  }
+
+  // 7. Suppression d'un compte adjoint par l'Admin Central
+  supprimerAdminAdjoint(adjointId: string): void {
+    const filtered = this.adjointsSubject.value.filter(a => a.id !== adjointId);
+    this.adjointsSubject.next(filtered);
+  }
+
+  // 8. Activation / Désactivation d'un adjoint
+  toggleAdminAdjointStatut(adjointId: string): boolean {
+    const adjoints = this.adjointsSubject.value;
+    const target = adjoints.find(a => a.id === adjointId);
+    if (target) {
+      target.actif = !target.actif;
+      this.adjointsSubject.next([...adjoints]);
+      return target.actif;
+    }
+    return false;
+  }
+
+  // 9. Mise à jour des tâches d'un adjoint par l'Admin Central
   modifierTachesAdjoint(adjointId: string, nouvellesTaches: AdminAdjointCompte['tachesAutorisees']): void {
     const adjoints = this.adjointsSubject.value;
     const target = adjoints.find(a => a.id === adjointId);
@@ -410,6 +457,6 @@ export class ComptesDemandesService {
 
   // Retourne les adjoints habilités pour la gestion des comptes Elissa/Edunet
   getAdjointsHabilitesComptes(): AdminAdjointCompte[] {
-    return this.adjointsSubject.value.filter(a => a.tachesAutorisees.comptesElissaEdunet);
+    return this.adjointsSubject.value.filter(a => a.actif && a.tachesAutorisees.comptesElissaEdunet);
   }
 }
