@@ -1,0 +1,56 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Fonction helper pour vérifier si l'utilisateur est authentifié
+    function estAuthentifie() {
+      return request.auth != null;
+    }
+
+    // Collection des CREs (Lecture publique/authentifiée, écriture réservée Admin Central)
+    match /cres/{creId} {
+      allow read: if true;
+      allow write: if estAuthentifie();
+    }
+
+    // Collection des Établissements & Sondes IP Réseau
+    match /etablissements/{etablissementId} {
+      allow read: if true;
+      allow write: if estAuthentifie();
+    }
+
+    // Comptes locaux de la CRE
+    match /comptes_locaux/{compteId} {
+      allow read: if estAuthentifie();
+      allow write: if estAuthentifie();
+    }
+
+    // Agents administratifs pré-saisis et dotations
+    match /agents_administratifs/{agentId} {
+      allow read: if estAuthentifie();
+      allow write: if estAuthentifie();
+    }
+
+    // Admin Adjoints du Ministère
+    match /admin_adjoints/{adjointId} {
+      allow read: if estAuthentifie();
+      allow write: if estAuthentifie();
+    }
+
+    // Demandes de comptes Elissa & Edunet
+    match /demandes_elissa_edunet/{demandeId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if estAuthentifie();
+    }
+
+    // Planning et Ordres de Mission
+    match /planning_interventions/{planId} {
+      allow read, write: if estAuthentifie();
+    }
+
+    match /ordres_mission/{omId} {
+      allow read, write: if estAuthentifie();
+    }
+  }
+}
