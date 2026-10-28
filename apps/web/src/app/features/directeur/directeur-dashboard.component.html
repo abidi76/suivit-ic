@@ -754,7 +754,7 @@
             <li *ngFor="let eq of selectedPrestataireForValidation.equipements">
               {{ eq.marqueModele }} (S/N: <code>{{ eq.numeroSerie }}</code>) — {{ eq.action }}
               <span *ngIf="eq.piecesRechange.length">
-                (Pièce : {{ eq.piecesRechange[0]?.designation }} - S/N: <code>{{ eq.piecesRechange[0]?.numeroSerie }}</code>)
+                (Pièce : {{ eq.piecesRechange[0].designation }} - S/N: <code>{{ eq.piecesRechange[0].numeroSerie }}</code>)
               </span>
             </li>
           </ul>
