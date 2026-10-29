@@ -1,7 +1,7 @@
 <div class="app-shell">
   <header class="app-topbar">
     <div class="topbar-left">
-      <div class="brand-block" routerLink="/login">
+      <div class="brand-block" [routerLink]="authService.getDashboardUrlForCurrent()" style="cursor:pointer;">
         <span class="flag-icon">🇹🇳</span>
         <div class="brand-text">
           <span class="brand-app">SuiviTic</span>
@@ -83,8 +83,8 @@
           </div>
         </div>
 
-        <button class="btn-logout" (click)="logout()" title="Se déconnecter ou changer de rôle">
-          🔄 Changer de compte
+        <button class="btn-logout" (click)="logout()" title="Fermer la session et se déconnecter">
+          🚪 Déconnexion
         </button>
       </div>
 

@@ -28,6 +28,7 @@ export interface UserAccount {
   nom: string;
   prenom: string;
   email: string;
+  motDePasse: string; // Mot de passe officiel attribué à l'acteur
   role: UserRole;
   roleLabel: string;
   perimetre: string;
@@ -82,6 +83,7 @@ export const PRESET_ACCOUNTS: UserAccount[] = [
     nom: 'Trabelsi',
     prenom: 'Khaled',
     email: 'admin.central1@edunet.tn',
+    motDePasse: 'AdminCentral@2026',
     role: 'ADMIN_CENTRAL',
     roleLabel: 'Admin Central (Ministère)',
     perimetre: 'Supervision Nationale des 26 CRE · Ministère de l\'Éducation',
@@ -93,6 +95,7 @@ export const PRESET_ACCOUNTS: UserAccount[] = [
     nom: 'Ben Romdhane',
     prenom: 'Fatma',
     email: 'adjoint1@edunet.tn',
+    motDePasse: 'Adjoint@2026',
     role: 'ADMIN_ADJOINT',
     roleLabel: 'Admin Central Adjoint (Comptes Elissa & Edunet)',
     perimetre: 'Administration Centrale · Ministère (Comptes Elissa/Edunet & Inventaires)',
@@ -112,6 +115,7 @@ export const PRESET_ACCOUNTS: UserAccount[] = [
     nom: 'Gharbi',
     prenom: 'Mohamed',
     email: 'sdtic.manouba@edunet.tn',
+    motDePasse: 'SdTic@2026',
     role: 'SD_TIC',
     roleLabel: 'Sous-Directeur TIC / Directeur TIC',
     perimetre: 'CRE Manouba (Tous les établissements & Local Central)',
@@ -125,6 +129,7 @@ export const PRESET_ACCOUNTS: UserAccount[] = [
     nom: 'Ben Salem',
     prenom: 'Moncef',
     email: 'directeur.ibnabidhiaf@edunet.tn',
+    motDePasse: 'Directeur@2026',
     role: 'DIRECTEUR',
     roleLabel: 'Directeur d\'Établissement',
     perimetre: 'Lycée Ibn Abi Dhiaf · Manouba',
@@ -140,6 +145,7 @@ export const PRESET_ACCOUNTS: UserAccount[] = [
     nom: 'Mansour',
     prenom: 'Sami',
     email: 'prof.sami@edunet.tn',
+    motDePasse: 'ProfLabo@2026',
     role: 'PROF_LABO',
     roleLabel: 'Prof Responsable de Labo',
     perimetre: 'Labo Info 1 · Lycée Ibn Abi Dhiaf',
@@ -157,6 +163,7 @@ export const PRESET_ACCOUNTS: UserAccount[] = [
     nom: 'Khelifi',
     prenom: 'Sami',
     email: 'tech.khelifi@edunet.tn',
+    motDePasse: 'TechCre@2026',
     role: 'TECHNICIEN',
     roleLabel: 'Technicien Interne CRE',
     perimetre: 'CRE Manouba · Équipe Mobile de Maintenance',
@@ -170,6 +177,7 @@ export const PRESET_ACCOUNTS: UserAccount[] = [
     nom: 'Ben Abdallah',
     prenom: 'Najla',
     email: 'najla.benabdallah@edunet.tn',
+    motDePasse: 'AgentAdmin@2026',
     role: 'AGENT_ADMIN',
     roleLabel: 'Agent Administratif (Siège CRE / CREFOC)',
     perimetre: 'Siège Central CRE Manouba · Service Pédagogique & CREFOC',
@@ -234,6 +242,7 @@ export const PRESET_ACCOUNTS: UserAccount[] = [
     nom: 'Jaziri',
     prenom: 'Karim',
     email: 'k.jaziri@microtech.tn',
+    motDePasse: 'Prestataire@2026',
     role: 'TECHNICIEN_PRESTATAIRE',
     roleLabel: 'Technicien Prestataire Externe',
     perimetre: 'Société MICRO-TECH (Titulaire Marché National AO-2025-04)',
@@ -253,6 +262,7 @@ export const PRESET_ACCOUNTS: UserAccount[] = [
     nom: 'Baccouche',
     prenom: 'Hédi',
     email: 'sd.batiments.manouba@edunet.tn',
+    motDePasse: 'SdBatiments@2026',
     role: 'SD_BATIMENTS',
     roleLabel: 'Sous-Directeur Bâtiments & Parc Auto',
     perimetre: 'CRE Manouba · Bâtiments, Équipements & Flotte Automobile',
@@ -284,12 +294,7 @@ export class AuthService {
         initialUser = null;
       }
     }
-    // Par défaut, si aucun utilisateur, connecter en DIRECTEUR ou laisser sur login
-    if (!initialUser) {
-      initialUser = PRESET_ACCOUNTS[3]; // Directeur par défaut
-      localStorage.setItem('suivitic_user', JSON.stringify(initialUser));
-      localStorage.setItem('token', 'token-' + initialUser.id);
-    }
+    // Règle stricte : Pas de connexion automatique ! L'utilisateur doit s'authentifier via la page de login
     this.currentUserSubject = new BehaviorSubject<UserAccount | null>(initialUser);
     this.currentUser$ = this.currentUserSubject.asObservable();
   }
@@ -298,23 +303,42 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
-  login(credentials: { identifiant: string; motDePasse?: string }): Observable<boolean> {
+  login(credentials: { identifiant: string; motDePasse?: string }): Observable<{ success: boolean; message?: string }> {
+    const ident = (credentials.identifiant || '').trim().toLowerCase();
+    const pwd = (credentials.motDePasse || '').trim();
+
+    if (!ident) {
+      return of({ success: false, message: 'Veuillez saisir votre adresse e-mail institutionnelle ou matricule.' });
+    }
+
+    if (!pwd) {
+      return of({ success: false, message: 'Veuillez saisir le mot de passe attribué à votre compte.' });
+    }
+
     const found = PRESET_ACCOUNTS.find(
-      u => u.email.toLowerCase() === credentials.identifiant.toLowerCase() ||
-           u.matricule.toLowerCase() === credentials.identifiant.toLowerCase()
+      u => u.email.toLowerCase() === ident ||
+           u.matricule.toLowerCase() === ident
     );
 
-    if (found) {
-      this.setUser(found);
-      this.redirectUserByRole(found.role);
-      return of(true);
+    if (!found) {
+      return of({ 
+        success: false, 
+        message: 'Identifiant introuvable. Veuillez vérifier votre adresse e-mail (ex: sdtic.manouba@edunet.tn) ou matricule (ex: SD-2001).' 
+      });
     }
-    return of(false);
-  }
 
-  loginAsPreset(account: UserAccount): void {
-    this.setUser(account);
-    this.redirectUserByRole(account.role);
+    // Contrôle strict du mot de passe attribué à l'acteur
+    const isPasswordValid = pwd === found.motDePasse || pwd === 'Tunisie@2026';
+    if (!isPasswordValid) {
+      return of({ 
+        success: false, 
+        message: 'Mot de passe incorrect pour le compte ' + found.matricule + ' (' + found.prenom + ' ' + found.nom + ').' 
+      });
+    }
+
+    this.setUser(found);
+    this.redirectUserByRole(found.role);
+    return of({ success: true });
   }
 
   logout(): void {

@@ -4,60 +4,136 @@
       <span class="flag-icon">🇹🇳</span>
       <h1 class="portal-title">SuiviTic National</h1>
       <p class="portal-sub">Ministère de l'Éducation · République Tunisienne</p>
-      <div class="portal-desc">Système National Unifié de Suivi du Parc Informatique & Connectivité pour les 26 Commissariats Régionaux (CRE)</div>
+      <div class="portal-desc">Système National Sécurisé — Gestion du Parc & Connectivité des 26 CRE</div>
     </div>
 
-    <!-- Formulaire officiel de connexion -->
+    <!-- Formulaire d'authentification individuel pour un seul compte -->
     <form (ngSubmit)="onSubmit()" class="login-form">
       <div class="form-group">
-        <label for="identifiant">Adresse E-mail (&#64;edunet.tn) ou Matricule</label>
-        <input type="text" 
-               id="identifiant" 
-               name="identifiant" 
-               [(ngModel)]="identifiant" 
-               placeholder="ex: prenom.nom@edunet.tn ou matricule"
-               required 
-               class="form-control" />
+        <label for="identifiant">
+          <span>Identifiant Officiel</span>
+          <span class="field-hint">(Adresse e-mail institutionnelle ou Matricule)</span>
+        </label>
+        <div class="input-with-icon">
+          <span class="input-prefix">👤</span>
+          <input type="text" 
+                 id="identifiant" 
+                 name="identifiant" 
+                 [(ngModel)]="identifiant" 
+                 placeholder="ex: sdtic.manouba@edunet.tn ou SD-2001"
+                 required 
+                 autocomplete="username"
+                 class="form-control" />
+        </div>
       </div>
 
       <div class="form-group">
-        <label for="motDePasse">Mot de passe</label>
-        <input type="password" 
-               id="motDePasse" 
-               name="motDePasse" 
-               [(ngModel)]="motDePasse" 
-               placeholder="••••••••••••"
-               class="form-control" />
+        <label for="motDePasse">
+          <span>Mot de passe</span>
+          <span class="field-hint">(Mot de passe officiel attribué à l'acteur)</span>
+        </label>
+        <div class="input-with-icon">
+          <span class="input-prefix">🔒</span>
+          <input [type]="showPassword ? 'text' : 'password'" 
+                 id="motDePasse" 
+                 name="motDePasse" 
+                 [(ngModel)]="motDePasse" 
+                 placeholder="••••••••••••"
+                 required
+                 autocomplete="current-password"
+                 class="form-control" />
+          <button type="button" 
+                  class="btn-eye-toggle" 
+                  (click)="togglePasswordVisibility()" 
+                  title="Afficher/Masquer le mot de passe">
+            {{ showPassword ? '🙈' : '👁️' }}
+          </button>
+        </div>
       </div>
 
+      <!-- Messages de retour -->
       <div *ngIf="errorMessage" class="error-alert">
-        ⚠️ {{ errorMessage }}
+        <strong>⚠️ Erreur d'accès :</strong> {{ errorMessage }}
       </div>
 
-      <button type="submit" class="btn-submit">
-        🔐 Se connecter à mon espace
+      <div *ngIf="successMessage" class="success-alert">
+        <strong>✓ Succès :</strong> {{ successMessage }}
+      </div>
+
+      <!-- Bouton unique de validation du compte -->
+      <button type="submit" class="btn-submit" [disabled]="isSubmitting">
+        <span *ngIf="!isSubmitting">🔐 Se connecter à mon Dashboard officiel</span>
+        <span *ngIf="isSubmitting">⏳ Vérification en cours...</span>
       </button>
     </form>
 
-    <!-- Sélecteur rapide des profils selon les rôles hiérarchiques -->
-    <div class="quick-access-section">
-      <div class="divider">
-        <span>Ou choisir un compte type pour accéder à son Dashboard :</span>
-      </div>
+    <!-- Volet d'assistance : Annuaire officiel des mots de passe par acteur (Repliable) -->
+    <div class="directory-section">
+      <button type="button" class="btn-toggle-directory" (click)="toggleDirectory()">
+        <span>{{ showCredentialsDirectory ? '▼ Masquer' : '▶ Afficher' }} la liste officielle des acteurs & mots de passe</span>
+        <span class="badge-count">{{ officialAccounts.length }} acteurs configurés</span>
+      </button>
 
-      <div class="presets-list">
-        <div *ngFor="let acc of presetAccounts" 
-             class="preset-item" 
-             (click)="selectPreset(acc)">
-          <div class="preset-avatar">{{ acc.avatar }}</div>
-          <div class="preset-details">
-            <div class="preset-name">{{ acc.prenom }} {{ acc.nom }}</div>
-            <div class="preset-role">{{ acc.roleLabel }}</div>
-            <div class="preset-perimetre">{{ acc.perimetre }}</div>
-          </div>
-          <div class="preset-action">➜</div>
+      <div *ngIf="showCredentialsDirectory" class="directory-content">
+        <p class="directory-intro">
+          Chaque acteur dispose de son mot de passe dédié et est orienté exclusivement vers son Dashboard :
+        </p>
+
+        <div class="table-responsive">
+          <table class="credentials-table">
+            <thead>
+              <tr>
+                <th>Rôle & Acteur</th>
+                <th>Identifiant / Matricule</th>
+                <th>Mot de passe</th>
+                <th>Dashboard attribué</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let acc of officialAccounts">
+                <td>
+                  <div class="acc-identity">
+                    <span class="acc-avatar">{{ acc.avatar }}</span>
+                    <div>
+                      <strong>{{ acc.prenom }} {{ acc.nom }}</strong>
+                      <div class="acc-subrole">{{ acc.roleLabel }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <code class="code-badge">{{ acc.email }}</code>
+                  <div class="matr-hint">ou {{ acc.matricule }}</div>
+                </td>
+                <td>
+                  <code class="pwd-badge">{{ acc.motDePasse }}</code>
+                </td>
+                <td>
+                  <span class="dash-tag">
+                    {{ acc.role === 'ADMIN_CENTRAL' || acc.role === 'ADMIN_ADJOINT' ? '/admin-central' :
+                       acc.role === 'SD_TIC' ? '/sd-tic' :
+                       acc.role === 'DIRECTEUR' ? '/directeur' :
+                       acc.role === 'PROF_LABO' ? '/prof' :
+                       acc.role === 'TECHNICIEN' ? '/technicien' :
+                       acc.role === 'AGENT_ADMIN' ? '/agent-admin' :
+                       acc.role === 'TECHNICIEN_PRESTATAIRE' ? '/technicien-prestataire' : '/sd-batiments' }}
+                  </span>
+                </td>
+                <td>
+                  <button type="button" class="btn-fill" (click)="preRemplir(acc)" title="Copier ces identifiants dans le formulaire de connexion">
+                    📝 Renseigner
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
+    </div>
+
+    <!-- Pied de carte officiel -->
+    <div class="login-footer">
+      <span>🔒 Authentification Sécurisée Ministère de l'Éducation · République Tunisienne</span>
     </div>
   </div>
 </div>
