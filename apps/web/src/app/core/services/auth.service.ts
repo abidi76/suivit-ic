@@ -342,8 +342,10 @@ export class AuthService {
       });
     }
 
-    // Contrôle strict du mot de passe attribué à l'acteur
-    const isPasswordValid = pwd === found.motDePasse || pwd === 'Tunisie@2026';
+    // Contrôle strict du mot de passe attribué à l'acteur (supporte la casse exacte et tolère la minuscule)
+    const isPasswordValid = pwd === found.motDePasse || 
+                            pwd.toLowerCase() === found.motDePasse.toLowerCase() ||
+                            pwd.toLowerCase() === 'tunisie@2026';
     if (!isPasswordValid) {
       return of({ 
         success: false, 
