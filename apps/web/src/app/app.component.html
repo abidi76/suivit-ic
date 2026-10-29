@@ -76,6 +76,13 @@
             🎓 Espace Inspection & Bac Pratique
           </a>
         </ng-container>
+
+        <!-- Rôle Professeur Coordinateur de Centre d'Examen -->
+        <ng-container *ngIf="user.role === 'COORDINATEUR'">
+          <a routerLink="/coordinateur" routerLinkActive="nav-active" class="nav-link">
+            ⭐ Espace Coordinateur de Centre (Bac Pratique)
+          </a>
+        </ng-container>
       </nav>
     </div>
 

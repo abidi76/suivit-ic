@@ -12,7 +12,8 @@ export type UserRole =
   | 'AGENT_ADMIN'
   | 'TECHNICIEN_PRESTATAIRE'
   | 'SD_BATIMENTS'
-  | 'INSPECTEUR';
+  | 'INSPECTEUR'
+  | 'COORDINATEUR';
 
 export interface DotationEquipement {
   id: string;
@@ -291,6 +292,22 @@ export const PRESET_ACCOUNTS: UserAccount[] = [
     creId: 'CRE-01',
     creNom: 'CRE Manouba',
     avatar: '🎓'
+  },
+  {
+    id: 'USR-011',
+    matricule: 'COORD-4001',
+    nom: 'Mansour',
+    prenom: 'Sami',
+    email: 'coordinateur.ibnabidhiaf@edunet.tn',
+    motDePasse: 'Coordinateur@2026',
+    role: 'COORDINATEUR',
+    roleLabel: 'Professeur Coordinateur de Centre d\'Examen',
+    perimetre: 'Centre d\'Examen Lycée Ibn Abi Dhiaf · Supervision de tous les laboratoires (CRE Manouba)',
+    creId: 'CRE-01',
+    creNom: 'CRE Manouba',
+    etablissementId: 'ETAB-101',
+    etablissementNom: 'Lycée Ibn Abi Dhiaf - Manouba',
+    avatar: '⭐'
   }
 ];
 
@@ -455,6 +472,9 @@ export class AuthService {
       case 'INSPECTEUR':
         this.router.navigate(['/inspecteur']);
         break;
+      case 'COORDINATEUR':
+        this.router.navigate(['/coordinateur']);
+        break;
       default:
         this.router.navigate(['/login']);
     }
@@ -484,6 +504,7 @@ export class AuthService {
       case 'TECHNICIEN_PRESTATAIRE': return '/technicien-prestataire';
       case 'SD_BATIMENTS': return '/sd-batiments';
       case 'INSPECTEUR': return '/inspecteur';
+      case 'COORDINATEUR': return '/coordinateur';
       default: return '/login';
     }
   }

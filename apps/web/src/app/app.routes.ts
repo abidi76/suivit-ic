@@ -9,6 +9,7 @@ import { AgentAdminDashboardComponent } from './features/agent-admin/agent-admin
 import { TechnicienPrestataireDashboardComponent } from './features/technicien-prestataire/technicien-prestataire-dashboard.component';
 import { SdBatimentsDashboardComponent } from './features/sd-batiments/sd-batiments-dashboard.component';
 import { InspecteurDashboardComponent } from './features/inspecteur/inspecteur-dashboard.component';
+import { CoordinateurDashboardComponent } from './features/coordinateur/coordinateur-dashboard.component';
 import { InterventionsListComponent } from './features/interventions/interventions-list/interventions-list.component';
 import { authGuard, roleGuard } from './core/guards/auth.guard';
 
@@ -67,6 +68,12 @@ export const routes: Routes = [
     component: InspecteurDashboardComponent, 
     canActivate: [roleGuard], 
     data: { roles: ['INSPECTEUR'] } 
+  },
+  { 
+    path: 'coordinateur', 
+    component: CoordinateurDashboardComponent, 
+    canActivate: [roleGuard], 
+    data: { roles: ['COORDINATEUR'] } 
   },
   { 
     path: 'interventions', 

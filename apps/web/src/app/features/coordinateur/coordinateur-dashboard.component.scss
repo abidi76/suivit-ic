@@ -1,0 +1,747 @@
+.coordinateur-container {
+  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.toast-notification {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: #0f172a;
+  color: #ffffff;
+  padding: 0.9rem 1.4rem;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  z-index: 9999;
+  font-size: 0.9rem;
+  border-left: 5px solid #eab308;
+  animation: slideIn 0.25s ease-out;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+// Header Coordinateur
+.coordinateur-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1.35rem 1.75rem;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.03);
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+
+    .flag-icon {
+      font-size: 2.5rem;
+    }
+
+    .sup-title {
+      font-size: 0.725rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.5px;
+    }
+
+    .main-title {
+      font-size: 1.45rem;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0.2rem 0;
+    }
+
+    .centre-meta {
+      font-size: 0.85rem;
+      color: #334155;
+
+      code {
+        background: #f1f5f9;
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        font-weight: 700;
+        color: #0284c7;
+      }
+    }
+  }
+
+  // Équipe de Direction du Centre
+  .direction-team-box {
+    background: #f8fafc;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 0.75rem 1.1rem;
+
+    .direction-team-title {
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.5rem;
+    }
+
+    .direction-members {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+
+      .dir-sep {
+        color: #cbd5e1;
+        font-weight: 300;
+      }
+
+      .dir-member {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        .dir-avatar {
+          font-size: 1.4rem;
+        }
+
+        .dir-role {
+          font-size: 0.675rem;
+          color: #64748b;
+          font-weight: 600;
+        }
+
+        .dir-name {
+          font-size: 0.85rem;
+          color: #0f172a;
+          display: block;
+        }
+
+        .dir-sub {
+          font-size: 0.675rem;
+          color: #0284c7;
+          font-weight: 600;
+          display: block;
+        }
+
+        &.highlight-coord {
+          background: #fef9c3;
+          border: 1px solid #fde047;
+          padding: 0.3rem 0.6rem;
+          border-radius: 8px;
+
+          .dir-sub {
+            color: #854d0e;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Bannière "Ce jour-là seulement"
+.today-focus-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 1.25rem 1.75rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.25);
+  flex-wrap: wrap;
+  gap: 1rem;
+
+  .tf-icon {
+    font-size: 2.8rem;
+  }
+
+  .tf-content {
+    flex: 1;
+
+    .tf-badge {
+      font-size: 0.7rem;
+      font-weight: 800;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 0.2rem 0.6rem;
+      border-radius: 12px;
+      display: inline-block;
+      margin-bottom: 0.35rem;
+      letter-spacing: 0.5px;
+    }
+
+    .tf-date {
+      font-size: 1.4rem;
+      font-weight: 900;
+      margin: 0 0 0.3rem 0;
+      color: #ffffff;
+    }
+
+    .tf-desc {
+      font-size: 0.85rem;
+      color: #e0f2fe;
+      margin: 0;
+      line-height: 1.4;
+
+      strong {
+        color: #ffffff;
+      }
+    }
+  }
+
+  .tf-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+
+    label {
+      font-size: 0.725rem;
+      color: #bae6fd;
+      font-weight: 600;
+    }
+
+    .select-day {
+      background: #ffffff;
+      color: #0f172a;
+      border: none;
+      padding: 0.5rem 0.8rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      outline: none;
+      cursor: pointer;
+    }
+  }
+}
+
+// Métriques
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  .metric-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+
+    .metric-val {
+      font-size: 1.7rem;
+      font-weight: 800;
+      color: #0284c7;
+    }
+
+    .metric-lbl {
+      font-size: 0.775rem;
+      font-weight: 700;
+      color: #334155;
+      margin-top: 0.25rem;
+    }
+
+    .metric-sub {
+      font-size: 0.7rem;
+      color: #64748b;
+      margin-top: 0.25rem;
+    }
+  }
+}
+
+.text-success { color: #15803d !important; font-weight: 700; }
+.text-warning { color: #b45309 !important; font-weight: 700; }
+.text-info { color: #0284c7 !important; font-weight: 700; }
+
+// Sections
+.section-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.02);
+  margin-bottom: 1.5rem;
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 0.85rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+
+    h3 {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0;
+    }
+
+    .section-sub {
+      font-size: 0.825rem;
+      color: #64748b;
+      margin: 0.25rem 0 0 0;
+    }
+
+    .session-pill, .reserve-count-pill {
+      background: #f1f5f9;
+      color: #0284c7;
+      border: 1px solid #cbd5e1;
+      padding: 0.35rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.775rem;
+      font-weight: 700;
+    }
+  }
+}
+
+// Labos du Centre
+.labos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+
+  .labo-item-card {
+    background: #f8fafc;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 1.25rem;
+    transition: all 0.15s ease;
+
+    .labo-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+
+      .labo-ident {
+        .labo-badge {
+          background: #e0f2fe;
+          color: #0369a1;
+          font-size: 0.675rem;
+          font-weight: 800;
+          padding: 0.15rem 0.5rem;
+          border-radius: 4px;
+        }
+
+        h4 {
+          font-size: 1.15rem;
+          font-weight: 800;
+          color: #0f172a;
+          margin: 0.3rem 0;
+        }
+
+        .labo-subinfo {
+          font-size: 0.8rem;
+          color: #475569;
+          display: flex;
+          gap: 0.5rem;
+          flex-wrap: wrap;
+        }
+      }
+
+      .labo-status-box {
+        text-align: right;
+
+        .status-indicator {
+          display: inline-block;
+          font-size: 0.7rem;
+          font-weight: 800;
+          padding: 0.25rem 0.6rem;
+          border-radius: 12px;
+
+          &.ready {
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #86efac;
+          }
+        }
+
+        .candidats-count {
+          font-size: 0.8rem;
+          color: #334155;
+          margin-top: 0.3rem;
+        }
+      }
+    }
+
+    .surveillants-table-wrapper {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin-bottom: 0.85rem;
+
+      .surveillants-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.825rem;
+
+        th {
+          background: #f1f5f9;
+          color: #334155;
+          text-align: left;
+          padding: 0.65rem 0.85rem;
+          font-weight: 700;
+          border-bottom: 1px solid #e2e8f0;
+        }
+
+        td {
+          padding: 0.65rem 0.85rem;
+          border-bottom: 1px solid #f1f5f9;
+          vertical-align: middle;
+        }
+
+        &.absent-row td {
+          background: #fef2f2;
+        }
+
+        .role-titulaire-tag {
+          background: #e0f2fe;
+          color: #0369a1;
+          font-size: 0.7rem;
+          font-weight: 700;
+          padding: 0.2rem 0.45rem;
+          border-radius: 4px;
+        }
+
+        .tel-link {
+          color: #0284c7;
+          text-decoration: none;
+          font-weight: 600;
+
+          &:hover {
+            text-decoration: underline;
+          }
+        }
+
+        .arrival-badge {
+          background: #f1f5f9;
+          padding: 0.2rem 0.4rem;
+          border-radius: 4px;
+          font-family: monospace;
+          font-size: 0.75rem;
+        }
+
+        .presence-badge {
+          display: inline-block;
+          font-size: 0.7rem;
+          font-weight: 800;
+          padding: 0.2rem 0.5rem;
+          border-radius: 12px;
+
+          &.present { background: #dcfce7; color: #15803d; }
+          &.absent { background: #fee2e2; color: #b91c1c; }
+          &.remplace { background: #fef3c7; color: #b45309; }
+        }
+
+        .btn-group-actions {
+          display: flex;
+          gap: 0.35rem;
+        }
+
+        .btn-present {
+          background: #dcfce7;
+          color: #15803d;
+          border: 1px solid #86efac;
+        }
+
+        .btn-replace {
+          background: #ef4444;
+          color: #ffffff;
+          border: none;
+
+          &:hover {
+            background: #dc2626;
+          }
+        }
+      }
+    }
+
+    .labo-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.775rem;
+      color: #64748b;
+      padding-top: 0.5rem;
+    }
+  }
+}
+
+// Table Réserves
+.table-responsive {
+  overflow-x: auto;
+}
+
+.reserves-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+
+  th {
+    background: #f8fafc;
+    color: #475569;
+    text-align: left;
+    padding: 0.75rem;
+    border-bottom: 2px solid #e2e8f0;
+    font-weight: 700;
+  }
+
+  td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: middle;
+  }
+
+  .reserve-status-badge {
+    font-size: 0.725rem;
+    font-weight: 800;
+    padding: 0.25rem 0.6rem;
+    border-radius: 12px;
+
+    &.disponible_au_centre { background: #dcfce7; color: #15803d; }
+    &.engage_en_remplacement { background: #fee2e2; color: #b91c1c; }
+  }
+
+  .replacement-dest {
+    color: #b91c1c;
+    font-size: 0.8rem;
+  }
+
+  .standby-text {
+    color: #64748b;
+    font-style: italic;
+    font-size: 0.8rem;
+  }
+}
+
+// Incidents
+.incidents-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  .incident-item {
+    display: flex;
+    gap: 1rem;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0.85rem;
+
+    .inc-time {
+      font-weight: 800;
+      color: #0284c7;
+      font-size: 0.85rem;
+      min-width: 50px;
+    }
+
+    .inc-body {
+      font-size: 0.825rem;
+      color: #1e293b;
+      line-height: 1.4;
+
+      .inc-labo {
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 0.2rem;
+      }
+
+      .inc-by {
+        font-size: 0.7rem;
+        color: #64748b;
+        margin-top: 0.25rem;
+      }
+    }
+  }
+}
+
+.daily-pv-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+  border: 1.5px dashed #0284c7;
+  border-radius: 12px;
+  padding: 1.25rem 1.75rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+
+  .dpv-text {
+    max-width: 750px;
+
+    h4 {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0 0 0.35rem 0;
+    }
+
+    p {
+      font-size: 0.825rem;
+      color: #475569;
+      margin: 0;
+      line-height: 1.4;
+    }
+  }
+}
+
+// Boutons
+.btn {
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.825rem;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s ease;
+
+  &.btn-primary {
+    background: #0284c7;
+    color: #ffffff;
+    &:hover:not(:disabled) { background: #0369a1; }
+  }
+
+  &.btn-secondary {
+    background: #e2e8f0;
+    color: #334155;
+    &:hover { background: #cbd5e1; }
+  }
+
+  &.btn-danger {
+    background: #ef4444;
+    color: #ffffff;
+    &:hover:not(:disabled) { background: #dc2626; }
+  }
+
+  &.btn-sm {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
+  }
+}
+
+// Modales
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.modal-card {
+  background: #ffffff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  overflow: hidden;
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+
+    h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      cursor: pointer;
+      color: #64748b;
+    }
+  }
+
+  .modal-body {
+    padding: 1.25rem;
+
+    .alert-replace {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      margin-bottom: 1rem;
+
+      p {
+        margin: 0.25rem 0 0 0;
+      }
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+
+      label {
+        display: block;
+        font-size: 0.825rem;
+        font-weight: 700;
+        color: #334155;
+        margin-bottom: 0.35rem;
+      }
+
+      .form-select {
+        width: 100%;
+        padding: 0.6rem 0.8rem;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        outline: none;
+
+        &:focus {
+          border-color: #0284c7;
+        }
+      }
+    }
+
+    .modal-notify-note {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin: 0;
+      font-style: italic;
+    }
+  }
+
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+  }
+}
+
+// Media print
+@media print {
+  .no-print, .tf-controls, .btn-group-actions, .modal-backdrop, app-topbar, footer {
+    display: none !important;
+  }
+}

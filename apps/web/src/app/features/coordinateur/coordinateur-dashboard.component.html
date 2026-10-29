@@ -1,0 +1,349 @@
+<div class="coordinateur-container">
+  <!-- Toast Notification -->
+  <div *ngIf="toastMessage" class="toast-notification">
+    {{ toastMessage }}
+  </div>
+
+  <!-- Header Officiel du Centre d'Examen -->
+  <header class="coordinateur-header">
+    <div class="header-left">
+      <span class="flag-icon">🇹🇳</span>
+      <div>
+        <div class="sup-title">Ministère de l'Éducation · République Tunisienne · Baccalauréat National 2026</div>
+        <h1 class="main-title">Espace Professeur Coordinateur de Centre d'Examen</h1>
+        <div class="centre-meta">
+          Centre d'Examen : <strong>{{ centreExamenNom }}</strong> (Code : <code>{{ centreExamenCode }}</code>) · {{ creRattachement }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Équipe de Direction du Centre d'Examen (Directeur = Chef de Centre, Censeur = Adjoint) -->
+    <div class="direction-team-box">
+      <div class="direction-team-title">🏛️ ÉQUIPE DE DIRECTION DU CENTRE D'EXAMEN :</div>
+      <div class="direction-members">
+        <div class="dir-member">
+          <span class="dir-avatar">🏫</span>
+          <div>
+            <div class="dir-role">Chef du Centre d'Examen :</div>
+            <strong class="dir-name">{{ chefCentreNom }}</strong>
+            <span class="dir-sub">(Directeur du Lycée)</span>
+          </div>
+        </div>
+        <div class="dir-sep">|</div>
+        <div class="dir-member">
+          <span class="dir-avatar">📋</span>
+          <div>
+            <div class="dir-role">Adjoint au Chef de Centre :</div>
+            <strong class="dir-name">{{ censeurAdjointNom }}</strong>
+            <span class="dir-sub">(Censeur du Lycée · الناظر)</span>
+          </div>
+        </div>
+        <div class="dir-sep">|</div>
+        <div class="dir-member highlight-coord">
+          <span class="dir-avatar">⭐</span>
+          <div>
+            <div class="dir-role">Professeur Coordinateur :</div>
+            <strong class="dir-name">{{ currentUser?.prenom || 'Sami' }} {{ currentUser?.nom || 'Mansour' }}</strong>
+            <span class="dir-sub">(Supervision des Labos du Centre)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Bannière Règle Officielle : Ce jour-là seulement -->
+  <div class="today-focus-banner">
+    <div class="tf-icon">📅</div>
+    <div class="tf-content">
+      <div class="tf-badge">TABLEAU DE BORD OPÉRATIONNEL DU JOUR J</div>
+      <h2 class="tf-date">{{ journeeLibelle }}</h2>
+      <p class="tf-desc">
+        Supervision exclusive des <strong>laboratoires d'informatique du centre</strong>, des <strong>professeurs surveillants titulaires en poste</strong> et des <strong>professeurs de réserve mobilisés</strong> pour la journée en cours.
+      </p>
+    </div>
+    <div class="tf-controls">
+      <label>Consulter une autre journée d'épreuve :</label>
+      <select [(ngModel)]="dateAujourdhui" class="select-day">
+        <option *ngFor="let j of joursSessionBac" [value]="j.date">{{ j.libelle }}</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Métriques Globales du Centre d'Examen ce jour-là -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-val">{{ labosDuCentre.length }}</div>
+      <div class="metric-lbl">Laboratoires d'Examen Actifs</div>
+      <div class="metric-sub">Capacité totale : 46 candidats / séance</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val">6</div>
+      <div class="metric-lbl">Surveillants Titulaires en Poste</div>
+      <div class="metric-sub text-success">2 professeurs par laboratoire</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val">{{ surveillantsReservesJour.length }}</div>
+      <div class="metric-lbl">Surveillants de Réserve Présents</div>
+      <div class="metric-sub text-info">Volants prêts au remplacement</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val">45 / 46</div>
+      <div class="metric-lbl">Candidats Ayant Composé</div>
+      <div class="metric-sub text-warning">1 absence signalée au Chef de Centre</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val text-success">SCELLÉ ✓</div>
+      <div class="metric-lbl">Sujets & Clés USB Sécurisées</div>
+      <div class="metric-sub">Remises par le Chef de Centre à 07h30</div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- SECTION 1 : LABORATOIRES DU CENTRE & SURVEILLANTS TITULAIRES   -->
+  <!-- ============================================================== -->
+  <section class="section-card">
+    <div class="section-header">
+      <div>
+        <h3>🔬 Laboratoires du Centre d'Examen & Surveillants Titulaires (Jour 1)</h3>
+        <p class="section-sub">
+          Chaque laboratoire est surveillé par <strong>2 professeurs titulaires</strong>. Cliquez pour émarger la présence ou remplacer immédiatement par un surveillant de réserve.
+        </p>
+      </div>
+      <div class="session-pill">
+        <span>⏰ {{ seanceEnCours }}</span>
+      </div>
+    </div>
+
+    <div class="labos-list">
+      <div *ngFor="let labo of labosDuCentre" class="labo-item-card">
+        <div class="labo-top">
+          <div class="labo-ident">
+            <span class="labo-badge">LABO ACTIF</span>
+            <h4>{{ labo.nomLabo }}</h4>
+            <div class="labo-subinfo">
+              <span>📍 {{ labo.etage }}</span> · 
+              <span>Capacité : <strong>{{ labo.capaciteCandidats }} candidats</strong></span> · 
+              <span>Postes de secours : <strong>{{ labo.postesSecours }} postes</strong></span> · 
+              <span>Préparateur unique : <strong>{{ labo.profResponsablePreparation }}</strong></span>
+            </div>
+          </div>
+          <div class="labo-status-box">
+            <span class="status-indicator ready">SYSTÈME OPÉRATIONNEL</span>
+            <div class="candidats-count">
+              Émargement : <strong>{{ labo.candidatsPresents }}</strong> / {{ labo.capaciteCandidats }} candidats
+            </div>
+          </div>
+        </div>
+
+        <!-- Tableau des Surveillants Titulaires pour ce Laboratoire -->
+        <div class="surveillants-table-wrapper">
+          <table class="surveillants-table">
+            <thead>
+              <tr>
+                <th>Rôle d'affectation</th>
+                <th>Surveillant Titulaire</th>
+                <th>Matricule & Établissement d'Origine</th>
+                <th>Téléphone</th>
+                <th>Heure d'Arrivée</th>
+                <th>Statut Présence</th>
+                <th>Actions Coordinateur</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let surv of labo.surveillantsTitulaires; let idx = index" [class.absent-row]="surv.statutPresence === 'ABSENT'">
+                <td>
+                  <span class="role-titulaire-tag">Titulaire {{ idx + 1 }}</span>
+                </td>
+                <td>
+                  <strong>{{ surv.nomPrenom }}</strong>
+                </td>
+                <td>
+                  <code>{{ surv.matricule }}</code> · {{ surv.etablissementOrigine }}
+                </td>
+                <td>
+                  <a href="tel:{{ surv.telephone }}" class="tel-link">📞 {{ surv.telephone }}</a>
+                </td>
+                <td>
+                  <span class="arrival-badge">{{ surv.heureArrivee || '--:--' }}</span>
+                </td>
+                <td>
+                  <span class="presence-badge" [ngClass]="surv.statutPresence.toLowerCase()">
+                    {{ surv.statutPresence === 'PRESENT' ? '✓ PRÉSENT' :
+                       surv.statutPresence === 'ABSENT' ? '⚠️ ABSENT' :
+                       surv.statutPresence === 'REMPLACE' ? '🔄 REMPLACÉ PAR RÉSERVE' : 'EN RETARD' }}
+                  </span>
+                </td>
+                <td>
+                  <div class="btn-group-actions">
+                    <button class="btn btn-sm" [class.btn-present]="surv.statutPresence === 'PRESENT'" (click)="basculerPresenceSurveillant(labo, surv)" title="Pointer présent/absent">
+                      {{ surv.statutPresence === 'PRESENT' ? '✓ Émargé' : 'Pointer Présence' }}
+                    </button>
+                    <button *ngIf="surv.statutPresence === 'ABSENT' || surv.statutPresence === 'EN_RETARD'" class="btn btn-sm btn-replace" (click)="ouvrirRemplacement(labo, surv)" title="Remplacer par un professeur de réserve">
+                      🚨 Remplacer par Réserve
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Clôture et visa du PV de séance pour ce laboratoire -->
+        <div class="labo-footer">
+          <div class="footer-checks">
+            <span>💾 Clé USB Sujets délivrée : <strong>OUI ✓</strong></span> · 
+            <span>Sauvegardes candidats récupérées : <strong>OUI ✓</strong></span>
+          </div>
+          <div>
+            <button class="btn btn-sm btn-primary" (click)="validerPvLabo(labo)" [disabled]="labo.pvSeanceValide">
+              {{ labo.pvSeanceValide ? '✓ PV de Séance Validé par Coordinateur' : '📝 Viser le PV de Séance du Labo' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SECTION 2 : PROFESSEURS SURVEILLANTS DE RÉSERVE DU JOUR J      -->
+  <!-- ============================================================== -->
+  <section class="section-card">
+    <div class="section-header">
+      <div>
+        <h3>🛡️ Liste des Professeurs Surveillants de Réserve (Présents au Centre ce Jour-là)</h3>
+        <p class="section-sub">
+          Professeurs volants convoqués au Centre d'Examen dès 07h15, prêts à pallier immédiatement toute défaillance ou cas de force majeure.
+        </p>
+      </div>
+      <div class="reserve-count-pill">
+        <span>{{ surveillantsReservesJour.length }} Professeurs de Réserve Mobilisés</span>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="reserves-table">
+        <thead>
+          <tr>
+            <th>Matricule</th>
+            <th>Nom & Prénom</th>
+            <th>Établissement d'Origine</th>
+            <th>Téléphone d'Urgence</th>
+            <th>Heure de Pointage au Centre</th>
+            <th>Statut de Disponibilité Aujourd'hui</th>
+            <th>Affectation Actuelle</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let res of surveillantsReservesJour">
+            <td><code>{{ res.matricule }}</code></td>
+            <td><strong>{{ res.nomPrenom }}</strong></td>
+            <td>{{ res.etablissementOrigine }}</td>
+            <td><a href="tel:{{ res.telephone }}" class="tel-link">📞 {{ res.telephone }}</a></td>
+            <td><span class="arrival-badge">{{ res.heurePointage }}</span></td>
+            <td>
+              <span class="reserve-status-badge" [ngClass]="res.statutReserve.toLowerCase()">
+                {{ res.statutReserve === 'DISPONIBLE_AU_CENTRE' ? '✓ DISPONIBLE EN SALLE DE RÉSERVE' : '🚨 ENGAGÉ EN REMPLACEMENT' }}
+              </span>
+            </td>
+            <td>
+              <span *ngIf="res.laboAffecteEnRemplacement" class="replacement-dest">
+                Affecté en renfort sur : <strong>{{ res.laboAffecteEnRemplacement }}</strong>
+              </span>
+              <span *ngIf="!res.laboAffecteEnRemplacement" class="standby-text">
+                En attente dans la salle des professeurs
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SECTION 3 : JOURNAL DES ÉVÉNEMENTS DU JOUR J                   -->
+  <!-- ============================================================== -->
+  <section class="section-card">
+    <div class="section-header">
+      <div>
+        <h3>📋 Journal des Événements & Remplacements du Jour J</h3>
+        <p class="section-sub">Registre officiel des incidents et mesures prises sous la supervision du Coordinateur</p>
+      </div>
+      <div>
+        <button class="btn btn-secondary btn-sm" (click)="imprimerRapportJournee()">
+          🖨️ Imprimer la Fiche Quotidienne pour le Chef de Centre & Censeur
+        </button>
+      </div>
+    </div>
+
+    <div class="incidents-list">
+      <div *ngFor="let inc of incidentsJour" class="incident-item">
+        <div class="inc-time">{{ inc.heure }}</div>
+        <div class="inc-body">
+          <div class="inc-labo">📍 {{ inc.laboNom }}</div>
+          <div class="inc-nature"><strong>Constat :</strong> {{ inc.nature }}</div>
+          <div class="inc-decision"><strong>Décision prise :</strong> {{ inc.decisionPrise }}</div>
+          <div class="inc-by">Enregistré par : {{ inc.enregistrePar }}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- SECTION 4 : PV DE SYNTHÈSE QUOTIDIENNE (POUR DIRECTION)        -->
+  <!-- ============================================================== -->
+  <div class="daily-pv-summary no-print">
+    <div class="dpv-text">
+      <h4>Rapport Quotidien du Professeur Coordinateur de Centre :</h4>
+      <p>
+        Rapport destiné à <strong>{{ chefCentreNom }}</strong> (Chef du Centre / Directeur du Lycée) et à <strong>{{ censeurAdjointNom }}</strong> (Adjoint au Chef de Centre / Censeur du Lycée). 
+        Tous les laboratoires d'informatique du centre ont fonctionné sous contrôle rigoureux avec émargement intégral des surveillants titulaires et réserves.
+      </p>
+    </div>
+    <button class="btn btn-primary" (click)="imprimerRapportJournee()">
+      📜 Exporter le Rapport Journalier Officiel
+    </button>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODALE : REMPLACEMENT PAR UN SURVEILLANT DE RÉSERVE           -->
+  <!-- ============================================================== -->
+  <div *ngIf="showRemplacementModal && laboCibleRemplacement && surveillantARemplacer" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Remplacement d'Urgence par un Surveillant de Réserve</h3>
+        <button class="modal-close" (click)="showRemplacementModal = false">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="alert-replace">
+          <strong>🚨 PROCÉDURE OFFICIELLE DE REMPLACEMENT :</strong>
+          <p>
+            Vous êtes sur le point de remplacer le surveillant titulaire <strong>{{ surveillantARemplacer.nomPrenom }}</strong> 
+            sur le <strong>{{ laboCibleRemplacement.nomLabo }}</strong>.
+          </p>
+        </div>
+
+        <div class="form-group">
+          <label>Sélectionner un Surveillant de Réserve disponible au Centre :</label>
+          <select [(ngModel)]="reserveSelectionneeMatricule" class="form-select">
+            <option value="" disabled>-- Choisir une réserve disponible --</option>
+            <option *ngFor="let r of surveillantsReservesJour" [value]="r.matricule" [disabled]="r.statutReserve !== 'DISPONIBLE_AU_CENTRE'">
+              {{ r.nomPrenom }} (Matr: {{ r.matricule }} · {{ r.etablissementOrigine }}) {{ r.statutReserve === 'DISPONIBLE_AU_CENTRE' ? '✓ Disponible' : '❌ Déjà engagé' }}
+            </option>
+          </select>
+        </div>
+
+        <p class="modal-notify-note">
+          ℹ️ Cette décision sera automatiquement consignée au journal de bord et notifiée au Chef de Centre (Directeur) et à son Adjoint (Censeur).
+        </p>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showRemplacementModal = false">Annuler</button>
+        <button class="btn btn-danger" (click)="confirmerRemplacement()" [disabled]="!reserveSelectionneeMatricule">
+          ✓ Valider le Remplacement Officiel
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
