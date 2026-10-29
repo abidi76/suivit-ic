@@ -2,6 +2,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execSync } from 'node:child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,6 +10,16 @@ const __dirname = path.dirname(__filename);
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const HOST = '0.0.0.0';
 const DIST_DIR = path.join(__dirname, 'apps', 'web', 'dist', 'web', 'browser');
+
+// Ensure dist directory exists, or build it
+if (!fs.existsSync(DIST_DIR)) {
+  console.log(`Build directory ${DIST_DIR} not found. Running npm run build...`);
+  try {
+    execSync('npm run build', { stdio: 'inherit' });
+  } catch (err) {
+    console.error('Error during auto-build:', err);
+  }
+}
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
