@@ -1,0 +1,689 @@
+<div class="inspecteur-container">
+  <!-- Toast Notification -->
+  <div *ngIf="toastMessage" class="toast-notification">
+    {{ toastMessage }}
+  </div>
+
+  <!-- Header Inspecteur Pédagogique -->
+  <header class="inspecteur-header">
+    <div class="header-left">
+      <span class="flag-icon">🇹🇳</span>
+      <div>
+        <div class="sup-title">Ministère de l'Éducation · Direction Générale des Examens & Inspection Pédagogique</div>
+        <h1 class="main-title">Espace Inspecteur Pédagogique (Informatique & TIC)</h1>
+        <div class="user-meta">
+          Inspecteur : <strong>{{ currentUser?.prenom || 'Taoufik' }} {{ currentUser?.nom || 'Ben Amor' }}</strong> · Circonscription : <strong>{{ selectedCreNom }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="cre-selector">
+        <label>📍 Région Pédagogique :</label>
+        <select [(ngModel)]="selectedCreNom">
+          <option *ngFor="let cre of listeCre26" [value]="cre">{{ cre }}</option>
+        </select>
+      </div>
+
+      <div class="badge-role">
+        <span class="badge-role-icon">🎓</span>
+        <span>Inspection Régionale</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Bannière Règle Officielle & Sécurité des Examens Nationaux -->
+  <div class="official-banner">
+    <div class="banner-icon">⚖️</div>
+    <div class="banner-text">
+      <strong>RÈGLEMENT OFFICIEL DU BACCALAURÉAT — ÉPREUVE PRATIQUE D'INFORMATIQUE :</strong>
+      <span>
+        1) Contrôle obligatoire des inventaires d'équipements par établissement scolaire. 
+        2) <strong>Règle d'or de préparation : Exactement UN SEUL professeur désigné par laboratoire</strong> (responsable exclusif de l'image système, de l'isolation réseau et des compilateurs). 
+        3) Répartition rigoureuse des surveillants titulaires, surveillants de réserve, professeurs coordinateurs et correcteurs.
+      </span>
+    </div>
+  </div>
+
+  <!-- Barre de Navigation des Onglets de l'Inspecteur -->
+  <nav class="inspecteur-tabs">
+    <button class="tab-btn" [class.active]="activeTab === 'inventaires'" (click)="activeTab = 'inventaires'">
+      🏫 Inventaires Équipements par Établissement ({{ etablissements.length }})
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'preparation'" (click)="activeTab = 'preparation'">
+      🔬 Préparation Bac Pratique (1 seul Prof / Labo)
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'repartition'" (click)="activeTab = 'repartition'">
+      📅 Organisation & Répartition (Jour & Labo)
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'pv'" (click)="activeTab = 'pv'">
+      📜 PV Officiel & Ordre de Mission
+    </button>
+  </nav>
+
+  <!-- ============================================================== -->
+  <!-- ONGLET 1 : INVENTAIRES ÉQUIPEMENTS PAR ÉTABLISSEMENT           -->
+  <!-- ============================================================== -->
+  <section *ngIf="activeTab === 'inventaires'" class="tab-content">
+    <div class="content-header">
+      <div>
+        <h2>Inventaire du Parc Informatique par Établissement</h2>
+        <p class="section-sub">Supervision de la disponibilité des équipements pour l'accueil des épreuves d'examen</p>
+      </div>
+      <div class="etab-select-box">
+        <label>Choisir un établissement :</label>
+        <select [(ngModel)]="selectedEtablissementId">
+          <option *ngFor="let etab of etablissements" [value]="etab.id">
+            {{ etab.nom }} ({{ etab.delegation }})
+          </option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Fiche Récapitulative de l'Établissement Sélectionné -->
+    <div *ngIf="selectedEtablissement" class="etab-details-card">
+      <div class="etab-card-top">
+        <div>
+          <h3>{{ selectedEtablissement.nom }}</h3>
+          <div class="etab-tags">
+            <span class="tag-type">{{ selectedEtablissement.type }}</span>
+            <span class="tag-code">Code : {{ selectedEtablissement.code }}</span>
+            <span class="tag-delegation">Délégation : {{ selectedEtablissement.delegation }}</span>
+            <span class="tag-inspection">Dernière inspection : {{ selectedEtablissement.derniereInspectionDate }}</span>
+          </div>
+        </div>
+        <div class="conformite-badge" [ngClass]="selectedEtablissement.statutConformiteBac.toLowerCase()">
+          <span *ngIf="selectedEtablissement.statutConformiteBac === 'CONFORME'">✓ PARC CONFORME BAC</span>
+          <span *ngIf="selectedEtablissement.statutConformiteBac === 'VIGILANCE'">⚠️ SOUS VIGILANCE</span>
+          <span *ngIf="selectedEtablissement.statutConformiteBac === 'NON_CONFORME'">🛑 NON CONFORME</span>
+        </div>
+      </div>
+
+      <!-- Métriques de l'établissement -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-val">{{ selectedEtablissement.nombreLabos }}</div>
+          <div class="metric-lbl">Laboratoires Info Dédiés</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">{{ selectedEtablissement.totalPcFixes }}</div>
+          <div class="metric-lbl">Total PC Fixes Postes Élèves</div>
+          <div class="metric-sub" [class.danger]="selectedEtablissement.pcFixesEnPanne > 0">
+            {{ selectedEtablissement.pcFixesEnPanne }} en panne
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">{{ selectedEtablissement.totalPcPortables }}</div>
+          <div class="metric-lbl">Total PC Portables</div>
+          <div class="metric-sub" [class.danger]="selectedEtablissement.pcPortablesEnPanne > 0">
+            {{ selectedEtablissement.pcPortablesEnPanne }} en panne
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">{{ selectedEtablissement.totalServeurs }}</div>
+          <div class="metric-lbl">Serveurs d'Épreuves Locaux</div>
+          <div class="metric-sub" [class.danger]="selectedEtablissement.serveursEnPanne > 0">
+            {{ selectedEtablissement.serveursEnPanne }} en panne
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">{{ selectedEtablissement.totalSwitchs }}</div>
+          <div class="metric-lbl">Switchs Réseau Gigabit</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">{{ selectedEtablissement.totalOnduleurs }}</div>
+          <div class="metric-lbl">Onduleurs Haute Capacité</div>
+        </div>
+      </div>
+
+      <!-- Observations et VISA de l'Inspecteur -->
+      <div class="observations-box">
+        <h4>📋 Rapport & Observations Pédagogiques de l'Inspecteur :</h4>
+        <textarea [(ngModel)]="selectedEtablissement.observationsInspection" 
+                  rows="3" 
+                  class="obs-textarea" 
+                  placeholder="Inscrire vos remarques d'inspection ou préconisations techniques..."></textarea>
+        <div class="obs-actions">
+          <button class="btn btn-primary" (click)="saveData(); showToast('✓ Rapport d\'inspection enregistré avec succès.')">
+            💾 Enregistrer le rapport d'inspection
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tableau Comparatif de Tous les Établissements de la Région -->
+    <div class="table-card">
+      <h3>Tableau Synthétique Régional des 26 CRE · État des Parcs</h3>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Établissement</th>
+              <th>Délégation</th>
+              <th>Labos Info</th>
+              <th>PC Fixes (Op / Panne)</th>
+              <th>PC Portables</th>
+              <th>Serveurs</th>
+              <th>Statut Bac</th>
+              <th>Dernier Visa</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let etab of etablissements" (click)="selectedEtablissementId = etab.id" [class.selected-row]="selectedEtablissementId === etab.id" style="cursor:pointer;">
+              <td>
+                <strong>{{ etab.nom }}</strong>
+                <div class="code-sub">{{ etab.code }}</div>
+              </td>
+              <td>{{ etab.delegation }}</td>
+              <td><span class="badge-num">{{ etab.nombreLabos }} labos</span></td>
+              <td>
+                <span class="text-success">{{ etab.totalPcFixes - etab.pcFixesEnPanne }}</span> / 
+                <span [class.text-danger]="etab.pcFixesEnPanne > 0">{{ etab.pcFixesEnPanne }} panne</span>
+              </td>
+              <td>
+                {{ etab.totalPcPortables - etab.pcPortablesEnPanne }} / 
+                <span [class.text-danger]="etab.pcPortablesEnPanne > 0">{{ etab.pcPortablesEnPanne }} panne</span>
+              </td>
+              <td>
+                {{ etab.totalServeurs - etab.serveursEnPanne }} / 
+                <span [class.text-danger]="etab.serveursEnPanne > 0">{{ etab.serveursEnPanne }} panne</span>
+              </td>
+              <td>
+                <span class="badge-status" [ngClass]="etab.statutConformiteBac.toLowerCase()">
+                  {{ etab.statutConformiteBac }}
+                </span>
+              </td>
+              <td>{{ etab.derniereInspectionDate }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- ONGLET 2 : PRÉPARATION DU BAC PRATIQUE (1 SEUL PROF / LABO)    -->
+  <!-- ============================================================== -->
+  <section *ngIf="activeTab === 'preparation'" class="tab-content">
+    <div class="content-header">
+      <div>
+        <h2>Préparation Technique des Laboratoires pour le Bac Pratique</h2>
+        <p class="section-sub">
+          <strong>RÈGLE D'OR MINISTÉRIELLE :</strong> Chaque laboratoire doit avoir <strong>UN SEUL ET UNIQUE professeur responsable</strong> désigné pour sa préparation technique.
+        </p>
+      </div>
+    </div>
+
+    <!-- Cartes des Laboratoires & Contrôle de l'Inspecteur -->
+    <div class="labos-grid">
+      <div *ngFor="let labo of labosPreparation" class="labo-card" [class.valide]="labo.statutPreparation === 'PRET_VALIDE'">
+        <div class="labo-card-header">
+          <div>
+            <div class="labo-etab">{{ labo.etablissementNom }}</div>
+            <h3 class="labo-title">{{ labo.nomLabo }}</h3>
+          </div>
+          <span class="badge-statut-prep" [ngClass]="labo.statutPreparation.toLowerCase()">
+            {{ labo.statutPreparation === 'PRET_VALIDE' ? '✓ VALIDÉ PAR INSPECTEUR' :
+               labo.statutPreparation === 'EN_COURS' ? '⏳ EN COURS DE PRÉPARATION' : '🛑 NON CONFORME' }}
+          </span>
+        </div>
+
+        <!-- Encadré du Professeur Responsable Unique -->
+        <div class="prof-unique-box">
+          <div class="prof-unique-badge">
+            <span>🛡️ PROFESSEUR RESPONSABLE UNIQUE DÉSIGNÉ</span>
+          </div>
+          <div class="prof-unique-info">
+            <div class="prof-avatar">👨‍🏫</div>
+            <div class="prof-meta">
+              <div class="prof-nom">{{ labo.profResponsableNom }}</div>
+              <div class="prof-sub">
+                Matricule : <code>{{ labo.profResponsableMatricule }}</code> · Tél : {{ labo.profResponsableTel }}
+              </div>
+              <div class="prof-date">Désigné le : {{ labo.dateDesignation }}</div>
+            </div>
+            <button class="btn-change-prof" (click)="ouvrirDesignationProf(labo)" title="Modifier le professeur responsable (Règle 1 seul prof/labo)">
+              🔄 Remplacer
+            </button>
+          </div>
+        </div>
+
+        <!-- Capacités -->
+        <div class="labo-stats-row">
+          <div class="stat-pill">
+            <span class="stat-k">Postes Candidats :</span>
+            <span class="stat-v">{{ labo.capacitePostes }}</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-k">Postes de Secours :</span>
+            <span class="stat-v">{{ labo.postesSecours }}</span>
+          </div>
+        </div>
+
+        <!-- Checklist Technique Officielle -->
+        <div class="checklist-section">
+          <h4>Checklist de Contrôle de l'Inspecteur :</h4>
+          <div class="check-item">
+            <input type="checkbox" [(ngModel)]="labo.imageSystemeInstallee" (change)="saveData()" id="chk-img-{{labo.id}}">
+            <label for="chk-img-{{labo.id}}">Image système officielle installée (OS & outils certifiés)</label>
+          </div>
+          <div class="check-item">
+            <input type="checkbox" [(ngModel)]="labo.isolationInternetValidee" (change)="saveData()" id="chk-iso-{{labo.id}}">
+            <label for="chk-iso-{{labo.id}}">Isolation réseau Internet certifiée (coupure flux externe)</label>
+          </div>
+          <div class="check-item">
+            <input type="checkbox" [(ngModel)]="labo.compilateursPrets" (change)="saveData()" id="chk-comp-{{labo.id}}">
+            <label for="chk-comp-{{labo.id}}">Environnements prêts (Python 3.11, VS Code, Thonny, MySQL)</label>
+          </div>
+          <div class="check-item">
+            <input type="checkbox" [(ngModel)]="labo.onduleurVerifie" (change)="saveData()" id="chk-ond-{{labo.id}}">
+            <label for="chk-ond-{{labo.id}}">Onduleurs & alimentation électrique de secours testés</label>
+          </div>
+        </div>
+
+        <!-- Visa Inspecteur -->
+        <div class="visa-section">
+          <div *ngIf="labo.visaInspecteurDate" class="visa-granted">
+            <span>✓ Visé et validé le {{ labo.visaInspecteurDate }} par l'Inspecteur</span>
+          </div>
+          <div class="visa-remarques">
+            <label>Remarques de l'Inspecteur :</label>
+            <input type="text" [(ngModel)]="labo.remarquesInspecteur" (change)="saveData()" placeholder="Observations techniques de l'inspecteur...">
+          </div>
+          <button class="btn btn-certify" (click)="validerConformiteLabo(labo)">
+            📜 Accorder le Visa Officiel d'Ouverture du Labo
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- ONGLET 3 : ORGANISATION & RÉPARTITION DURANT LE BAC PRATIQUE   -->
+  <!-- ============================================================== -->
+  <section *ngIf="activeTab === 'repartition'" class="tab-content">
+    <div class="content-header">
+      <div>
+        <h2>Répartition des Professeurs durant le Bac Pratique (Par Jour & Par Labo)</h2>
+        <p class="section-sub">Désignation des surveillants titulaires, surveillants de réserve, professeurs coordinateurs et correcteurs</p>
+      </div>
+      <div>
+        <button class="btn btn-primary" (click)="showAddAffectationModal = true">
+          ➕ Planifier une Séance d'Épreuve
+        </button>
+      </div>
+    </div>
+
+    <!-- Filtres Journée & Session -->
+    <div class="filter-bar">
+      <div class="filter-item">
+        <label>📅 Choisir le Jour du Bac Pratique :</label>
+        <select [(ngModel)]="selectedJourDate">
+          <option *ngFor="let j of joursBac" [value]="j.date">{{ j.libelle }}</option>
+        </select>
+      </div>
+      <div class="filter-badge">
+        <span>Session Principale du Baccalauréat · Épreuves Pratiques 2026</span>
+      </div>
+    </div>
+
+    <!-- Liste des Affectations du Jour Sélectionné -->
+    <div *ngIf="filteredAffectations.length === 0" class="empty-state">
+      <div class="empty-icon">📅</div>
+      <h3>Aucune affectation planifiée pour ce jour</h3>
+      <p>Cliquez sur le bouton ci-dessus pour affecter les professeurs surveillants et coordinateurs.</p>
+    </div>
+
+    <div *ngFor="let aff of filteredAffectations" class="affectation-card">
+      <div class="affectation-header">
+        <div>
+          <span class="aff-etab">{{ aff.etablissementNom }}</span>
+          <h3 class="aff-title">{{ aff.laboNom }}</h3>
+          <div class="aff-meta">
+            <span>📅 {{ aff.jourLibelle }}</span> · 
+            <span class="time-badge">⏰ {{ aff.seanceHoraire }}</span>
+          </div>
+        </div>
+        <div class="aff-actions">
+          <span class="badge-visa">✓ VISA INSPECTEUR ACCORDÉ</span>
+          <button class="btn-delete" (click)="supprimerAffectation(aff.id)" title="Retirer cette affectation">✕</button>
+        </div>
+      </div>
+
+      <!-- Grille des 4 Rôles Officiels Attribués -->
+      <div class="roles-grid">
+        <!-- 1. Surveillants Titulaires -->
+        <div class="role-col">
+          <div class="role-col-title">
+            <span>👥 Surveillants Titulaires</span>
+            <span class="role-tag titular">2 profs requis</span>
+          </div>
+          <div class="teachers-list">
+            <div *ngFor="let surv of aff.surveillantsTitulaires; let i = index" class="teacher-item">
+              <span class="tch-idx">{{ i + 1 }}</span>
+              <div class="tch-info">
+                <strong>{{ surv.nomPrenom }}</strong>
+                <div class="tch-sub"><code>{{ surv.matricule }}</code> · {{ surv.etablissement }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Surveillant de Réserve -->
+        <div class="role-col">
+          <div class="role-col-title">
+            <span>🛡️ Surveillant de Réserve</span>
+            <span class="role-tag reserve">Volant / Remplacement</span>
+          </div>
+          <div *ngIf="aff.surveillantReserve" class="teacher-item">
+            <span class="tch-idx">R</span>
+            <div class="tch-info">
+              <strong>{{ aff.surveillantReserve.nomPrenom }}</strong>
+              <div class="tch-sub"><code>{{ aff.surveillantReserve.matricule }}</code> · {{ aff.surveillantReserve.etablissement }}</div>
+            </div>
+          </div>
+          <div *ngIf="!aff.surveillantReserve" class="no-reserve">
+            Aucun surveillant de réserve affecté
+          </div>
+        </div>
+
+        <!-- 3. Professeur Coordinateur Désigné -->
+        <div class="role-col">
+          <div class="role-col-title">
+            <span>⭐ Professeur Coordinateur de Centre</span>
+            <span class="role-tag coord">Responsable Logistique</span>
+          </div>
+          <div class="teacher-item coord-item">
+            <span class="tch-idx">★</span>
+            <div class="tch-info">
+              <strong>{{ aff.profCoordinateur.nomPrenom }}</strong>
+              <div class="tch-sub"><code>{{ aff.profCoordinateur.matricule }}</code> · {{ aff.profCoordinateur.etablissement }}</div>
+              <div class="tch-contact">📞 Tél d'urgence : {{ aff.profCoordinateur.tel }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Professeurs Correcteurs Désignés -->
+        <div class="role-col">
+          <div class="role-col-title">
+            <span>📝 Professeurs Correcteurs</span>
+            <span class="role-tag corr">Évaluation</span>
+          </div>
+          <div class="teachers-list">
+            <div *ngFor="let corr of aff.profsCorrecteurs" class="teacher-item">
+              <span class="tch-idx">✍️</span>
+              <div class="tch-info">
+                <strong>{{ corr.nomPrenom }}</strong>
+                <div class="tch-sub"><code>{{ corr.matricule }}</code> · {{ corr.centreCorrection }}</div>
+                <div class="tch-quota">Quota attribué : <strong>{{ corr.quotaCopies }} copies/projets</strong></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- ONGLET 4 : PV OFFICIEL & ORDRE DE MISSION                      -->
+  <!-- ============================================================== -->
+  <section *ngIf="activeTab === 'pv'" class="tab-content">
+    <div class="pv-actions-bar no-print">
+      <div>
+        <h2>Procès-Verbal Officiel de Répartition du Bac Pratique</h2>
+        <p class="section-sub">Document officiel de la Direction Générale des Examens validé par l'Inspecteur Pédagogique</p>
+      </div>
+      <div>
+        <button class="btn btn-primary" (click)="imprimerPV()">
+          🖨️ Imprimer / Exporter le PV Officiel (PDF)
+        </button>
+      </div>
+    </div>
+
+    <!-- Document Officiel Format Ministère (Imprimable) -->
+    <div class="pv-document printable-area">
+      <div class="pv-header">
+        <div class="pv-rep">
+          <div>الجمهورية التونسية</div>
+          <div>وزارة التربية</div>
+          <div>الإدارة العامة للامتحانات</div>
+          <div>المندوبية الجهوية للتربية بمنوبة</div>
+        </div>
+        <div class="pv-crest">
+          <span style="font-size: 2.2rem;">🇹🇳</span>
+          <div style="font-size:0.75rem; font-weight:700;">RÉPUBLIQUE TUNISIENNE<br>MINISTÈRE DE L'ÉDUCATION</div>
+        </div>
+        <div class="pv-fr">
+          <div>RÉPUBLIQUE TUNISIENNE</div>
+          <div>MINISTÈRE DE L'ÉDUCATION</div>
+          <div>Direction Générale des Examens</div>
+          <div>Inspection Pédagogique d'Informatique</div>
+        </div>
+      </div>
+
+      <div class="pv-title-block">
+        <h1 class="pv-doc-title">PROCÈS-VERBAL OFFICIEL DE RÉPARTITION ET D'AFFECTATION</h1>
+        <div class="pv-doc-sub">ÉPREUVE PRATIQUE D'INFORMATIQUE — BACCALAURÉAT NATIONAL 2026</div>
+        <div class="pv-doc-cre">Circonscription Pédagogique : {{ selectedCreNom }} · Session Principale</div>
+      </div>
+
+      <div class="pv-body">
+        <p>
+          En application des arrêtés ministériels relatifs à l'organisation des examens nationaux du Baccalauréat, 
+          l'Inspecteur Pédagogique certifie avoir procédé aux vérifications suivantes :
+        </p>
+
+        <ol class="pv-clauses">
+          <li>
+            <strong>Conformité des Laboratoires :</strong> Vérification préalable des images systèmes certifiées, de l'isolation étanche du réseau Internet et de la disponibilité des postes de secours.
+          </li>
+          <li>
+            <strong>Règle d'or de Préparation Technique :</strong> Désignation exclusive d'<strong>UN SEUL ET UNIQUE professeur responsable par laboratoire</strong> pour la préparation des postes d'examen.
+          </li>
+          <li>
+            <strong>Désignation des Enseignants :</strong> Arrêt de la liste officielle des professeurs surveillants titulaires (2 par salle), des surveillants de réserve, des professeurs coordinateurs de centre et des correcteurs.
+          </li>
+        </ol>
+
+        <!-- Tableau Officiel Récapitulatif -->
+        <table class="pv-table">
+          <thead>
+            <tr>
+              <th>Date & Horaire</th>
+              <th>Centre d'Épreuve / Labo</th>
+              <th>Prof Coordinateur</th>
+              <th>Surveillants Titulaires (2)</th>
+              <th>Surveillant Réserve</th>
+              <th>Correcteurs Désignés</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let aff of affectations">
+              <td>
+                <strong>{{ aff.jourLibelle }}</strong><br>
+                <small>{{ aff.seanceHoraire }}</small>
+              </td>
+              <td>
+                <strong>{{ aff.etablissementNom }}</strong><br>
+                <small>{{ aff.laboNom }}</small>
+              </td>
+              <td>
+                {{ aff.profCoordinateur.nomPrenom }}<br>
+                <small>Matr. {{ aff.profCoordinateur.matricule }}</small>
+              </td>
+              <td>
+                <div *ngFor="let s of aff.surveillantsTitulaires">
+                  • {{ s.nomPrenom }} ({{ s.etablissement }})
+                </div>
+              </td>
+              <td>
+                {{ aff.surveillantReserve ? aff.surveillantReserve.nomPrenom : 'Non affecté' }}
+              </td>
+              <td>
+                <div *ngFor="let c of aff.profsCorrecteurs">
+                  • {{ c.nomPrenom }} ({{ c.quotaCopies }} copies)
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Signatures et Cachets Officiels -->
+        <div class="pv-signatures">
+          <div class="sig-box">
+            <div class="sig-title">Le Chef de Centre d'Épreuve</div>
+            <div class="sig-sub">(Signature & Cachet)</div>
+            <div class="sig-space"></div>
+          </div>
+          <div class="sig-box">
+            <div class="sig-title">Le Directeur de la CRE</div>
+            <div class="sig-sub">(Direction Régionale)</div>
+            <div class="sig-space"></div>
+          </div>
+          <div class="sig-box highlight">
+            <div class="sig-title">L'Inspecteur Pédagogique d'Informatique</div>
+            <div class="sig-sub">M. {{ currentUser?.prenom || 'Taoufik' }} {{ currentUser?.nom || 'Ben Amor' }}</div>
+            <div class="sig-space">
+              <span class="digital-stamp">VISA OFFICIEL ACCORDÉ<br>MINISTÈRE DE L'ÉDUCATION · BAC 2026</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================== -->
+  <!-- MODALE : DÉSIGNATION STRICTE 1 SEUL PROF PAR LABO              -->
+  <!-- ============================================================== -->
+  <div *ngIf="showDesignationModal && selectedLaboForDesignation" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Désignation du Professeur Responsable Unique</h3>
+        <button class="modal-close" (click)="showDesignationModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="alert-rule">
+          <strong>⚖️ RÈGLE MINISTÉRIELLE STRICTE :</strong>
+          <p>Un laboratoire ne peut être préparé que par <strong>UN SEUL professeur responsable</strong>. Il est strictement interdit d'assigner le même professeur à plusieurs laboratoires distincts.</p>
+        </div>
+
+        <p>Laboratoire concerné : <strong>{{ selectedLaboForDesignation.nomLabo }}</strong> ({{ selectedLaboForDesignation.etablissementNom }})</p>
+
+        <div class="form-group">
+          <label>Sélectionner le professeur responsable unique :</label>
+          <select [(ngModel)]="selectedProfMatriculeForLabo" class="form-select">
+            <option value="" disabled>-- Choisir un enseignant du vivier --</option>
+            <option *ngFor="let p of enseignantsVivier" [value]="p.matricule">
+              {{ p.prenom }} {{ p.nom }} (Matr: {{ p.matricule }} · {{ p.etablissementOrigine }})
+            </option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showDesignationModal = false">Annuler</button>
+        <button class="btn btn-primary" (click)="confirmerDesignationProf()">
+          ✓ Confirmer la désignation exclusive
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODALE : NOUVELLE AFFECTATION DE SÉANCE BAC                    -->
+  <!-- ============================================================== -->
+  <div *ngIf="showAddAffectationModal" class="modal-backdrop">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h3>Planifier une Séance d'Épreuve Pratique du Bac</h3>
+        <button class="modal-close" (click)="showAddAffectationModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Centre d'Épreuve (Établissement) :</label>
+            <input type="text" [(ngModel)]="newAffectation.etablissementNom" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Laboratoire Informatique :</label>
+            <input type="text" [(ngModel)]="newAffectation.laboNom" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Journée du Bac :</label>
+            <select [(ngModel)]="newAffectation.dateJour" class="form-select">
+              <option *ngFor="let j of joursBac" [value]="j.date">{{ j.libelle }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Séance Horaire :</label>
+            <select [(ngModel)]="newAffectation.seanceHoraire" class="form-select">
+              <option value="08h00 - 10h00 (Séance 1)">08h00 - 10h00 (Séance 1)</option>
+              <option value="10h30 - 12h30 (Séance 2)">10h30 - 12h30 (Séance 2)</option>
+              <option value="14h00 - 16h00 (Séance 3)">14h00 - 16h00 (Séance 3)</option>
+            </select>
+          </div>
+        </div>
+
+        <h4 style="margin-top:1.2rem; color:#0369a1;">Désignation des Enseignants :</h4>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Surveillant Titulaire 1 :</label>
+            <select [(ngModel)]="newAffectation.surveillant1Matricule" class="form-select">
+              <option value="" disabled>-- Choisir Surveillant 1 --</option>
+              <option *ngFor="let p of enseignantsVivier" [value]="p.matricule">
+                {{ p.prenom }} {{ p.nom }} ({{ p.matricule }})
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Surveillant Titulaire 2 :</label>
+            <select [(ngModel)]="newAffectation.surveillant2Matricule" class="form-select">
+              <option value="" disabled>-- Choisir Surveillant 2 --</option>
+              <option *ngFor="let p of enseignantsVivier" [value]="p.matricule">
+                {{ p.prenom }} {{ p.nom }} ({{ p.matricule }})
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Surveillant de Réserve (Volant) :</label>
+            <select [(ngModel)]="newAffectation.reserveMatricule" class="form-select">
+              <option value="">-- Aucun / En réserve centrale --</option>
+              <option *ngFor="let p of enseignantsVivier" [value]="p.matricule">
+                {{ p.prenom }} {{ p.nom }} ({{ p.matricule }})
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Professeur Coordinateur de Centre :</label>
+            <select [(ngModel)]="newAffectation.coordinateurMatricule" class="form-select">
+              <option *ngFor="let p of enseignantsVivier" [value]="p.matricule">
+                {{ p.prenom }} {{ p.nom }} ({{ p.matricule }})
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <h4 style="margin-top:1.2rem; color:#0369a1;">Désignation du Correcteur :</h4>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Professeur Correcteur :</label>
+            <select [(ngModel)]="newAffectation.correcteurMatricule" class="form-select">
+              <option *ngFor="let p of enseignantsVivier" [value]="p.matricule">
+                {{ p.prenom }} {{ p.nom }} ({{ p.matricule }})
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Quota de copies / projets attribué :</label>
+            <input type="number" [(ngModel)]="newAffectation.quotaCopies" class="form-control" min="10" max="150">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showAddAffectationModal = false">Annuler</button>
+        <button class="btn btn-primary" (click)="ajouterAffectation()">
+          ✓ Valider et Enregistrer l'Affectation
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

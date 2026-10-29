@@ -11,7 +11,8 @@ export type UserRole =
   | 'TECHNICIEN'
   | 'AGENT_ADMIN'
   | 'TECHNICIEN_PRESTATAIRE'
-  | 'SD_BATIMENTS';
+  | 'SD_BATIMENTS'
+  | 'INSPECTEUR';
 
 export interface DotationEquipement {
   id: string;
@@ -276,6 +277,20 @@ export const PRESET_ACCOUNTS: UserAccount[] = [
       vehiculesSupervises: 6,
       chauffeursActifs: 5
     }
+  },
+  {
+    id: 'USR-010',
+    matricule: 'INSP-9001',
+    nom: 'Ben Amor',
+    prenom: 'Taoufik',
+    email: 'inspecteur.informatique@edunet.tn',
+    motDePasse: 'Inspecteur@2026',
+    role: 'INSPECTEUR',
+    roleLabel: 'Inspecteur Pédagogique (Informatique & TIC)',
+    perimetre: 'Inspection Régionale de l\'Enseignement Secondaire · CRE Manouba',
+    creId: 'CRE-01',
+    creNom: 'CRE Manouba',
+    avatar: '🎓'
   }
 ];
 
@@ -381,6 +396,9 @@ export class AuthService {
       case 'SD_BATIMENTS':
         this.router.navigate(['/sd-batiments']);
         break;
+      case 'INSPECTEUR':
+        this.router.navigate(['/inspecteur']);
+        break;
       default:
         this.router.navigate(['/login']);
     }
@@ -409,6 +427,7 @@ export class AuthService {
       case 'AGENT_ADMIN': return '/agent-admin';
       case 'TECHNICIEN_PRESTATAIRE': return '/technicien-prestataire';
       case 'SD_BATIMENTS': return '/sd-batiments';
+      case 'INSPECTEUR': return '/inspecteur';
       default: return '/login';
     }
   }

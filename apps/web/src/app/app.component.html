@@ -69,6 +69,13 @@
             🚐 Parc Auto, Chauffeurs & Bâtiments
           </a>
         </ng-container>
+
+        <!-- Rôle Inspecteur Pédagogique (Informatique & TIC) -->
+        <ng-container *ngIf="user.role === 'INSPECTEUR'">
+          <a routerLink="/inspecteur" routerLinkActive="nav-active" class="nav-link">
+            🎓 Espace Inspection & Bac Pratique
+          </a>
+        </ng-container>
       </nav>
     </div>
 

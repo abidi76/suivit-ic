@@ -116,7 +116,9 @@
                        acc.role === 'PROF_LABO' ? '/prof' :
                        acc.role === 'TECHNICIEN' ? '/technicien' :
                        acc.role === 'AGENT_ADMIN' ? '/agent-admin' :
-                       acc.role === 'TECHNICIEN_PRESTATAIRE' ? '/technicien-prestataire' : '/sd-batiments' }}
+                       acc.role === 'TECHNICIEN_PRESTATAIRE' ? '/technicien-prestataire' :
+                       acc.role === 'SD_BATIMENTS' ? '/sd-batiments' :
+                       acc.role === 'INSPECTEUR' ? '/inspecteur' : '/admin-central' }}
                   </span>
                 </td>
                 <td>
