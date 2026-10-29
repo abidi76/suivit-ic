@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AuthService, PRESET_ACCOUNTS, UserAccount } from '../../../core/services/auth.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -11,22 +11,27 @@ import { AuthService, PRESET_ACCOUNTS, UserAccount } from '../../../core/service
   styleUrls: ['./login.component.scss']
 })
 export class LoginComponent implements OnInit {
+  // Champs de connexion manuelle stricte
   identifiant = '';
   motDePasse = '';
   errorMessage = '';
   successMessage = '';
   isSubmitting = false;
   showPassword = false;
-  showCredentialsDirectory = true; // Ouvert par défaut pour faciliter l'accès immédiat aux mots de passe
-  selectedAccountMatricule = '';
-  
-  // Annuaire officiel des 10 profils d'acteurs
-  officialAccounts: UserAccount[] = PRESET_ACCOUNTS;
+
+  // Modale de changement / réinitialisation de mot de passe
+  showResetModal = false;
+  resetIdentifiant = '';
+  resetNouveauMotDePasse = '';
+  resetConfirmationMotDePasse = '';
+  resetErrorMessage = '';
+  resetSuccessMessage = '';
+  isResetSubmitting = false;
 
   constructor(private authService: AuthService) {}
 
   ngOnInit(): void {
-    // Si l'utilisateur est déjà connecté, le rediriger directement vers son dashboard
+    // Si l'utilisateur a déjà une session valide, l'acheminer directement vers son dashboard
     if (this.authService.isLoggedIn()) {
       const current = this.authService.currentUserValue;
       if (current) {
@@ -35,40 +40,32 @@ export class LoginComponent implements OnInit {
     }
   }
 
-  /**
-   * Sélection rapide depuis la liste déroulante
-   */
-  onAccountSelectChange(): void {
-    if (!this.selectedAccountMatricule) return;
-    const acc = this.officialAccounts.find(a => a.matricule === this.selectedAccountMatricule);
-    if (acc) {
-      this.preRemplir(acc);
-    }
-  }
-
   onSubmit(): void {
     this.errorMessage = '';
     this.successMessage = '';
 
-    if (!this.identifiant.trim()) {
-      this.errorMessage = 'Veuillez saisir votre identifiant ou choisir un acteur dans la liste déroulante ci-dessus (ex: inspecteur.informatique@edunet.tn ou INSP-9001).';
+    const id = this.identifiant.trim();
+    const pw = this.motDePasse.trim();
+
+    if (!id) {
+      this.errorMessage = 'Veuillez saisir votre adresse e-mail institutionnelle ou votre matricule.';
       return;
     }
 
-    if (!this.motDePasse.trim()) {
-      this.errorMessage = 'Veuillez saisir le mot de passe attribué à ce compte.';
+    if (!pw) {
+      this.errorMessage = 'Veuillez saisir votre mot de passe.';
       return;
     }
 
     this.isSubmitting = true;
 
-    this.authService.login({ identifiant: this.identifiant, motDePasse: this.motDePasse }).subscribe({
+    this.authService.login({ identifiant: id, motDePasse: pw }).subscribe({
       next: (res) => {
         this.isSubmitting = false;
         if (!res.success) {
           this.errorMessage = res.message || 'Identifiant ou mot de passe incorrect.';
         } else {
-          this.successMessage = '✓ Authentification réussie. Redirection vers votre Dashboard officiel...';
+          this.successMessage = '✓ Authentification réussie. Acheminement vers votre Dashboard officiel...';
         }
       },
       error: () => {
@@ -82,28 +79,64 @@ export class LoginComponent implements OnInit {
     this.showPassword = !this.showPassword;
   }
 
-  toggleDirectory(): void {
-    this.showCredentialsDirectory = !this.showCredentialsDirectory;
+  ouvrirModaleReset(): void {
+    this.resetIdentifiant = this.identifiant.trim();
+    this.resetNouveauMotDePasse = '';
+    this.resetConfirmationMotDePasse = '';
+    this.resetErrorMessage = '';
+    this.resetSuccessMessage = '';
+    this.showResetModal = true;
   }
 
-  /**
-   * Pré-remplit les champs du formulaire avec les identifiants de l'acteur choisi
-   */
-  preRemplir(acc: UserAccount): void {
-    this.selectedAccountMatricule = acc.matricule;
-    this.identifiant = acc.email;
-    this.motDePasse = acc.motDePasse;
-    this.errorMessage = '';
-    this.successMessage = `Compte sélectionné : ${acc.prenom} ${acc.nom} (${acc.roleLabel}). Cliquez sur « Se connecter » pour accéder au dashboard.`;
+  fermerModaleReset(): void {
+    this.showResetModal = false;
   }
 
-  /**
-   * Renseigne les identifiants et valide immédiatement la connexion
-   */
-  connecterDirect(acc: UserAccount): void {
-    this.selectedAccountMatricule = acc.matricule;
-    this.identifiant = acc.email;
-    this.motDePasse = acc.motDePasse;
-    this.onSubmit();
+  confirmerChangementMotDePasse(): void {
+    this.resetErrorMessage = '';
+    this.resetSuccessMessage = '';
+
+    const email = this.resetIdentifiant.trim();
+    const nouveau = this.resetNouveauMotDePasse.trim();
+    const confirm = this.resetConfirmationMotDePasse.trim();
+
+    if (!email) {
+      this.resetErrorMessage = 'Veuillez saisir votre adresse e-mail institutionnelle (@edunet.tn).';
+      return;
+    }
+
+    if (!nouveau || nouveau.length < 6) {
+      this.resetErrorMessage = 'Le mot de passe doit comporter au moins 6 caractères.';
+      return;
+    }
+
+    if (nouveau !== confirm) {
+      this.resetErrorMessage = 'Les deux mots de passe saisis ne sont pas identiques.';
+      return;
+    }
+
+    this.isResetSubmitting = true;
+
+    this.authService.changerMotDePasse(email, nouveau).subscribe({
+      next: (res) => {
+        this.isResetSubmitting = false;
+        if (!res.success) {
+          this.resetErrorMessage = res.message;
+        } else {
+          this.resetSuccessMessage = res.message;
+          // Pré-remplit le formulaire principal avec les nouveaux identifiants
+          this.identifiant = email;
+          this.motDePasse = nouveau;
+          setTimeout(() => {
+            this.showResetModal = false;
+            this.successMessage = '✓ Nouveau mot de passe enregistré et transmis à votre boîte e-mail. Vous pouvez maintenant cliquer sur « Se connecter ».';
+          }, 2000);
+        }
+      },
+      error: () => {
+        this.isResetSubmitting = false;
+        this.resetErrorMessage = 'Erreur lors de la mise à jour du mot de passe.';
+      }
+    });
   }
 }

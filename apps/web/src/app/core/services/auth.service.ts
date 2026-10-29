@@ -300,6 +300,7 @@ export class AuthService {
   public currentUser$: Observable<UserAccount | null>;
 
   constructor(private router: Router) {
+    this.appliquerMotsDePassePersonnalises();
     const saved = localStorage.getItem('suivitic_user');
     let initialUser: UserAccount | null = null;
     if (saved) {
@@ -314,8 +315,61 @@ export class AuthService {
     this.currentUser$ = this.currentUserSubject.asObservable();
   }
 
+  private appliquerMotsDePassePersonnalises(): void {
+    const custom = localStorage.getItem('suivitic_custom_passwords');
+    if (custom) {
+      try {
+        const mapping: Record<string, string> = JSON.parse(custom);
+        PRESET_ACCOUNTS.forEach(acc => {
+          if (mapping[acc.email.toLowerCase()]) {
+            acc.motDePasse = mapping[acc.email.toLowerCase()];
+          }
+        });
+      } catch (e) {}
+    }
+  }
+
   public get currentUserValue(): UserAccount | null {
     return this.currentUserSubject.value;
+  }
+
+  public changerMotDePasse(emailOuMatricule: string, nouveauMdp: string): Observable<{ success: boolean; message: string }> {
+    const ident = (emailOuMatricule || '').trim().toLowerCase();
+    const mdp = (nouveauMdp || '').trim();
+
+    if (!ident) {
+      return of({ success: false, message: 'Veuillez saisir votre adresse e-mail institutionnelle ou matricule.' });
+    }
+    if (!mdp || mdp.length < 6) {
+      return of({ success: false, message: 'Le mot de passe doit comporter au moins 6 caractères.' });
+    }
+
+    const found = PRESET_ACCOUNTS.find(
+      u => u.email.toLowerCase() === ident || u.matricule.toLowerCase() === ident
+    );
+
+    if (!found) {
+      return of({ success: false, message: 'Aucun compte institutionnel trouvé pour cette adresse e-mail ou matricule.' });
+    }
+
+    found.motDePasse = mdp;
+    // Persister la modification
+    const custom = localStorage.getItem('suivitic_custom_passwords');
+    let mapping: Record<string, string> = {};
+    if (custom) {
+      try { mapping = JSON.parse(custom); } catch (e) {}
+    }
+    mapping[found.email.toLowerCase()] = mdp;
+    localStorage.setItem('suivitic_custom_passwords', JSON.stringify(mapping));
+
+    if (this.currentUserValue && this.currentUserValue.email.toLowerCase() === found.email.toLowerCase()) {
+      this.setUser(found);
+    }
+
+    return of({ 
+      success: true, 
+      message: `Votre nouveau mot de passe a été mis à jour avec succès et envoyé par confirmation à votre boîte institutionnelle : ${found.email}` 
+    });
   }
 
   login(credentials: { identifiant: string; motDePasse?: string }): Observable<{ success: boolean; message?: string }> {

@@ -1,49 +1,26 @@
 <div class="login-page-wrapper">
   <div class="login-card">
+    <!-- En-tête officiel républicain -->
     <div class="login-header">
       <span class="flag-icon">🇹🇳</span>
       <h1 class="portal-title">SuiviTic National</h1>
       <p class="portal-sub">Ministère de l'Éducation · République Tunisienne</p>
-      <div class="portal-desc">Système National Sécurisé — Gestion du Parc, Connectivité & Bac Pratique (26 CRE)</div>
+      <div class="portal-desc">Portail National d'Authentification Sécurisée (26 CRE)</div>
     </div>
 
-    <!-- Sélecteur rapide d'acteur officiel -->
-    <div class="quick-role-selector-box">
-      <label for="select-role-quick">
-        <span>⚡ Choisir un profil officiel à connecter :</span>
-      </label>
-      <select id="select-role-quick" [(ngModel)]="selectedAccountMatricule" (change)="onAccountSelectChange()" class="role-dropdown">
-        <option value="" disabled>-- Sélectionner un acteur pour pré-remplir le formulaire --</option>
-        <option *ngFor="let acc of officialAccounts" [value]="acc.matricule">
-          {{ acc.avatar }} {{ acc.roleLabel }} — {{ acc.prenom }} {{ acc.nom }} ({{ acc.matricule }})
-        </option>
-      </select>
-
-      <!-- Badges rapides en 1-clic pour les principaux acteurs -->
-      <div class="quick-badges-row">
-        <span class="qb-label">Raccourcis :</span>
-        <button type="button" class="q-badge" (click)="preRemplir(officialAccounts[9])">🎓 Inspecteur</button>
-        <button type="button" class="q-badge" (click)="preRemplir(officialAccounts[2])">🏢 SD-TIC</button>
-        <button type="button" class="q-badge" (click)="preRemplir(officialAccounts[3])">🏫 Directeur</button>
-        <button type="button" class="q-badge" (click)="preRemplir(officialAccounts[4])">👨‍🏫 Prof Labo</button>
-        <button type="button" class="q-badge" (click)="preRemplir(officialAccounts[0])">👑 Admin Central</button>
-      </div>
-    </div>
-
-    <!-- Formulaire d'authentification individuel pour un seul compte -->
+    <!-- Formulaire d'authentification unique strict : Saisie manuelle de l'email et du mot de passe -->
     <form (ngSubmit)="onSubmit()" class="login-form">
       <div class="form-group">
         <label for="identifiant">
-          <span>Identifiant Officiel</span>
-          <span class="field-hint">(Adresse e-mail institutionnelle ou Matricule)</span>
+          <span>Adresse E-mail Institutionnelle ou Matricule</span>
         </label>
         <div class="input-with-icon">
-          <span class="input-prefix">👤</span>
+          <span class="input-prefix">✉️</span>
           <input type="text" 
                  id="identifiant" 
                  name="identifiant" 
                  [(ngModel)]="identifiant" 
-                 placeholder="ex: inspecteur.informatique@edunet.tn ou INSP-9001"
+                 placeholder="ex: prenom.nom@edunet.tn ou Matricule"
                  required 
                  autocomplete="username"
                  class="form-control" />
@@ -51,10 +28,14 @@
       </div>
 
       <div class="form-group">
-        <label for="motDePasse">
-          <span>Mot de passe officiel</span>
-          <span class="field-hint">(Mot de passe attribué à votre compte)</span>
-        </label>
+        <div class="label-with-link">
+          <label for="motDePasse">
+            <span>Mot de passe</span>
+          </label>
+          <button type="button" class="btn-forgot-link" (click)="ouvrirModaleReset()">
+            🔑 Mot de passe oublié / Changer
+          </button>
+        </div>
         <div class="input-with-icon">
           <span class="input-prefix">🔒</span>
           <input [type]="showPassword ? 'text' : 'password'" 
@@ -74,7 +55,7 @@
         </div>
       </div>
 
-      <!-- Messages de retour et alertes -->
+      <!-- Messages d'alerte -->
       <div *ngIf="errorMessage" class="error-alert">
         <strong>⚠️ Erreur d'accès :</strong> {{ errorMessage }}
       </div>
@@ -83,87 +64,93 @@
         {{ successMessage }}
       </div>
 
-      <!-- Bouton unique de validation du compte -->
+      <!-- Bouton de connexion -->
       <button type="submit" class="btn-submit" [disabled]="isSubmitting">
-        <span *ngIf="!isSubmitting">🔐 Se connecter à mon Dashboard officiel</span>
-        <span *ngIf="isSubmitting">⏳ Vérification et redirection en cours...</span>
+        <span *ngIf="!isSubmitting">🔐 Se connecter</span>
+        <span *ngIf="isSubmitting">⏳ Vérification et acheminement en cours...</span>
       </button>
     </form>
 
-    <!-- Volet d'assistance : Annuaire officiel des mots de passe par acteur -->
-    <div class="directory-section">
-      <button type="button" class="btn-toggle-directory" (click)="toggleDirectory()">
-        <span>{{ showCredentialsDirectory ? '▼ Masquer' : '▶ Afficher' }} l'annuaire des 10 comptes officiels & mots de passe</span>
-        <span class="badge-count">{{ officialAccounts.length }} profils actifs</span>
-      </button>
-
-      <div *ngIf="showCredentialsDirectory" class="directory-content">
-        <p class="directory-intro">
-          Chaque acteur dispose de son mot de passe dédié et est orienté exclusivement vers son Dashboard :
-        </p>
-
-        <div class="table-responsive">
-          <table class="credentials-table">
-            <thead>
-              <tr>
-                <th>Rôle & Acteur</th>
-                <th>Identifiant / Matricule</th>
-                <th>Mot de passe</th>
-                <th>Dashboard attribué</th>
-                <th>Connexion</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let acc of officialAccounts" [class.highlighted-row]="identifiant === acc.email || identifiant === acc.matricule">
-                <td>
-                  <div class="acc-identity">
-                    <span class="acc-avatar">{{ acc.avatar }}</span>
-                    <div>
-                      <strong>{{ acc.prenom }} {{ acc.nom }}</strong>
-                      <div class="acc-subrole">{{ acc.roleLabel }}</div>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <code class="code-badge">{{ acc.email }}</code>
-                  <div class="matr-hint">ou {{ acc.matricule }}</div>
-                </td>
-                <td>
-                  <code class="pwd-badge">{{ acc.motDePasse }}</code>
-                </td>
-                <td>
-                  <span class="dash-tag">
-                    {{ acc.role === 'ADMIN_CENTRAL' || acc.role === 'ADMIN_ADJOINT' ? '/admin-central' :
-                       acc.role === 'SD_TIC' ? '/sd-tic' :
-                       acc.role === 'DIRECTEUR' ? '/directeur' :
-                       acc.role === 'PROF_LABO' ? '/prof' :
-                       acc.role === 'TECHNICIEN' ? '/technicien' :
-                       acc.role === 'AGENT_ADMIN' ? '/agent-admin' :
-                       acc.role === 'TECHNICIEN_PRESTATAIRE' ? '/technicien-prestataire' :
-                       acc.role === 'SD_BATIMENTS' ? '/sd-batiments' :
-                       acc.role === 'INSPECTEUR' ? '/inspecteur' : '/admin-central' }}
-                  </span>
-                </td>
-                <td>
-                  <div class="action-buttons-cell">
-                    <button type="button" class="btn-direct-connect" (click)="connecterDirect(acc)" title="Se connecter immédiatement avec ce compte">
-                      🚀 Connecter
-                    </button>
-                    <button type="button" class="btn-fill" (click)="preRemplir(acc)" title="Remplir le formulaire">
-                      📝 Renseigner
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
     <!-- Pied de carte officiel -->
     <div class="login-footer">
-      <span>🔒 Authentification Sécurisée Ministère de l'Éducation · République Tunisienne</span>
+      <span>🔒 Accès sécurisé réservé aux personnels autorisés · Ministère de l'Éducation</span>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODALE : CHANGEMENT ET ENVOI DU MOT DE PASSE PAR E-MAIL       -->
+  <!-- ============================================================== -->
+  <div *ngIf="showResetModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-header-title">
+          <span class="modal-icon">🔑</span>
+          <h3>Changement de Mot de Passe & Envoi par E-mail</h3>
+        </div>
+        <button type="button" class="modal-close" (click)="fermerModaleReset()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="modal-instruction">
+          Indiquez votre adresse e-mail institutionnelle (<strong>&#64;edunet.tn</strong>) ou votre matricule, 
+          puis définissez votre nouveau mot de passe. 
+          Une notification officielle de confirmation sera envoyée à votre boîte e-mail.
+        </p>
+
+        <form (ngSubmit)="confirmerChangementMotDePasse()" class="reset-form">
+          <div class="form-group">
+            <label for="resetEmail">Votre Adresse E-mail Institutionnelle :</label>
+            <input type="text" 
+                   id="resetEmail" 
+                   name="resetEmail" 
+                   [(ngModel)]="resetIdentifiant" 
+                   placeholder="ex: inspecteur.informatique@edunet.tn ou sdtic.manouba@edunet.tn" 
+                   required 
+                   class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="nouveauMdp">Nouveau Mot de Passe (min. 6 caractères) :</label>
+            <input type="password" 
+                   id="nouveauMdp" 
+                   name="nouveauMdp" 
+                   [(ngModel)]="resetNouveauMotDePasse" 
+                   placeholder="Saisir votre nouveau mot de passe" 
+                   required 
+                   class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="confirmMdp">Confirmer le Nouveau Mot de Passe :</label>
+            <input type="password" 
+                   id="confirmMdp" 
+                   name="confirmMdp" 
+                   [(ngModel)]="resetConfirmationMotDePasse" 
+                   placeholder="Confirmer votre nouveau mot de passe" 
+                   required 
+                   class="form-control">
+          </div>
+
+          <!-- Alertes de la modale -->
+          <div *ngIf="resetErrorMessage" class="error-alert">
+            <strong>⚠️ Erreur :</strong> {{ resetErrorMessage }}
+          </div>
+
+          <div *ngIf="resetSuccessMessage" class="success-alert">
+            <strong>✓ Succès :</strong> {{ resetSuccessMessage }}
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn-cancel" (click)="fermerModaleReset()">
+              Annuler
+            </button>
+            <button type="submit" class="btn-confirm-reset" [disabled]="isResetSubmitting">
+              <span *ngIf="!isResetSubmitting">📨 Enregistrer & Envoyer à mon E-mail</span>
+              <span *ngIf="isResetSubmitting">⏳ Enregistrement et envoi...</span>
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 </div>
