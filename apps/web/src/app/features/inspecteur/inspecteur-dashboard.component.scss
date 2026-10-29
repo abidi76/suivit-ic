@@ -72,28 +72,32 @@
     align-items: center;
     gap: 1rem;
 
-    .cre-selector {
+    .cre-fixed-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
       background: #f8fafc;
-      border: 1px solid #cbd5e1;
-      padding: 0.4rem 0.8rem;
+      border: 1.5px solid #cbd5e1;
+      padding: 0.45rem 0.9rem;
       border-radius: 8px;
 
-      label {
-        display: block;
-        font-size: 0.7rem;
-        font-weight: 700;
-        color: #64748b;
-        margin-bottom: 0.15rem;
+      .cre-fixed-icon {
+        font-size: 1.25rem;
       }
 
-      select {
-        border: none;
-        background: transparent;
+      .cre-fixed-lbl {
+        font-size: 0.675rem;
         font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+
+      .cre-fixed-name {
+        display: block;
+        font-size: 0.95rem;
+        font-weight: 800;
         color: #0284c7;
-        font-size: 0.875rem;
-        outline: none;
-        cursor: pointer;
       }
     }
 

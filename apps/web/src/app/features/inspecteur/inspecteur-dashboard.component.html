@@ -12,17 +12,18 @@
         <div class="sup-title">Ministère de l'Éducation · Direction Générale des Examens & Inspection Pédagogique</div>
         <h1 class="main-title">Espace Inspecteur Pédagogique (Informatique & TIC)</h1>
         <div class="user-meta">
-          Inspecteur : <strong>{{ currentUser?.prenom || 'Taoufik' }} {{ currentUser?.nom || 'Ben Amor' }}</strong> · Circonscription : <strong>{{ selectedCreNom }}</strong>
+          Inspecteur : <strong>{{ currentUser?.prenom || 'Taoufik' }} {{ currentUser?.nom || 'Ben Amor' }}</strong> · Affectation exclusive : <strong>{{ assignedCreNom }}</strong>
         </div>
       </div>
     </div>
 
     <div class="header-right">
-      <div class="cre-selector">
-        <label>📍 Région Pédagogique :</label>
-        <select [(ngModel)]="selectedCreNom">
-          <option *ngFor="let cre of listeCre26" [value]="cre">{{ cre }}</option>
-        </select>
+      <div class="cre-fixed-badge">
+        <span class="cre-fixed-icon">📍</span>
+        <div>
+          <div class="cre-fixed-lbl">Circonscription Exclusive :</div>
+          <strong class="cre-fixed-name">{{ assignedCreNom }}</strong>
+        </div>
       </div>
 
       <div class="badge-role">
@@ -464,7 +465,7 @@
       <div class="pv-title-block">
         <h1 class="pv-doc-title">PROCÈS-VERBAL OFFICIEL DE RÉPARTITION ET D'AFFECTATION</h1>
         <div class="pv-doc-sub">ÉPREUVE PRATIQUE D'INFORMATIQUE — BACCALAURÉAT NATIONAL 2026</div>
-        <div class="pv-doc-cre">Circonscription Pédagogique : {{ selectedCreNom }} · Session Principale</div>
+        <div class="pv-doc-cre">Circonscription Pédagogique Exclusive : {{ assignedCreNom }} · Session Principale</div>
       </div>
 
       <div class="pv-body">

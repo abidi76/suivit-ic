@@ -89,15 +89,9 @@ export class InspecteurDashboardComponent implements OnInit {
   currentUser: UserAccount | null = null;
   activeTab: 'inventaires' | 'preparation' | 'repartition' | 'pv' = 'preparation';
 
-  // Filtres
-  selectedCreNom = 'CRE Manouba';
-  listeCre26: string[] = [
-    'CRE Manouba', 'CRE Tunis 1', 'CRE Tunis 2', 'CRE Ariana', 'CRE Ben Arous',
-    'CRE Bizerte', 'CRE Nabeul', 'CRE Zaghouan', 'CRE Béja', 'CRE Jendouba',
-    'CRE Le Kef', 'CRE Siliana', 'CRE Sousse', 'CRE Monastir', 'CRE Mahdia',
-    'CRE Sfax 1', 'CRE Sfax 2', 'CRE Kairouan', 'CRE Kasserine', 'CRE Sidi Bouzid',
-    'CRE Gabès', 'CRE Médenine', 'CRE Tataouine', 'CRE Gafsa', 'CRE Tozeur', 'CRE Kébili'
-  ];
+  // RÈGLE STRICTE : Un inspecteur est affecté exclusivement à un seul CRE
+  assignedCreNom = 'CRE Manouba';
+  assignedCreId = 'CRE-01';
 
   selectedEtablissementId = 'ETAB-101';
   toastMessage = '';
@@ -359,6 +353,12 @@ export class InspecteurDashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.currentUser = this.authService.currentUserValue;
+    if (this.currentUser?.creNom) {
+      this.assignedCreNom = this.currentUser.creNom;
+    }
+    if (this.currentUser?.creId) {
+      this.assignedCreId = this.currentUser.creId;
+    }
     this.loadPersistedData();
   }
 

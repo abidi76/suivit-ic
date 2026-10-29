@@ -4,7 +4,30 @@
       <span class="flag-icon">🇹🇳</span>
       <h1 class="portal-title">SuiviTic National</h1>
       <p class="portal-sub">Ministère de l'Éducation · République Tunisienne</p>
-      <div class="portal-desc">Système National Sécurisé — Gestion du Parc & Connectivité des 26 CRE</div>
+      <div class="portal-desc">Système National Sécurisé — Gestion du Parc, Connectivité & Bac Pratique (26 CRE)</div>
+    </div>
+
+    <!-- Sélecteur rapide d'acteur officiel -->
+    <div class="quick-role-selector-box">
+      <label for="select-role-quick">
+        <span>⚡ Choisir un profil officiel à connecter :</span>
+      </label>
+      <select id="select-role-quick" [(ngModel)]="selectedAccountMatricule" (change)="onAccountSelectChange()" class="role-dropdown">
+        <option value="" disabled>-- Sélectionner un acteur pour pré-remplir le formulaire --</option>
+        <option *ngFor="let acc of officialAccounts" [value]="acc.matricule">
+          {{ acc.avatar }} {{ acc.roleLabel }} — {{ acc.prenom }} {{ acc.nom }} ({{ acc.matricule }})
+        </option>
+      </select>
+
+      <!-- Badges rapides en 1-clic pour les principaux acteurs -->
+      <div class="quick-badges-row">
+        <span class="qb-label">Raccourcis :</span>
+        <button type="button" class="q-badge" (click)="preRemplir(officialAccounts[9])">🎓 Inspecteur</button>
+        <button type="button" class="q-badge" (click)="preRemplir(officialAccounts[2])">🏢 SD-TIC</button>
+        <button type="button" class="q-badge" (click)="preRemplir(officialAccounts[3])">🏫 Directeur</button>
+        <button type="button" class="q-badge" (click)="preRemplir(officialAccounts[4])">👨‍🏫 Prof Labo</button>
+        <button type="button" class="q-badge" (click)="preRemplir(officialAccounts[0])">👑 Admin Central</button>
+      </div>
     </div>
 
     <!-- Formulaire d'authentification individuel pour un seul compte -->
@@ -20,7 +43,7 @@
                  id="identifiant" 
                  name="identifiant" 
                  [(ngModel)]="identifiant" 
-                 placeholder="ex: sdtic.manouba@edunet.tn ou SD-2001"
+                 placeholder="ex: inspecteur.informatique@edunet.tn ou INSP-9001"
                  required 
                  autocomplete="username"
                  class="form-control" />
@@ -29,8 +52,8 @@
 
       <div class="form-group">
         <label for="motDePasse">
-          <span>Mot de passe</span>
-          <span class="field-hint">(Mot de passe officiel attribué à l'acteur)</span>
+          <span>Mot de passe officiel</span>
+          <span class="field-hint">(Mot de passe attribué à votre compte)</span>
         </label>
         <div class="input-with-icon">
           <span class="input-prefix">🔒</span>
@@ -51,27 +74,27 @@
         </div>
       </div>
 
-      <!-- Messages de retour -->
+      <!-- Messages de retour et alertes -->
       <div *ngIf="errorMessage" class="error-alert">
         <strong>⚠️ Erreur d'accès :</strong> {{ errorMessage }}
       </div>
 
       <div *ngIf="successMessage" class="success-alert">
-        <strong>✓ Succès :</strong> {{ successMessage }}
+        {{ successMessage }}
       </div>
 
       <!-- Bouton unique de validation du compte -->
       <button type="submit" class="btn-submit" [disabled]="isSubmitting">
         <span *ngIf="!isSubmitting">🔐 Se connecter à mon Dashboard officiel</span>
-        <span *ngIf="isSubmitting">⏳ Vérification en cours...</span>
+        <span *ngIf="isSubmitting">⏳ Vérification et redirection en cours...</span>
       </button>
     </form>
 
-    <!-- Volet d'assistance : Annuaire officiel des mots de passe par acteur (Repliable) -->
+    <!-- Volet d'assistance : Annuaire officiel des mots de passe par acteur -->
     <div class="directory-section">
       <button type="button" class="btn-toggle-directory" (click)="toggleDirectory()">
-        <span>{{ showCredentialsDirectory ? '▼ Masquer' : '▶ Afficher' }} la liste officielle des acteurs & mots de passe</span>
-        <span class="badge-count">{{ officialAccounts.length }} acteurs configurés</span>
+        <span>{{ showCredentialsDirectory ? '▼ Masquer' : '▶ Afficher' }} l'annuaire des 10 comptes officiels & mots de passe</span>
+        <span class="badge-count">{{ officialAccounts.length }} profils actifs</span>
       </button>
 
       <div *ngIf="showCredentialsDirectory" class="directory-content">
@@ -87,11 +110,11 @@
                 <th>Identifiant / Matricule</th>
                 <th>Mot de passe</th>
                 <th>Dashboard attribué</th>
-                <th>Action</th>
+                <th>Connexion</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let acc of officialAccounts">
+              <tr *ngFor="let acc of officialAccounts" [class.highlighted-row]="identifiant === acc.email || identifiant === acc.matricule">
                 <td>
                   <div class="acc-identity">
                     <span class="acc-avatar">{{ acc.avatar }}</span>
@@ -122,9 +145,14 @@
                   </span>
                 </td>
                 <td>
-                  <button type="button" class="btn-fill" (click)="preRemplir(acc)" title="Copier ces identifiants dans le formulaire de connexion">
-                    📝 Renseigner
-                  </button>
+                  <div class="action-buttons-cell">
+                    <button type="button" class="btn-direct-connect" (click)="connecterDirect(acc)" title="Se connecter immédiatement avec ce compte">
+                      🚀 Connecter
+                    </button>
+                    <button type="button" class="btn-fill" (click)="preRemplir(acc)" title="Remplir le formulaire">
+                      📝 Renseigner
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>

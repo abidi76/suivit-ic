@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService, PRESET_ACCOUNTS, UserAccount } from '../../../core/services/auth.service';
@@ -10,31 +10,53 @@ import { AuthService, PRESET_ACCOUNTS, UserAccount } from '../../../core/service
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss']
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   identifiant = '';
   motDePasse = '';
   errorMessage = '';
   successMessage = '';
   isSubmitting = false;
   showPassword = false;
-  showCredentialsDirectory = false;
+  showCredentialsDirectory = true; // Ouvert par défaut pour faciliter l'accès immédiat aux mots de passe
+  selectedAccountMatricule = '';
   
-  // Annuaire officiel des 9 profils d'acteurs
+  // Annuaire officiel des 10 profils d'acteurs
   officialAccounts: UserAccount[] = PRESET_ACCOUNTS;
 
   constructor(private authService: AuthService) {}
+
+  ngOnInit(): void {
+    // Si l'utilisateur est déjà connecté, le rediriger directement vers son dashboard
+    if (this.authService.isLoggedIn()) {
+      const current = this.authService.currentUserValue;
+      if (current) {
+        this.authService.redirectUserByRole(current.role);
+      }
+    }
+  }
+
+  /**
+   * Sélection rapide depuis la liste déroulante
+   */
+  onAccountSelectChange(): void {
+    if (!this.selectedAccountMatricule) return;
+    const acc = this.officialAccounts.find(a => a.matricule === this.selectedAccountMatricule);
+    if (acc) {
+      this.preRemplir(acc);
+    }
+  }
 
   onSubmit(): void {
     this.errorMessage = '';
     this.successMessage = '';
 
     if (!this.identifiant.trim()) {
-      this.errorMessage = 'Veuillez saisir votre identifiant (adresse e-mail ou matricule officiel).';
+      this.errorMessage = 'Veuillez saisir votre identifiant ou choisir un acteur dans la liste déroulante ci-dessus (ex: inspecteur.informatique@edunet.tn ou INSP-9001).';
       return;
     }
 
     if (!this.motDePasse.trim()) {
-      this.errorMessage = 'Veuillez saisir votre mot de passe officiel.';
+      this.errorMessage = 'Veuillez saisir le mot de passe attribué à ce compte.';
       return;
     }
 
@@ -46,7 +68,7 @@ export class LoginComponent {
         if (!res.success) {
           this.errorMessage = res.message || 'Identifiant ou mot de passe incorrect.';
         } else {
-          this.successMessage = 'Authentification réussie. Redirection vers votre Dashboard officiel...';
+          this.successMessage = '✓ Authentification réussie. Redirection vers votre Dashboard officiel...';
         }
       },
       error: () => {
@@ -65,13 +87,23 @@ export class LoginComponent {
   }
 
   /**
-   * Pré-remplit les champs du formulaire sans connecter automatiquement,
-   * respectant la règle de saisie unique pour un compte.
+   * Pré-remplit les champs du formulaire avec les identifiants de l'acteur choisi
    */
   preRemplir(acc: UserAccount): void {
+    this.selectedAccountMatricule = acc.matricule;
     this.identifiant = acc.email;
     this.motDePasse = acc.motDePasse;
     this.errorMessage = '';
-    this.successMessage = `Identifiants pré-renseignés pour : ${acc.prenom} ${acc.nom} (${acc.roleLabel}). Cliquez sur « Se connecter » pour valider.`;
+    this.successMessage = `Compte sélectionné : ${acc.prenom} ${acc.nom} (${acc.roleLabel}). Cliquez sur « Se connecter » pour accéder au dashboard.`;
+  }
+
+  /**
+   * Renseigne les identifiants et valide immédiatement la connexion
+   */
+  connecterDirect(acc: UserAccount): void {
+    this.selectedAccountMatricule = acc.matricule;
+    this.identifiant = acc.email;
+    this.motDePasse = acc.motDePasse;
+    this.onSubmit();
   }
 }
