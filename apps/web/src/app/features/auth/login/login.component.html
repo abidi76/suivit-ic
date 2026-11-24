@@ -1,152 +1,103 @@
 <div class="login-page-wrapper">
   <div class="login-card">
-    <!-- En-tête officiel républicain -->
     <div class="login-header">
       <span class="flag-icon">🇹🇳</span>
       <h1 class="portal-title">SuiviTic National</h1>
       <p class="portal-sub">Ministère de l'Éducation · République Tunisienne</p>
-      <div class="portal-desc">Portail National d'Authentification Sécurisée (26 CRE)</div>
+      <div class="portal-desc">Portail National d'Authentification Sécurisée</div>
     </div>
 
-    <!-- Formulaire d'authentification unique strict : Saisie manuelle de l'email et du mot de passe -->
     <form (ngSubmit)="onSubmit()" class="login-form">
       <div class="form-group">
-        <label for="identifiant">
-          <span>Adresse E-mail Institutionnelle ou Matricule</span>
-        </label>
+        <label for="identifiant"><span>Adresse E-mail Institutionnelle ou Matricule</span></label>
         <div class="input-with-icon">
           <span class="input-prefix">✉️</span>
-          <input type="text" 
-                 id="identifiant" 
-                 name="identifiant" 
-                 [(ngModel)]="identifiant" 
-                 placeholder="ex: prenom.nom@edunet.tn ou Matricule"
-                 required 
-                 autocomplete="username"
-                 class="form-control" />
+          <input type="text" id="identifiant" name="identifiant" [(ngModel)]="identifiant"
+                 placeholder="ex: prenom.nom@edunet.tn ou Matricule" required
+                 autocomplete="username" class="form-control" />
         </div>
       </div>
 
       <div class="form-group">
         <div class="label-with-link">
-          <label for="motDePasse">
-            <span>Mot de passe</span>
-          </label>
+          <label for="motDePasse"><span>Mot de passe</span></label>
           <button type="button" class="btn-forgot-link" (click)="ouvrirModaleReset()">
-            🔑 Mot de passe oublié / Changer
+            🔑 Changer le mot de passe
           </button>
         </div>
         <div class="input-with-icon">
           <span class="input-prefix">🔒</span>
-          <input [type]="showPassword ? 'text' : 'password'" 
-                 id="motDePasse" 
-                 name="motDePasse" 
-                 [(ngModel)]="motDePasse" 
-                 placeholder="••••••••••••"
-                 required
-                 autocomplete="current-password"
-                 class="form-control" />
-          <button type="button" 
-                  class="btn-eye-toggle" 
-                  (click)="togglePasswordVisibility()" 
+          <input [type]="showPassword ? 'text' : 'password'" id="motDePasse" name="motDePasse"
+                 [(ngModel)]="motDePasse" placeholder="••••••••••••" required
+                 autocomplete="current-password" class="form-control" />
+          <button type="button" class="btn-eye-toggle" (click)="togglePasswordVisibility()"
                   title="Afficher/Masquer le mot de passe">
             {{ showPassword ? '🙈' : '👁️' }}
           </button>
         </div>
       </div>
 
-      <!-- Messages d'alerte -->
       <div *ngIf="errorMessage" class="error-alert">
         <strong>⚠️ Erreur d'accès :</strong> {{ errorMessage }}
       </div>
+      <div *ngIf="successMessage" class="success-alert">{{ successMessage }}</div>
 
-      <div *ngIf="successMessage" class="success-alert">
-        {{ successMessage }}
-      </div>
-
-      <!-- Bouton de connexion -->
       <button type="submit" class="btn-submit" [disabled]="isSubmitting">
         <span *ngIf="!isSubmitting">🔐 Se connecter</span>
-        <span *ngIf="isSubmitting">⏳ Vérification et acheminement en cours...</span>
+        <span *ngIf="isSubmitting">⏳ Vérification en cours...</span>
       </button>
     </form>
-
-    <!-- Pied de carte officiel -->
-    <div class="login-footer">
-      <span>🔒 Accès sécurisé réservé aux personnels autorisés · Ministère de l'Éducation</span>
-    </div>
   </div>
 
-  <!-- ============================================================== -->
-  <!-- MODALE : CHANGEMENT ET ENVOI DU MOT DE PASSE PAR E-MAIL       -->
-  <!-- ============================================================== -->
   <div *ngIf="showResetModal" class="modal-backdrop">
     <div class="modal-card">
       <div class="modal-header">
         <div class="modal-header-title">
           <span class="modal-icon">🔑</span>
-          <h3>Changement de Mot de Passe & Envoi par E-mail</h3>
+          <h3>Changement de mot de passe</h3>
         </div>
         <button type="button" class="modal-close" (click)="fermerModaleReset()">✕</button>
       </div>
 
       <div class="modal-body">
         <p class="modal-instruction">
-          Indiquez votre adresse e-mail institutionnelle (<strong>&#64;edunet.tn</strong>) ou votre matricule, 
-          puis définissez votre nouveau mot de passe. 
-          Une notification officielle de confirmation sera envoyée à votre boîte e-mail.
+          Après connexion, saisissez votre mot de passe actuel puis votre nouveau mot de passe.
         </p>
 
         <form (ngSubmit)="confirmerChangementMotDePasse()" class="reset-form">
           <div class="form-group">
-            <label for="resetEmail">Votre Adresse E-mail Institutionnelle :</label>
-            <input type="text" 
-                   id="resetEmail" 
-                   name="resetEmail" 
-                   [(ngModel)]="resetIdentifiant" 
-                   placeholder="ex: inspecteur.informatique@edunet.tn ou sdtic.manouba@edunet.tn" 
-                   required 
-                   class="form-control">
+            <label for="ancienMdp">Mot de passe actuel :</label>
+            <input type="password" id="ancienMdp" name="ancienMdp"
+                   [(ngModel)]="resetAncienMotDePasse" required
+                   autocomplete="current-password" class="form-control">
           </div>
 
           <div class="form-group">
-            <label for="nouveauMdp">Nouveau Mot de Passe (min. 6 caractères) :</label>
-            <input type="password" 
-                   id="nouveauMdp" 
-                   name="nouveauMdp" 
-                   [(ngModel)]="resetNouveauMotDePasse" 
-                   placeholder="Saisir votre nouveau mot de passe" 
-                   required 
-                   class="form-control">
+            <label for="nouveauMdp">Nouveau mot de passe (minimum 8 caractères) :</label>
+            <input type="password" id="nouveauMdp" name="nouveauMdp"
+                   [(ngModel)]="resetNouveauMotDePasse" required
+                   minlength="8" autocomplete="new-password" class="form-control">
           </div>
 
           <div class="form-group">
-            <label for="confirmMdp">Confirmer le Nouveau Mot de Passe :</label>
-            <input type="password" 
-                   id="confirmMdp" 
-                   name="confirmMdp" 
-                   [(ngModel)]="resetConfirmationMotDePasse" 
-                   placeholder="Confirmer votre nouveau mot de passe" 
-                   required 
-                   class="form-control">
+            <label for="confirmMdp">Confirmer le nouveau mot de passe :</label>
+            <input type="password" id="confirmMdp" name="confirmMdp"
+                   [(ngModel)]="resetConfirmationMotDePasse" required
+                   minlength="8" autocomplete="new-password" class="form-control">
           </div>
 
-          <!-- Alertes de la modale -->
           <div *ngIf="resetErrorMessage" class="error-alert">
             <strong>⚠️ Erreur :</strong> {{ resetErrorMessage }}
           </div>
-
           <div *ngIf="resetSuccessMessage" class="success-alert">
             <strong>✓ Succès :</strong> {{ resetSuccessMessage }}
           </div>
 
           <div class="modal-actions">
-            <button type="button" class="btn-cancel" (click)="fermerModaleReset()">
-              Annuler
-            </button>
+            <button type="button" class="btn-cancel" (click)="fermerModaleReset()">Annuler</button>
             <button type="submit" class="btn-confirm-reset" [disabled]="isResetSubmitting">
-              <span *ngIf="!isResetSubmitting">📨 Enregistrer & Envoyer à mon E-mail</span>
-              <span *ngIf="isResetSubmitting">⏳ Enregistrement et envoi...</span>
+              <span *ngIf="!isResetSubmitting">Mettre à jour</span>
+              <span *ngIf="isResetSubmitting">⏳ Mise à jour...</span>
             </button>
           </div>
         </form>
