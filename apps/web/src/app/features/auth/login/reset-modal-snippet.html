@@ -1,0 +1,76 @@
+  <!-- MODALE : CHANGEMENT DU MOT DE PASSE -->
+  <div *ngIf="showResetModal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-header-title">
+          <span class="modal-icon">🔑</span>
+          <h3>Changement de mot de passe</h3>
+        </div>
+        <button type="button" class="modal-close" (click)="fermerModaleReset()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="modal-instruction">
+          Indiquez votre adresse e-mail institutionnelle ou votre matricule,
+          puis définissez un nouveau mot de passe de huit caractères minimum.
+        </p>
+
+        <form (ngSubmit)="confirmerChangementMotDePasse()" class="reset-form">
+          <div class="form-group">
+            <label for="resetEmail">Adresse e-mail institutionnelle ou matricule :</label>
+            <input type="text"
+                   id="resetEmail"
+                   name="resetEmail"
+                   [(ngModel)]="resetIdentifiant"
+                   placeholder="exemple : prenom.nom@edunet.tn ou ADM-001"
+                   required
+                   class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="nouveauMdp">Nouveau mot de passe (minimum 8 caractères) :</label>
+            <input type="password"
+                   id="nouveauMdp"
+                   name="nouveauMdp"
+                   [(ngModel)]="resetNouveauMotDePasse"
+                   placeholder="Saisir votre nouveau mot de passe"
+                   minlength="8"
+                   required
+                   autocomplete="new-password"
+                   class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label for="confirmMdp">Confirmer le nouveau mot de passe :</label>
+            <input type="password"
+                   id="confirmMdp"
+                   name="confirmMdp"
+                   [(ngModel)]="resetConfirmationMotDePasse"
+                   placeholder="Confirmer votre nouveau mot de passe"
+                   minlength="8"
+                   required
+                   autocomplete="new-password"
+                   class="form-control">
+          </div>
+
+          <div *ngIf="resetErrorMessage" class="error-alert">
+            <strong>⚠️ Erreur :</strong> {{ resetErrorMessage }}
+          </div>
+
+          <div *ngIf="resetSuccessMessage" class="success-alert">
+            <strong>✓ Succès :</strong> {{ resetSuccessMessage }}
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn-cancel" (click)="fermerModaleReset()">
+              Annuler
+            </button>
+            <button type="submit" class="btn-confirm-reset" [disabled]="isResetSubmitting">
+              <span *ngIf="!isResetSubmitting">Enregistrer le nouveau mot de passe</span>
+              <span *ngIf="isResetSubmitting">⏳ Enregistrement...</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>

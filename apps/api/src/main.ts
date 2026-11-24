@@ -1,12 +1,18 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ValidationPipe } from '@nestjs/common';
 import 'dotenv/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.setGlobalPrefix('api');
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  }));
 
   app.enableCors({
     origin: [
@@ -16,7 +22,6 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Configuration de Swagger
   const config = new DocumentBuilder()
     .setTitle('SuiviTic API')
     .setDescription('Documentation de l\'API')
