@@ -11,7 +11,6 @@ import { AuthService } from '../../../core/services/auth.service';
   styleUrls: ['./login.component.scss']
 })
 export class LoginComponent implements OnInit {
-  // Champs de connexion manuelle stricte
   identifiant = '';
   motDePasse = '';
   errorMessage = '';
@@ -19,9 +18,8 @@ export class LoginComponent implements OnInit {
   isSubmitting = false;
   showPassword = false;
 
-  // Modale de changement / réinitialisation de mot de passe
   showResetModal = false;
-  resetIdentifiant = '';
+  resetAncienMotDePasse = '';
   resetNouveauMotDePasse = '';
   resetConfirmationMotDePasse = '';
   resetErrorMessage = '';
@@ -31,12 +29,9 @@ export class LoginComponent implements OnInit {
   constructor(private authService: AuthService) {}
 
   ngOnInit(): void {
-    // Si l'utilisateur a déjà une session valide, l'acheminer directement vers son dashboard
     if (this.authService.isLoggedIn()) {
       const current = this.authService.currentUserValue;
-      if (current) {
-        this.authService.redirectUserByRole(current.role);
-      }
+      if (current) this.authService.redirectUserByRole(current.role);
     }
   }
 
@@ -44,33 +39,28 @@ export class LoginComponent implements OnInit {
     this.errorMessage = '';
     this.successMessage = '';
 
-    const id = this.identifiant.trim();
-    const pw = this.motDePasse.trim();
+    const identifiant = this.identifiant.trim();
+    const motDePasse = this.motDePasse;
 
-    if (!id) {
+    if (!identifiant) {
       this.errorMessage = 'Veuillez saisir votre adresse e-mail institutionnelle ou votre matricule.';
       return;
     }
-
-    if (!pw) {
+    if (!motDePasse) {
       this.errorMessage = 'Veuillez saisir votre mot de passe.';
       return;
     }
 
     this.isSubmitting = true;
-
-    this.authService.login({ identifiant: id, motDePasse: pw }).subscribe({
+    this.authService.login({ identifiant, motDePasse }).subscribe({
       next: (res) => {
         this.isSubmitting = false;
-        if (!res.success) {
-          this.errorMessage = res.message || 'Identifiant ou mot de passe incorrect.';
-        } else {
-          this.successMessage = '✓ Authentification réussie. Acheminement vers votre Dashboard officiel...';
-        }
+        this.errorMessage = res.success ? '' : (res.message || 'Identifiant ou mot de passe incorrect.');
+        if (res.success) this.successMessage = 'Authentification réussie.';
       },
       error: () => {
         this.isSubmitting = false;
-        this.errorMessage = 'Une erreur est survenue lors de la tentative de connexion.';
+        this.errorMessage = 'Impossible de contacter le serveur.';
       }
     });
   }
@@ -80,7 +70,7 @@ export class LoginComponent implements OnInit {
   }
 
   ouvrirModaleReset(): void {
-    this.resetIdentifiant = this.identifiant.trim();
+    this.resetAncienMotDePasse = '';
     this.resetNouveauMotDePasse = '';
     this.resetConfirmationMotDePasse = '';
     this.resetErrorMessage = '';
@@ -96,46 +86,37 @@ export class LoginComponent implements OnInit {
     this.resetErrorMessage = '';
     this.resetSuccessMessage = '';
 
-    const email = this.resetIdentifiant.trim();
-    const nouveau = this.resetNouveauMotDePasse.trim();
-    const confirm = this.resetConfirmationMotDePasse.trim();
+    const ancien = this.resetAncienMotDePasse;
+    const nouveau = this.resetNouveauMotDePasse;
+    const confirmation = this.resetConfirmationMotDePasse;
 
-    if (!email) {
-      this.resetErrorMessage = 'Veuillez saisir votre adresse e-mail institutionnelle (@edunet.tn).';
+    if (!ancien) {
+      this.resetErrorMessage = 'Veuillez saisir votre mot de passe actuel.';
       return;
     }
-
-    if (!nouveau || nouveau.length < 6) {
-      this.resetErrorMessage = 'Le mot de passe doit comporter au moins 6 caractères.';
+    if (nouveau.length < 8) {
+      this.resetErrorMessage = 'Le mot de passe doit comporter au moins 8 caractères.';
       return;
     }
-
-    if (nouveau !== confirm) {
+    if (nouveau !== confirmation) {
       this.resetErrorMessage = 'Les deux mots de passe saisis ne sont pas identiques.';
       return;
     }
 
     this.isResetSubmitting = true;
-
-    this.authService.changerMotDePasse(email, nouveau).subscribe({
+    this.authService.changerMotDePasse(ancien, nouveau).subscribe({
       next: (res) => {
         this.isResetSubmitting = false;
         if (!res.success) {
           this.resetErrorMessage = res.message;
         } else {
           this.resetSuccessMessage = res.message;
-          // Pré-remplit le formulaire principal avec les nouveaux identifiants
-          this.identifiant = email;
-          this.motDePasse = nouveau;
-          setTimeout(() => {
-            this.showResetModal = false;
-            this.successMessage = '✓ Nouveau mot de passe enregistré et transmis à votre boîte e-mail. Vous pouvez maintenant cliquer sur « Se connecter ».';
-          }, 2000);
+          this.motDePasse = '';
         }
       },
       error: () => {
         this.isResetSubmitting = false;
-        this.resetErrorMessage = 'Erreur lors de la mise à jour du mot de passe.';
+        this.resetErrorMessage = 'Impossible de joindre le serveur.';
       }
     });
   }
