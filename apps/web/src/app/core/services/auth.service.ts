@@ -4,26 +4,9 @@ import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, catchError, map, of, tap } from 'rxjs';
 
 export type UserRole =
-  | 'ADMIN_CENTRAL'
-  | 'ADMIN_ADJOINT'
-  | 'SD_TIC'
-  | 'DIRECTEUR'
-  | 'PROF_LABO'
-  | 'TECHNICIEN'
-  | 'AGENT_ADMIN'
-  | 'TECHNICIEN_PRESTATAIRE'
-  | 'SD_BATIMENTS'
-  | 'INSPECTEUR'
-  | 'COORDINATEUR';
-
-export interface DotationEquipement {
-  id: string;
-  type: string;
-  marqueModele: string;
-  numeroSerie: string;
-  dateDotation: string;
-  etat: 'FONCTIONNEL' | 'EN_PANNE' | 'A_REMPLACER';
-}
+  | 'ADMIN_CENTRAL' | 'ADMIN_ADJOINT' | 'SD_TIC' | 'DIRECTEUR'
+  | 'PROF_LABO' | 'TECHNICIEN' | 'AGENT_ADMIN'
+  | 'TECHNICIEN_PRESTATAIRE' | 'SD_BATIMENTS' | 'INSPECTEUR' | 'COORDINATEUR';
 
 export interface UserAccount {
   id: string;
@@ -35,47 +18,9 @@ export interface UserAccount {
   roleLabel: string;
   perimetre: string;
   creId?: string;
-  creNom?: string;
   etablissementId?: string;
-  etablissementNom?: string;
   laboId?: string;
-  laboNom?: string;
   avatar: string;
-  permissionsAdjoint?: {
-    arrivages: boolean;
-    inventaires: boolean;
-    pannesPertes: boolean;
-    comptesLocaux: boolean;
-    rapports: boolean;
-    comptesElissaEdunet: boolean;
-  };
-  agentProfile?: {
-    direction: string;
-    service: string;
-    bureau: string;
-    localisationType: 'CENTRAL_CRE' | 'CREFOC' | 'ETABLISSEMENT';
-    localisationNom: string;
-    ipFixe: string;
-    vlan: string;
-    priseMurale: string;
-    switchPort: string;
-    connexionStatut: 'CONNECTE' | 'DEGRADE' | 'COUPE';
-    equipementsDotation: DotationEquipement[];
-    tachesDeleguees?: string[];
-  };
-  prestataireProfile?: {
-    societeNom: string;
-    numeroMarche: string;
-    specialite: string;
-    telephone: string;
-  };
-  batimentsProfile?: {
-    service: string;
-    bureau: string;
-    parcAutomobileResponsable: boolean;
-    vehiculesSupervises: number;
-    chauffeursActifs: number;
-  };
 }
 
 interface LoginResponse {
@@ -94,34 +39,31 @@ export class AuthService {
 
   constructor(private router: Router, private http: HttpClient) {
     localStorage.removeItem('suivitic_custom_passwords');
+    this.restoreSession();
   }
 
   public get currentUserValue(): UserAccount | null {
     return this.currentUserSubject.value;
   }
 
-  changerMotDePasse(emailOuMatricule: string, nouveauMdp: string): Observable<{ success: boolean; message: string }> {
-    const ident = (emailOuMatricule || '').trim();
-    const mdp = nouveauMdp || '';
+  changerMotDePasse(ancienMotDePasse: string, nouveauMdp: string): Observable<{ success: boolean; message: string }> {
+    const ancien = ancienMotDePasse || '';
+    const nouveau = nouveauMdp || '';
 
-    if (!ident) {
-      return of({ success: false, message: 'Veuillez saisir votre adresse e-mail institutionnelle ou matricule.' });
-    }
-    if (mdp.length < 8) {
-      return of({ success: false, message: 'Le mot de passe doit comporter au moins 8 caractères.' });
-    }
+    if (!ancien) return of({ success: false, message: 'Veuillez saisir votre mot de passe actuel.' });
+    if (nouveau.length < 8) return of({ success: false, message: 'Le mot de passe doit comporter au moins 8 caractères.' });
 
     return this.http.post<{ success?: boolean; message?: string }>(`${this.apiUrl}/change-password`, {
-      identifiant: ident,
-      nouveauMotDePasse: mdp
+      ancienMotDePasse: ancien,
+      nouveauMotDePasse: nouveau,
     }).pipe(
       map((response) => ({
         success: response.success !== false,
-        message: response.message || 'Votre mot de passe a été mis à jour.'
+        message: response.message || 'Votre mot de passe a été mis à jour.',
       })),
       catchError((error: HttpErrorResponse) => of({
         success: false,
-        message: error.error?.message || 'Impossible de modifier le mot de passe pour le moment.'
+        message: this.genericHttpMessage(error),
       }))
     );
   }
@@ -129,13 +71,8 @@ export class AuthService {
   login(credentials: { identifiant: string; motDePasse?: string }): Observable<{ success: boolean; message?: string }> {
     const identifiant = (credentials.identifiant || '').trim();
     const motDePasse = credentials.motDePasse || '';
-
-    if (!identifiant) {
-      return of({ success: false, message: 'Veuillez saisir votre adresse e-mail institutionnelle ou matricule.' });
-    }
-    if (!motDePasse) {
-      return of({ success: false, message: 'Veuillez saisir votre mot de passe.' });
-    }
+    if (!identifiant) return of({ success: false, message: 'Veuillez saisir votre adresse e-mail institutionnelle ou matricule.' });
+    if (!motDePasse) return of({ success: false, message: 'Veuillez saisir votre mot de passe.' });
 
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, { identifiant, motDePasse }).pipe(
       tap((response) => {
@@ -152,8 +89,8 @@ export class AuthService {
       map(() => ({ success: true })),
       catchError((error: HttpErrorResponse | Error) => {
         const message = error instanceof HttpErrorResponse
-          ? (error.error?.message || 'Identifiants incorrects ou service indisponible.')
-          : error.message;
+          ? this.genericHttpMessage(error)
+          : 'Erreur de réponse du serveur.';
         return of({ success: false, message });
       })
     );
@@ -166,6 +103,50 @@ export class AuthService {
     this.router.navigate(['/login']);
   }
 
+  isLoggedIn(): boolean {
+    const token = localStorage.getItem('token');
+    return !!token && !!this.currentUserSubject.value && this.tokenIsNotExpired(token);
+  }
+
+  hasRole(allowedRoles: UserRole[]): boolean {
+    const user = this.currentUserValue;
+    return !!user && allowedRoles.includes(user.role);
+  }
+
+  private restoreSession(): void {
+    const token = localStorage.getItem('token');
+    const rawUser = localStorage.getItem('suivitic_user');
+    if (!token || !rawUser || !this.tokenIsNotExpired(token)) {
+      this.logout();
+      return;
+    }
+    try {
+      const user = JSON.parse(rawUser) as UserAccount;
+      if (user?.id && user?.role) {
+        user.role = this.normalizeRole(user.role);
+        this.currentUserSubject.next(user);
+      }
+    } catch {
+      this.logout();
+    }
+  }
+
+  private tokenIsNotExpired(token: string): boolean {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      return typeof payload.exp !== 'number' || payload.exp * 1000 > Date.now();
+    } catch {
+      return false;
+    }
+  }
+
+  private genericHttpMessage(error: HttpErrorResponse): string {
+    if (error.status === 401) return 'Identifiants incorrects ou session expirée.';
+    if (error.status === 403) return 'Accès refusé.';
+    if (error.status === 400) return 'Les données fournies sont invalides.';
+    return 'Impossible de joindre le serveur pour le moment.';
+  }
+
   private normalizeUser(apiUser: Partial<UserAccount> | undefined, identifiant: string): UserAccount {
     const role = this.normalizeRole(apiUser?.role);
     return {
@@ -176,18 +157,11 @@ export class AuthService {
       email: apiUser?.email || identifiant,
       role,
       roleLabel: apiUser?.roleLabel || role,
-      perimetre: apiUser?.perimetre || '',
+      perimetre: '',
       creId: apiUser?.creId,
-      creNom: apiUser?.creNom,
       etablissementId: apiUser?.etablissementId,
-      etablissementNom: apiUser?.etablissementNom,
       laboId: apiUser?.laboId,
-      laboNom: apiUser?.laboNom,
-      avatar: apiUser?.avatar || '👤',
-      permissionsAdjoint: apiUser?.permissionsAdjoint,
-      agentProfile: apiUser?.agentProfile,
-      prestataireProfile: apiUser?.prestataireProfile,
-      batimentsProfile: apiUser?.batimentsProfile
+      avatar: '👤',
     };
   }
 
@@ -200,53 +174,33 @@ export class AuthService {
       TECHNICIEN_INTERNE: 'TECHNICIEN', TECHNICIEN: 'TECHNICIEN',
       TECHNICIEN_PRESTATAIRE: 'TECHNICIEN_PRESTATAIRE',
       SOUS_DIRECTEUR_BATIMENTS: 'SD_BATIMENTS', SD_BATIMENTS: 'SD_BATIMENTS',
-      AGENT_ADMIN: 'AGENT_ADMIN', INSPECTEUR: 'INSPECTEUR', COORDINATEUR: 'COORDINATEUR'
+      AGENT_ADMIN: 'AGENT_ADMIN', INSPECTEUR: 'INSPECTEUR', COORDINATEUR: 'COORDINATEUR',
     };
     return role ? (mapping[role] || 'AGENT_ADMIN') : 'AGENT_ADMIN';
   }
 
-  public redirectUserByRole(role: UserRole): void {
-    switch (role) {
-      case 'ADMIN_CENTRAL':
-      case 'ADMIN_ADJOINT': this.router.navigate(['/admin-central']); break;
-      case 'SD_TIC': this.router.navigate(['/sd-tic']); break;
-      case 'DIRECTEUR': this.router.navigate(['/directeur']); break;
-      case 'PROF_LABO': this.router.navigate(['/prof']); break;
-      case 'TECHNICIEN': this.router.navigate(['/technicien']); break;
-      case 'AGENT_ADMIN': this.router.navigate(['/agent-admin']); break;
-      case 'TECHNICIEN_PRESTATAIRE': this.router.navigate(['/technicien-prestataire']); break;
-      case 'SD_BATIMENTS': this.router.navigate(['/sd-batiments']); break;
-      case 'INSPECTEUR': this.router.navigate(['/inspecteur']); break;
-      case 'COORDINATEUR': this.router.navigate(['/coordinateur']); break;
-      default: this.router.navigate(['/login']);
-    }
-  }
-
-  isLoggedIn(): boolean {
-    return !!this.currentUserSubject.value && !!localStorage.getItem('token');
-  }
-
-  hasRole(allowedRoles: UserRole[]): boolean {
-    const user = this.currentUserValue;
-    return !!user && allowedRoles.includes(user.role);
+  redirectUserByRole(role: UserRole): void {
+    const routes: Record<UserRole, string> = {
+      ADMIN_CENTRAL: '/admin-central', ADMIN_ADJOINT: '/admin-central', SD_TIC: '/sd-tic',
+      DIRECTEUR: '/directeur', PROF_LABO: '/prof', TECHNICIEN: '/technicien',
+      AGENT_ADMIN: '/agent-admin', TECHNICIEN_PRESTATAIRE: '/technicien-prestataire',
+      SD_BATIMENTS: '/sd-batiments', INSPECTEUR: '/inspecteur', COORDINATEUR: '/coordinateur',
+    };
+    this.router.navigate([routes[role] || '/login']);
   }
 
   getDashboardUrlForCurrent(): string {
     const user = this.currentUserValue;
-    if (!user) return '/login';
-    switch (user.role) {
-      case 'ADMIN_CENTRAL':
-      case 'ADMIN_ADJOINT': return '/admin-central';
-      case 'SD_TIC': return '/sd-tic';
-      case 'DIRECTEUR': return '/directeur';
-      case 'PROF_LABO': return '/prof';
-      case 'TECHNICIEN': return '/technicien';
-      case 'AGENT_ADMIN': return '/agent-admin';
-      case 'TECHNICIEN_PRESTATAIRE': return '/technicien-prestataire';
-      case 'SD_BATIMENTS': return '/sd-batiments';
-      case 'INSPECTEUR': return '/inspecteur';
-      case 'COORDINATEUR': return '/coordinateur';
-      default: return '/login';
-    }
+    return user ? this.dashboardRoute(user.role) : '/login';
+  }
+
+  private dashboardRoute(role: UserRole): string {
+    const routes: Record<UserRole, string> = {
+      ADMIN_CENTRAL: '/admin-central', ADMIN_ADJOINT: '/admin-central', SD_TIC: '/sd-tic',
+      DIRECTEUR: '/directeur', PROF_LABO: '/prof', TECHNICIEN: '/technicien',
+      AGENT_ADMIN: '/agent-admin', TECHNICIEN_PRESTATAIRE: '/technicien-prestataire',
+      SD_BATIMENTS: '/sd-batiments', INSPECTEUR: '/inspecteur', COORDINATEUR: '/coordinateur',
+    };
+    return routes[role] || '/login';
   }
 }
