@@ -11,7 +11,6 @@ import { AuthService } from '../../../core/services/auth.service';
   styleUrls: ['./login.component.scss']
 })
 export class LoginComponent implements OnInit {
-  // Champs de connexion manuelle stricte
   identifiant = '';
   motDePasse = '';
   errorMessage = '';
@@ -19,7 +18,6 @@ export class LoginComponent implements OnInit {
   isSubmitting = false;
   showPassword = false;
 
-  // Modale de changement / réinitialisation de mot de passe
   showResetModal = false;
   resetIdentifiant = '';
   resetNouveauMotDePasse = '';
@@ -31,7 +29,6 @@ export class LoginComponent implements OnInit {
   constructor(private authService: AuthService) {}
 
   ngOnInit(): void {
-    // Si l'utilisateur a déjà une session valide, l'acheminer directement vers son dashboard
     if (this.authService.isLoggedIn()) {
       const current = this.authService.currentUserValue;
       if (current) {
@@ -45,7 +42,7 @@ export class LoginComponent implements OnInit {
     this.successMessage = '';
 
     const id = this.identifiant.trim();
-    const pw = this.motDePasse.trim();
+    const pw = this.motDePasse;
 
     if (!id) {
       this.errorMessage = 'Veuillez saisir votre adresse e-mail institutionnelle ou votre matricule.';
@@ -65,7 +62,7 @@ export class LoginComponent implements OnInit {
         if (!res.success) {
           this.errorMessage = res.message || 'Identifiant ou mot de passe incorrect.';
         } else {
-          this.successMessage = '✓ Authentification réussie. Acheminement vers votre Dashboard officiel...';
+          this.successMessage = '✓ Authentification réussie. Acheminement vers votre tableau de bord.';
         }
       },
       error: () => {
@@ -96,17 +93,17 @@ export class LoginComponent implements OnInit {
     this.resetErrorMessage = '';
     this.resetSuccessMessage = '';
 
-    const email = this.resetIdentifiant.trim();
-    const nouveau = this.resetNouveauMotDePasse.trim();
-    const confirm = this.resetConfirmationMotDePasse.trim();
+    const identifiant = this.resetIdentifiant.trim();
+    const nouveau = this.resetNouveauMotDePasse;
+    const confirm = this.resetConfirmationMotDePasse;
 
-    if (!email) {
-      this.resetErrorMessage = 'Veuillez saisir votre adresse e-mail institutionnelle (@edunet.tn).';
+    if (!identifiant) {
+      this.resetErrorMessage = 'Veuillez saisir votre adresse e-mail institutionnelle ou votre matricule.';
       return;
     }
 
-    if (!nouveau || nouveau.length < 6) {
-      this.resetErrorMessage = 'Le mot de passe doit comporter au moins 6 caractères.';
+    if (nouveau.length < 8) {
+      this.resetErrorMessage = 'Le mot de passe doit comporter au moins 8 caractères.';
       return;
     }
 
@@ -117,20 +114,19 @@ export class LoginComponent implements OnInit {
 
     this.isResetSubmitting = true;
 
-    this.authService.changerMotDePasse(email, nouveau).subscribe({
+    this.authService.changerMotDePasse(identifiant, nouveau).subscribe({
       next: (res) => {
         this.isResetSubmitting = false;
         if (!res.success) {
           this.resetErrorMessage = res.message;
         } else {
           this.resetSuccessMessage = res.message;
-          // Pré-remplit le formulaire principal avec les nouveaux identifiants
-          this.identifiant = email;
+          this.identifiant = identifiant;
           this.motDePasse = nouveau;
           setTimeout(() => {
             this.showResetModal = false;
-            this.successMessage = '✓ Nouveau mot de passe enregistré et transmis à votre boîte e-mail. Vous pouvez maintenant cliquer sur « Se connecter ».';
-          }, 2000);
+            this.successMessage = '✓ Mot de passe enregistré. Vous pouvez maintenant vous connecter.';
+          }, 1200);
         }
       },
       error: () => {

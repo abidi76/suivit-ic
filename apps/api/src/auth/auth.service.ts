@@ -1,7 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
@@ -12,49 +13,29 @@ export class AuthService {
   ) {}
 
   async login(dto: LoginDto) {
-    const { identifiant, motDePasse } = dto;
-
-    console.log('=== LOGIN DÉBUT ===');
-    console.log('Identifiant reçu:', identifiant);
-    console.log('Longueur motDePasse:', motDePasse.length);
-    console.log('Codes:', [...motDePasse].map(c => c.charCodeAt(0)).join(','));
-    console.log('Mot de passe reçu:', motDePasse);
+    const identifiant = dto.identifiant.trim();
 
     const user = await this.prisma.user.findFirst({
       where: {
         OR: [
-          { email: identifiant.toLowerCase().trim() },
-          { matricule: identifiant.trim() },
+          { email: identifiant.toLowerCase() },
+          { matricule: identifiant },
         ],
       },
     });
 
-    console.log('=== USER TROUVÉ ===');
-    console.log('User:', user ? 'OUI' : 'NON');
-    if (user) {
-      console.log('ID:', user.id);
-      console.log('Email:', user.email);
-      console.log('Hash en base:', user.motDePasseHash);
-      console.log('Actif:', user.actif);
-    }
-
     const GENERIQUE = 'Identifiants invalides.';
     if (!user) {
-      console.log('ERREUR: user non trouvé');
       throw new UnauthorizedException(GENERIQUE);
     }
 
-    const ok = await bcrypt.compare(motDePasse, user.motDePasseHash);
-    console.log('=== BCRYPT ===');
-    console.log('Compare result:', ok);
+    const ok = await bcrypt.compare(dto.motDePasse, user.motDePasseHash);
 
     if (!ok) {
-      console.log('ERREUR: mot de passe incorrect');
       throw new UnauthorizedException(GENERIQUE);
     }
 
     if (!user.actif) {
-      console.log('ERREUR: compte désactivé');
       throw new UnauthorizedException('Compte désactivé.');
     }
 
@@ -69,8 +50,6 @@ export class AuthService {
       role: user.role,
     });
 
-    console.log('=== TOKEN GÉNÉRÉ ===');
-
     return {
       accessToken,
       user: {
@@ -84,6 +63,51 @@ export class AuthService {
         etablissementId: user.etablissementId,
         doitChangerMdp: user.doitChangerMdp,
       },
+    };
+  }
+
+  async changePassword(dto: ChangePasswordDto) {
+    const identifiant = dto.identifiant.trim();
+    const nouveauMotDePasse = dto.nouveauMotDePasse;
+
+    if (!identifiant) {
+      throw new BadRequestException('Identifiant requis.');
+    }
+
+    if (nouveauMotDePasse.length < 8) {
+      throw new BadRequestException('Le mot de passe doit comporter au moins 8 caractères.');
+    }
+
+    const user = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: identifiant.toLowerCase() },
+          { matricule: identifiant },
+        ],
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Compte introuvable.');
+    }
+
+    if (!user.actif) {
+      throw new UnauthorizedException('Compte désactivé.');
+    }
+
+    const motDePasseHash = await bcrypt.hash(nouveauMotDePasse, 10);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        motDePasseHash,
+        doitChangerMdp: false,
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Votre mot de passe a été mis à jour.',
     };
   }
 }
